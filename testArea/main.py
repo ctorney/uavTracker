@@ -108,7 +108,7 @@ def main():
     xs = int(0.5*lastIm.height)
     ys = int(0.5*lastIm.width)
     final = final.blit(lastIm,pos=(ys,xs))
-    final.save(display)
+    final.save("wild.jpg")
     while display.isNotDone():
 
         thisIm = vir.getImage()
