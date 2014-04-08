@@ -86,7 +86,7 @@ def reMap(src, mapx, mapy, scaling):
     cy = 180*scaling
     lx = 1350*scaling
     ly = 1050*scaling
-    return Image(dst,cv2image=True).crop(cx,cy,lx,ly)
+    return Image(dst,cv2image=True)#.crop(cx,cy,lx,ly)
 
 
 
@@ -109,6 +109,7 @@ def main():
     ys = int(0.5*lastIm.width)
     final = final.blit(lastIm,pos=(ys,xs))
     final.save(display)
+    i=0
     while display.isNotDone():
 
         thisIm = vir.getImage()
@@ -121,7 +122,9 @@ def main():
 
 
         lastIm = thisIm
-        final.save(display)
+        #final.save(display)
+        final.save("imgs/"+ str(i).zfill(4)  + ".png")
+        i+=1
 
         if vir.getImage().getBitmap() == '': display.done = True
         if display.mouseRight: display.done = True
