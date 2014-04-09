@@ -57,21 +57,40 @@ class circularHOGExtractor(FeatureExtractorBase):
 
     def extract(self, img):
         I = img.getGrayNumpyCv2().astype(float)/255.0
+
+        # size and centre of image
         (nx, ny) = I.shape
         cx = int(round(0.5*nx))
         cy = int(round(0.5*ny))
+
+        # compute gradient with a central difference method and store in complex form
         (dy, dx) = np.gradient(I)
         dz = dx + 1j*dy
 
+        # compute magnitude/phase of complex numbers
         phi = np.angle(dz)
         r = np.abs(dz)
-        histF = np.zeros([nx,ny, self.mNMaxFreq+1])+0j
 
+        # create an empty array for storing the dfft of the orientation vector
+        histF = np.zeros([nx, ny, self.mNMaxFreq+1])+0j
+
+        # take the dfft of the orientation vector up to order MaxFreq
         for k in range(0,self.mNMaxFreq+1):
             histF[:,:,k] = np.multiply(np.exp( -1j * (k) * phi) , r+0j)
         
         histF[:,:,0] = histF[:,:,0] * 0.5;
-        return I
+
+        # compute regional descriptors by convolutions (these descriptors are not rotation invariant)
+        ceDesc = np.zeros([self.mNMaxFreq+1, 1])+0j
+        template = self.ciKernel[0]
+        (tnx, tny) = template.shape
+        tnx2 = int(round(0.5*tnx))
+        c_featureDetail = [];
+        for k in range(0,self.mNMaxFreq+1):
+            ceDesc[k] = np.sum(np.sum(np.multiply(histF[cx-tnx2:cx-tnx2+tnx,cy-tnx2:cy-tnx2+tnx,k],template)))
+            c_featureDetail.append([0,-1,-k, 0, -k])
+
+        return ceDesc
 
 
     
