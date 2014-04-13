@@ -35,19 +35,19 @@ class circularHOGExtractor(FeatureExtractorBase):
 
         # next build the internal regions - (bins-1) concentric circles
         modes = range(0, self.mNMaxFreq+1)
-        Scale = range(2, bins+1)
+        scale = range(2, self.mNBins+1)
 
-        for s in Scale:
+        for s in scale:
             r = int(self.mNSize * s)
             ll = range(1-r,r)
             [x,y] = np.meshgrid(ll,ll)
             z = x + 1j*y
             phase_z = np.angle(z);
                             
-            for j in modes:
-                kernel = self.mNSize - np.abs(np.abs(z) - r) 
+            for k in modes:
+                kernel = self.mNSize - np.abs(np.abs(z) - (r-self.mNSize)) 
                 kernel[kernel < 0] = 0
-                kernel = np.multiply(kernel,np.exp(1j*phase_z*j))
+                kernel = np.multiply(kernel,np.exp(1j*phase_z*k))
                 sa = np.ravel(np.abs(kernel))
                 kernel = kernel / np.sqrt(np.sum(np.multiply(sa,sa)))
 
@@ -75,22 +75,69 @@ class circularHOGExtractor(FeatureExtractorBase):
         histF = np.zeros([nx, ny, self.mNMaxFreq+1])+0j
 
         # take the dfft of the orientation vector up to order MaxFreq
+        # positive values of k only since negative values give conjugate
         for k in range(0,self.mNMaxFreq+1):
             histF[:,:,k] = np.multiply(np.exp( -1j * (k) * phi) , r+0j)
         
-        histF[:,:,0] = histF[:,:,0] * 0.5;
+# this makes no sense to me        histF[:,:,0] = histF[:,:,0] * 0.5
 
         # compute regional descriptors by convolutions (these descriptors are not rotation invariant)
-        ceDesc = np.zeros([self.mNMaxFreq+1, 1])+0j
+        ceDesc = np.zeros([self.mNMaxFreq+1])+0j
         template = self.ciKernel[0]
         (tnx, tny) = template.shape
         tnx2 = int(round(0.5*tnx))
-        c_featureDetail = [];
+        c_featureDetail = []
         for k in range(0,self.mNMaxFreq+1):
             ceDesc[k] = np.sum(np.sum(np.multiply(histF[cx-tnx2:cx-tnx2+tnx,cy-tnx2:cy-tnx2+tnx,k],template)))
             c_featureDetail.append([0,-1,-k, 0, -k])
 
-        return ceDesc
+
+        scale = range(2, self.mNBins+1)
+        featureDetail = []
+        for s in scale:
+            featureDim = 0;
+            for freq in range(-self.mNMaxFreq,self.mNMaxFreq+1):
+                for k in range(0,self.mNMaxFreq+1):
+                    ff = freq - k
+                    if(ff >= -self.mNMaxFreq and ff <= self.mNMaxFreq and not(k==0 and freq < 0)):
+                        featureDim = featureDim + 1;
+                        featureDetail.append([s,-1,-k, freq, ff])
+
+        # no descriptors should be conjugate as this gives no extra information, 
+        # i.e. we want to keep (UmFk or U-mF-k) and (U-mFk or UmF-k). If m=k then 
+        # this is a rotation invariant feature, if not we only keep the magnitude
+        fHoG = np.zeros([featureDim*(self.mNBins-1)]) + 0j
+        f_index = 0
+        for s in scale:
+            for freq in range(-self.mNMaxFreq,self.mNMaxFreq+1):
+                for k in range(0,self.mNMaxFreq+1):
+                    k_index = 1 + (s-2)*(self.mNMaxFreq+1)+abs(freq)
+                    template = self.ciKernel[k_index]
+                    (tnx, tny) = template.shape
+                    tnx2 = int(round(0.5*tnx))
+                    if(freq < 0):
+                        template = np.conjugate(template)
+                    ff = freq - k
+                    if(ff >= -self.mNMaxFreq and ff <= self.mNMaxFreq and not(k==0 and freq < 0)):
+                        if (ff==0):
+                            fHoG[f_index] = np.sum(np.sum(np.multiply(histF[cx-tnx2:cx-tnx2+tnx,cy-tnx2:cy-tnx2+tnx,k],template)))
+                        else:
+                            fHoG[f_index] = abs(np.sum(np.sum(np.multiply(histF[cx-tnx2:cx-tnx2+tnx,cy-tnx2:cy-tnx2+tnx,k],template))))
+
+                        f_index+=1
+
+
+        fHoG2 = np.zeros([98]) 
+
+        for i in range(0,5):
+            fHoG2[i]=abs(ceDesc[i])
+
+        for i in range(5,98):
+            fHoG2[i]=abs(fHoG[i-5])
+
+        return fHoG2.tolist()
+
+        return np.concatenate((ceDesc,fHoG)).tolist()
 
 
     
@@ -99,11 +146,8 @@ class circularHOGExtractor(FeatureExtractorBase):
         Return the names of all of the length and angle fields. 
         """
         retVal = []
-        for i in range(self.mNBins):
+        for i in range(0,98):
             name = "Length"+str(i)
-            retVal.append(name)
-        for i in range(self.mNBins):
-            name = "Angle"+str(i)
             retVal.append(name)
                         
         return retVal
@@ -116,5 +160,5 @@ class circularHOGExtractor(FeatureExtractorBase):
         """
         This method returns the total number of fields in the feature vector.
         """
-        return self.mNBins*2
+        return 98
 
