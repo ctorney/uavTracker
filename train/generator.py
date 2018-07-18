@@ -1,7 +1,8 @@
-import cv2
+import os, sys, cv2
 import copy
 import numpy as np
 from keras.utils import Sequence
+sys.path.append("..")
 from utils.bbox import BoundBox, bbox_iou
 from utils.image import apply_random_scale_and_crop, random_distort_image, random_flip, correct_bounding_boxes, random_flip2, correct_bounding_boxes2
 
@@ -15,13 +16,13 @@ class BatchGenerator(Sequence):
         downsample=32, # ratio between network input's size and network output's size, 32 for YOLOv3
         max_box_per_image=30,
         batch_size=1,
+        im_dir='./',
         min_net_size=320,
         max_net_size=608,    
         net_h=864,
         net_w=864,
         shuffle=True, 
-        jitter=True, 
-        norm=None
+        jitter=True 
     ):
         self.instances          = instances
         self.batch_size         = batch_size
@@ -33,7 +34,7 @@ class BatchGenerator(Sequence):
         self.max_net_size       = (max_net_size//self.downsample)*self.downsample
         self.shuffle            = shuffle
         self.jitter             = jitter
-        self.norm               = norm
+        self.im_dir             = im_dir
  #       self.anchors            = [BoundBox(0, 0, anchors[2*i], anchors[2*i+1]) for i in range(len(anchors)//2)]
         self.net_h              = net_h
         self.net_w              = net_w
@@ -73,6 +74,7 @@ class BatchGenerator(Sequence):
             # augment input image and fix object's position and size
             img, all_objs = self._aug_image(train_instance, net_h, net_w)
             
+            #print(len(all_objs))
             for obj in all_objs:
                 # find the best anchor box for this object
                 max_anchor = None                
@@ -92,6 +94,7 @@ class BatchGenerator(Sequence):
                 
                 # determine the yolo to be responsible for this bounding box
                 yolo = yolos[max_index//3]
+                #print(max_index//3)
                 grid_h, grid_w = yolo.shape[1:3]
                 
                 # determine the position of the bounding box on the grid
@@ -115,24 +118,18 @@ class BatchGenerator(Sequence):
 
                 # assign ground truth x, y, w, h, confidence and class probs to y_batch
  #               yolo[instance_count, grid_y, grid_x, ]      = 0
-                yolo[instance_count, grid_y, grid_x, max_index%3, 0:4] = box
-                yolo[instance_count, grid_y, grid_x, max_index%3, 4  ] = 1.
-                yolo[instance_count, grid_y, grid_x, max_index%3, 5+obj_indx] = 1
+            
+                #print( instance_count, grid_y, grid_x, max_index%3, box)
+ #               yolo[instance_count, grid_y, grid_x, max_index%3, 0:4] = box
+                yolo[instance_count, grid_y, grid_x, :, 0:4] = box
+#                yolo[instance_count, grid_y, grid_x, max_index%3, 4  ] = 1.
+                yolo[instance_count, grid_y, grid_x, :, 4  ] = 1.
+ #               yolo[instance_count, grid_y, grid_x, max_index%3, 5+obj_indx] = 1
+                yolo[instance_count, grid_y, grid_x, :, 5+obj_indx] = 1
 
 
             # assign input image to x_batch
-            if self.norm != None: 
-                x_batch[instance_count] = self.norm(img)
-            else:
-                # plot image and bounding boxes for sanity check
- #               for obj in all_objs:
- #                   cv2.rectangle(img, (obj['xmin'],obj['ymin']), (obj['xmax'],obj['ymax']), (255,0,0), 3)
- #                   cv2.putText(img, obj['name'], 
- #                               (obj['xmin']+2, obj['ymin']+12), 
- #                               0, 1.2e-3 * img.shape[0], 
- #                               (0,255,0), 2)
-                
-                x_batch[instance_count] = img
+            x_batch[instance_count] = img/255.
 
             # increase instance counter in the current batch
             instance_count += 1                 
@@ -151,8 +148,8 @@ class BatchGenerator(Sequence):
         return self.net_h, self.net_w
     
     def _aug_image(self, instance, net_h, net_w):
-        image_name = instance['filename']
-        image_name = image_name.replace('../', '') # hack for changed folder structure
+        image_name = self.im_dir + instance['filename']
+        #print(image_name)
         image = cv2.imread(image_name) # RGB image
         
         if image is None: print('Cannot find ', image_name)
@@ -166,6 +163,8 @@ class BatchGenerator(Sequence):
 
         new_ar = (image_w + np.random.uniform(-dw, dw)) / (image_h + np.random.uniform(-dh, dh));
         scale = np.random.uniform(0.95, 1.05);
+        scale=1.0
+        #print(scale)
 
         if (new_ar < 1):
             new_h = int(scale * net_h);
@@ -185,6 +184,7 @@ class BatchGenerator(Sequence):
         
         # randomly flip
         flip = np.random.randint(2)
+        flip=0
         im_sized = random_flip(im_sized, flip)
         #im_sized = random_flip(image, flip)
         #flip2 = np.random.randint(2)
