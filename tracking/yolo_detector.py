@@ -1,11 +1,9 @@
 import numpy as np
 import os, cv2, sys
-import time
+import time, math
 from deep_sort.detection import Detection
 sys.path.append("..")
-from models.yolo_models import get_yolo_sort
-from models.yolo_models import get_yolo_coco
-
+from models.yolo_models import get_yolo_model
 
 
 def _sigmoid(x):
@@ -53,15 +51,15 @@ class yoloDetector(object):
     obj_thresh=0.5
     nms_thresh=0.4 #0.25
     nb_box=3
-    base = 32
+    base = 32.0
 
-    weight_file = '../weights/yolo-v3-coco.h5'
 
-    def __init__(self, width, height):
-        self.width = (width // self.base * self.base)
-        self.height = (height // self.base * self.base)
+    def __init__(self, width, height, wt_file):
+        self.width = int(round(width / self.base) * self.base)
+        self.height = int(round(height / self.base) * self.base)
+        self.weight_file = wt_file
         
-        self.model = get_yolo_sort(width, height)
+        self.model = get_yolo_model(self.width, self.height, num_class=1,features = True)
         self.model.load_weights(self.weight_file,by_name=True)
         
 
@@ -78,30 +76,12 @@ class yoloDetector(object):
         for i in range(3):
             netout=preds[i][0]
             grid_h, grid_w = netout.shape[:2]
-            netout = netout.reshape(grid_h,grid_w,3,-1)
-            # convert from raw output
-            netout[..., :2]  = _sigmoid(netout[..., :2])
-            netout[..., 4:]  = _sigmoid(netout[..., 4:])
-            netout[..., 5:]  = netout[..., 4][..., np.newaxis] * netout[..., 5:]
-            # process the coordinates
-            x = np.linspace(0, grid_w-1, grid_w)
-            y = np.linspace(0, grid_h-1, grid_h)
-
-            xv,yv = np.meshgrid(x, y)
-            xv = np.expand_dims(xv, -1)
-            yv = np.expand_dims(yv, -1)
-            xpos =(np.tile(xv, (1,1,3))+netout[...,0])  / grid_w * self.width
-            ypos =(np.tile(yv, (1,1,3))+netout[...,1])  / grid_h * self.height
-            wpos = np.exp(netout[...,2])
-            hpos = np.exp(netout[...,3])
-
-            thisanchor = self.anchors[i]
-            for b in range(3):
-                wpos[...,b] *=thisanchor[2 * b + 0]
-                hpos[...,b] *=thisanchor[2 * b + 1]
-
-            objectness = netout[...,5]
-            objectness = np.max(netout[...,5:], axis=-1)
+            xpos = netout[...,0]
+            ypos = netout[...,1]
+            wpos = netout[...,2]
+            hpos = netout[...,3]
+                    
+            objectness = netout[...,4]
 
             # select only objects above threshold
             indexes = objectness > self.obj_thresh
@@ -109,10 +89,10 @@ class yoloDetector(object):
             thisfeat = features[::skip,::skip,:]
             thisfeat = np.expand_dims(thisfeat,2) 
             thisfeat = np.tile(thisfeat,(1,1,3,1))
-            new_boxes = np.append(new_boxes, np.column_stack((xpos[indexes]-wpos[indexes]/2, \
-                                         ypos[indexes]-hpos[indexes]/2, \
-                                         xpos[indexes]+wpos[indexes]/2, \
-                                         ypos[indexes]+hpos[indexes]/2, \
+            new_boxes = np.append(new_boxes, np.column_stack((xpos[indexes]-wpos[indexes]/2.0, \
+                                         ypos[indexes]-hpos[indexes]/2.0, \
+                                         xpos[indexes]+wpos[indexes]/2.0, \
+                                         ypos[indexes]+hpos[indexes]/2.0, \
                                          objectness[indexes], thisfeat[indexes])),axis=0)
 
         # do nms 

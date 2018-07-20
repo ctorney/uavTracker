@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, glob
 
 import cv2
 import numpy as np
@@ -8,23 +8,22 @@ from deep_sort.detection import Detection
 from yolo_detector import yoloDetector
 from deep_sort.tracker import Tracker
 
-sys.path.append("..")
-from models.yolo_models import get_yolo_sort
-
 
 
 input_file = 'test.avi'
+image_dir =  '/home/ctorney/data/horses/still_images/'
+train_images =  glob.glob( image_dir + "*.png" )
 output_file = 'out.avi'
 
-width = 608#1920
-height = 608#1056
+width = 1920
+height = 1056
 max_cosine_distance = 0.2
 display = True
 
 
 metric = nn_matching.NearestNeighborDistanceMetric("cosine", max_cosine_distance)
 tracker = Tracker(metric)
-yolo = yoloDetector(width,height)
+yolo = yoloDetector(width,height, '../weights/horses-yolo.h5')
 results = []
 
 cap = cv2.VideoCapture('test2.avi')
@@ -35,8 +34,10 @@ S = (1920,1080)
                         
 out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc('M','J','P','G'), fps, S, True)
 frame_idx=0
-for i in range(1000):
-    ret, frame = cap.read() 
+#for i in range(1000):
+for imagename in train_images: 
+#    ret, frame = cap.read() 
+    frame = cv2.imread(imagename)
  #   if i%5!=0:
  #       continue
  #   inframe = cv2.imread('birds.jpg') 
@@ -45,8 +46,8 @@ for i in range(1000):
  #       frame[:,:-i,:]=inframe[:,i:,:] 
  #       frame[:,-i:,:]=inframe[:,:i,:] 
     
-    if ret != True:
-        break;
+ #   if ret != True:
+ #       break;
 
     frame = cv2.resize(frame,(width,height))
     detections = yolo.create_detections(frame)
@@ -69,7 +70,7 @@ for i in range(1000):
 
     if display:
  #       cv2.imshow('', frame)
-  #      cv2.waitKey(10)
+ #       cv2.waitKey(10)
         frame = cv2.resize(frame,S)
         out.write(frame)
 
