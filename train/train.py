@@ -22,12 +22,12 @@ sys.path.append("..")
 
 random.seed(0)
 np.random.seed(0)
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from models.yolo_models import get_yolo_model
 
 
-FINE_TUNE=0
+FINE_TUNE=1
 
 
 LABELS = ['aoi']
@@ -43,7 +43,7 @@ CLASS_SCALE      = 1.0
 if FINE_TUNE:
     BATCH_SIZE       = 4
 else:
-    BATCH_SIZE       = 1
+    BATCH_SIZE       = 4
 
 
 #true_boxes  = Input(shape=(1, 1, 1, TRUE_BOX_BUFFER , 4))
@@ -55,11 +55,12 @@ valid_image_folder = train_image_folder#'/home/ctorney/data/coco/val2014/'
 valid_annot_folder = train_annot_folder#'/home/ctorney/data/coco/val2014ann/'
 
 
-model = get_yolo_model(IMAGE_W,IMAGE_H, num_class=1,trainable=True)
 
 if FINE_TUNE:
+    model = get_yolo_model(IMAGE_W,IMAGE_H, num_class=1,headtrainable=True, trainable=True)
     model.load_weights('../weights/horses-yolo.h5')
 else:
+    model = get_yolo_model(IMAGE_W,IMAGE_H, num_class=1,headtrainable=True)
     model.load_weights('../weights/yolo-v3-coco.h5', by_name=True)
 #model = get_yolo_model(IMAGE_W,IMAGE_H, num_class=1,trainable=True)
 
@@ -91,8 +92,8 @@ def yolo_loss(y_true, y_pred):
     true_box_conf  = tf.expand_dims(y_true[..., 4], 4)
     true_box_class = y_true[..., 5:]         
 
-    xy_delta    = COORD_SCALE * object_mask   * (pred_box_xy-true_box_xy) /net_factor #* xywh_scale
-    wh_delta    = COORD_SCALE * object_mask   * (pred_box_wh-true_box_wh) / net_factor #* xywh_scale
+    xy_delta    = COORD_SCALE * object_mask   * (pred_box_xy-true_box_xy) #/net_factor #* xywh_scale
+    wh_delta    = COORD_SCALE * object_mask   * (pred_box_wh-true_box_wh) #/ net_factor #* xywh_scale
    
     obj_delta  = OBJECT_SCALE * object_mask * (pred_box_conf-true_box_conf)  
     no_obj_delta = NO_OBJECT_SCALE * (1-object_mask) * pred_box_conf
@@ -105,7 +106,9 @@ def yolo_loss(y_true, y_pred):
     loss_cls= tf.reduce_sum(tf.square(class_delta),    list(range(1,5)))
 
     loss = loss_xy + loss_wh + loss_obj + lossnobj + loss_cls
-    #loss = loss_obj + lossnobj
+    #loss = loss_xy + loss_wh# + loss_obj + lossnobj# + loss_cls
+ #   loss = loss_obj + lossnobj
+    #loss = loss_obj + lossnobj + loss_cls
     #tots_wh = tf.reduce_sum(pred_box_wh,       list(range(0,5))) 
 
     #loss = tf.cond(loss_wh[2]>100000, lambda:  tf.Print(loss, [loss_wh[2]], message='\n\n avg_wh \n\n\t', summarize=1000),lambda: loss)
@@ -115,7 +118,8 @@ def yolo_loss(y_true, y_pred):
 
  #   if loss_wh[2]>1000000:
   #  loss = tf.Print(loss, [tots_wh], message='\n\n sum wh \t', summarize=1000)
- #       loss = tf.Print(loss, [loss_wh[2]], message='\n\n avg_wh \n\n\t', summarize=1000)
+  #  loss = tf.Print(loss, [loss_wh], message='\n\n avg_wh \n\n\t', summarize=1000)
+ #   loss = tf.Print(loss, [loss_xy], message='\n\n avg_xy \n\n\t', summarize=1000)
   #      loss = tf.Print(loss, [true_box_wh], message='\n\n true_wh \n\n\t', summarize=1000)
    #     loss = tf.Print(loss, [pred_box_wh], message='\n\n pred_wh \n\n\t', summarize=1000)
     #loss = tf.Print(loss, [net_factor], message='\n\n netfact_wh \t', summarize=1000)
@@ -126,8 +130,9 @@ def yolo_loss(y_true, y_pred):
  #   loss = tf.Print(loss, [tf.shape(y_true)], message='\n\n true \t', summarize=1000)
  #   loss = tf.Print(loss, [tf.shape(y_pred)], message='\n\n pred \t', summarize=1000)
  #   loss = tf.Print(loss, [y_pred[0,:,:,2,0:4]], message='\n\n pred \t', summarize=1000)
-    #loss = tf.Print(loss, [lossnobj], message='\n\n avg_noobj \t', summarize=1000)
-    #loss = tf.Print(loss, [loss_cls], message='\n\n avg_cls \t', summarize=1000)
+ #   loss = tf.Print(loss, [loss_obj], message='\n\n avg_obj \t', summarize=1000)
+ #   loss = tf.Print(loss, [lossnobj], message='\n\n avg_noobj \t', summarize=1000)
+ #   loss = tf.Print(loss, [loss_cls], message='\n\n avg_cls \t', summarize=1000)
  
     return loss
 
@@ -135,11 +140,11 @@ def yolo_loss(y_true, y_pred):
 
 ### read saved pickle of parsed annotations
 with open (train_image_folder + '/annotations-checked.pickle', 'rb') as fp:
-    all_imgsdb = pickle.load(fp)
+    all_imgs = pickle.load(fp)
 
-all_imgs=[]
-all_imgs+=[all_imgsdb[0]]
-all_imgs+=[all_imgsdb[0]]
+#all_imgs=[]
+#all_imgs+=[all_imgsdb[0]]
+#all_imgs+=[all_imgsdb[0]]
 #all_imgs=all_imgs[0]
 
 num_ims = len(all_imgs)
@@ -185,7 +190,7 @@ if FINE_TUNE:
     EPOCHS=200
 else:
     optimizer = Adam(lr=0.5e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
-    EPOCHS=250
+    EPOCHS=500
 #  optimizer = SGD(lr=1e-5, decay=0.0005, momentum=0.9)
 model.compile(loss=yolo_loss, optimizer=optimizer)
 wt_file='../weights/horses-yolo.h5'

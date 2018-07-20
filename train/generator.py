@@ -74,7 +74,6 @@ class BatchGenerator(Sequence):
             # augment input image and fix object's position and size
             img, all_objs = self._aug_image(train_instance, net_h, net_w)
             
-            #print(len(all_objs))
             for obj in all_objs:
                 # find the best anchor box for this object
                 max_anchor = None                
@@ -94,7 +93,6 @@ class BatchGenerator(Sequence):
                 
                 # determine the yolo to be responsible for this bounding box
                 yolo = yolos[max_index//3]
-                #print(max_index//3)
                 grid_h, grid_w = yolo.shape[1:3]
                 
                 # determine the position of the bounding box on the grid
@@ -118,14 +116,9 @@ class BatchGenerator(Sequence):
 
                 # assign ground truth x, y, w, h, confidence and class probs to y_batch
  #               yolo[instance_count, grid_y, grid_x, ]      = 0
-            
-                #print( instance_count, grid_y, grid_x, max_index%3, box)
- #               yolo[instance_count, grid_y, grid_x, max_index%3, 0:4] = box
-                yolo[instance_count, grid_y, grid_x, :, 0:4] = box
-#                yolo[instance_count, grid_y, grid_x, max_index%3, 4  ] = 1.
-                yolo[instance_count, grid_y, grid_x, :, 4  ] = 1.
- #               yolo[instance_count, grid_y, grid_x, max_index%3, 5+obj_indx] = 1
-                yolo[instance_count, grid_y, grid_x, :, 5+obj_indx] = 1
+                yolo[instance_count, grid_y, grid_x, max_index%3, 0:4] = box
+                yolo[instance_count, grid_y, grid_x, max_index%3, 4  ] = 1.
+                yolo[instance_count, grid_y, grid_x, max_index%3, 5+obj_indx] = 1
 
 
             # assign input image to x_batch
@@ -148,11 +141,11 @@ class BatchGenerator(Sequence):
         return self.net_h, self.net_w
     
     def _aug_image(self, instance, net_h, net_w):
-        image_name = self.im_dir + instance['filename']
-        #print(image_name)
-        image = cv2.imread(image_name) # RGB image
+        _, image_name = os.path.split(instance['filename'])
+        full_image_name = self.im_dir + image_name
+        image = cv2.imread(full_image_name) # RGB image
         
-        if image is None: print('Cannot find ', image_name)
+        if image is None: print('Cannot find ', full_image_name)
         image = image[:,:,::-1] # RGB image
             
         image_h, image_w, _ = image.shape
@@ -163,8 +156,6 @@ class BatchGenerator(Sequence):
 
         new_ar = (image_w + np.random.uniform(-dw, dw)) / (image_h + np.random.uniform(-dh, dh));
         scale = np.random.uniform(0.95, 1.05);
-        scale=1.0
-        #print(scale)
 
         if (new_ar < 1):
             new_h = int(scale * net_h);
@@ -184,7 +175,6 @@ class BatchGenerator(Sequence):
         
         # randomly flip
         flip = np.random.randint(2)
-        flip=0
         im_sized = random_flip(im_sized, flip)
         #im_sized = random_flip(image, flip)
         #flip2 = np.random.randint(2)
