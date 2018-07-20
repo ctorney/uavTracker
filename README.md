@@ -1,5 +1,5 @@
-# deepTracker
-Animal tracking from overhead using YOLO
+# uavTracker
+Animal tracking from overhead using YOLO and deep_sort
 
 
 ## Steps to create the tracker are 
