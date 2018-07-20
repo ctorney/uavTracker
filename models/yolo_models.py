@@ -54,7 +54,8 @@ def positions(h,w):
         grid_factor = tf.reshape(tf.cast([grid_w, grid_h], tf.float32), [1,1,1,1,2])
         net_factor  = tf.reshape(tf.cast([w, h], tf.float32), [1,1,1,1,2])
         
-        cell_x = tf.to_float(tf.reshape(tf.tile(tf.range(grid_w), [grid_h]), (1, grid_h, grid_w, 1, 1)))
+        cell_x = tf.to_float(tf.reshape(tf.tile(tf.range(tf.maximum(grid_h,grid_w)), [tf.maximum(grid_h,grid_w)]), (1, tf.maximum(grid_h,grid_w), tf.maximum(grid_h,grid_w), 1, 1)))
+
         cell_y = tf.transpose(cell_x, (0,2,1,3,4))
         cell_grid = tf.tile(tf.concat([cell_x,cell_y],-1), [1, 1, 1, 3, 1])
         pred_box_xy = (cell_grid[:,:grid_h,:grid_w,:,:] + x) 
@@ -175,6 +176,9 @@ def get_yolo_model(in_w=416,in_h=416, num_class=80, trainable=False, headtrainab
     final_large = Reshape((in_h//32,in_w//32,3,out_size))(yolo_82)
     final_med = Reshape((in_h//16, in_w//16,3,out_size))(yolo_94)
     final_small = Reshape((in_h//8,in_w//8,3,out_size))(yolo_106)
+    #output = [final_large, final_med, final_small]  
+    #model = Model(input_image,output)
+    #return model
 
     s_offs =crop(0,2)(final_small)
     s_szs =crop(2,4)(final_small)
