@@ -14,11 +14,8 @@ class BatchGenerator(Sequence):
         labels,        
         objects=1,        
         downsample=32, # ratio between network input's size and network output's size, 32 for YOLOv3
-        max_box_per_image=30,
         batch_size=1,
         im_dir='./',
-        min_net_size=320,
-        max_net_size=608,    
         net_h=864,
         net_w=864,
         shuffle=True, 
@@ -29,13 +26,9 @@ class BatchGenerator(Sequence):
         self.labels             = labels
         self.objects            = objects
         self.downsample         = downsample
-        self.max_box_per_image  = max_box_per_image
-        self.min_net_size       = (min_net_size//self.downsample)*self.downsample
-        self.max_net_size       = (max_net_size//self.downsample)*self.downsample
         self.shuffle            = shuffle
         self.jitter             = jitter
         self.im_dir             = im_dir
- #       self.anchors            = [BoundBox(0, 0, anchors[2*i], anchors[2*i+1]) for i in range(len(anchors)//2)]
         self.net_h              = net_h
         self.net_w              = net_w
 
@@ -46,8 +39,7 @@ class BatchGenerator(Sequence):
 
     def __getitem__(self, idx):
         # get image input size, change every 10 batches
-        net_h, net_w = self._get_net_size(idx)
-        base_grid_h, base_grid_w = net_h//self.downsample, net_w//self.downsample
+        base_grid_h, base_grid_w = self.net_h//self.downsample, self.net_w//self.downsample
 
         # determine the first and the last indices of the batch
         l_bound = idx*self.batch_size
@@ -57,8 +49,7 @@ class BatchGenerator(Sequence):
             r_bound = len(self.instances)
             l_bound = r_bound - self.batch_size
 
-        x_batch = np.zeros((r_bound - l_bound, net_h, net_w, 3))             # input images
-        t_batch = np.zeros((r_bound - l_bound, 1, 1, 1,  self.max_box_per_image, 4))   # list of groundtruth boxes
+        x_batch = np.zeros((r_bound - l_bound, self.net_h, self.net_w, 3))             # input images
 
         # initialize the inputs and the outputs
         yolo_1 = np.zeros((r_bound - l_bound, 1*base_grid_h,  1*base_grid_w, 3, 4+1+self.objects)) # desired network output 1
@@ -72,7 +63,7 @@ class BatchGenerator(Sequence):
         # do the logic to fill in the inputs and the output
         for train_instance in self.instances[l_bound:r_bound]:
             # augment input image and fix object's position and size
-            img, all_objs = self._aug_image(train_instance, net_h, net_w)
+            img, all_objs = self._aug_image(train_instance, self.net_h, self.net_w)
             
             for obj in all_objs:
                 # find the best anchor box for this object
@@ -97,9 +88,9 @@ class BatchGenerator(Sequence):
                 
                 # determine the position of the bounding box on the grid
                 center_x = .5*(obj['xmin'] + obj['xmax'])
-                g_center_x = center_x / float(net_w) * grid_w # sigma(t_x) + c_x
+                g_center_x = center_x / float(self.net_w) * grid_w # sigma(t_x) + c_x
                 center_y = .5*(obj['ymin'] + obj['ymax'])
-                g_center_y = center_y / float(net_h) * grid_h # sigma(t_y) + c_y
+                g_center_y = center_y / float(self.net_h) * grid_h # sigma(t_y) + c_y
                 
                 # determine the sizes of the bounding box
                 w = obj['xmax'] - obj['xmin']
@@ -115,7 +106,6 @@ class BatchGenerator(Sequence):
                 grid_y = int(np.floor(g_center_y))
 
                 # assign ground truth x, y, w, h, confidence and class probs to y_batch
- #               yolo[instance_count, grid_y, grid_x, ]      = 0
                 yolo[instance_count, grid_y, grid_x, max_index%3, 0:4] = box
                 yolo[instance_count, grid_y, grid_x, max_index%3, 4  ] = 1.
                 yolo[instance_count, grid_y, grid_x, max_index%3, 5+obj_indx] = 1
@@ -127,18 +117,8 @@ class BatchGenerator(Sequence):
             # increase instance counter in the current batch
             instance_count += 1                 
                 
-  #      yolo_1 = yolo_1.reshape((yolo_1.shape[0],yolo_1.shape[1],yolo_1.shape[2],3*(self.objects+5)))
-       # print(yolo_1.shape)
- #       return x_batch, yolo_3#  [dummy_yolo_1]
         return x_batch, [yolo_1, yolo_2, yolo_3]#  [dummy_yolo_1]
-        return [x_batch, t_batch, yolo_1], [dummy_yolo_1]
 
-    def _get_net_size(self, idx):
-        if idx%10 == 0:
-            net_size = self.downsample*np.random.randint(self.min_net_size/self.downsample, \
-                                                         self.max_net_size/self.downsample+1)
-            self.net_h, self.net_w = net_size, net_size
-        return self.net_h, self.net_w
     
     def _aug_image(self, instance, net_h, net_w):
         _, image_name = os.path.split(instance['filename'])
@@ -195,13 +175,6 @@ class BatchGenerator(Sequence):
     def size(self):
         return len(self.instances)    
 
-    def get_anchors(self):
-        anchors = []
-
-        for anchor in self.anchors:
-            anchors += [anchor.xmax, anchor.ymax]
-
-        return anchors
 
     def load_annotation(self, i):
         annots = []

@@ -1,16 +1,6 @@
-#from keras.models import Sequential, Model
-#from keras.layers import Reshape, Activation, Conv2D, Input, MaxPooling2D, BatchNormalization, Flatten, Dense, Lambda
-#from keras.layers.advanced_activations import LeakyReLU
 from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
 from keras.optimizers import SGD, Adam, RMSprop
-#from keras.layers.merge import concatenate
-#from keras.losses import categorical_crossentropy
-#from keras.losses import binary_crossentropy
-#import keras.backend as K
 import tensorflow as tf
-#import imgaug as ia
-#from tqdm import tqdm
-#from imgaug import augmenters as iaa
 import numpy as np
 import pickle
 import os, sys, cv2
@@ -20,34 +10,19 @@ from operator import itemgetter
 import random
 sys.path.append("..")
 
-random.seed(0)
-np.random.seed(0)
-#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from models.yolo_models import get_yolo_model
 
 
 FINE_TUNE=1
 
-
 LABELS = ['aoi']
 IMAGE_H, IMAGE_W = 864, 864
-GRID_H,  GRID_W  = 27, 27
-
-# all seem to be in the custom loss function - some method to weight the loss
 NO_OBJECT_SCALE  = 1.0
 OBJECT_SCALE     = 5.0
 COORD_SCALE      = 2.0
 CLASS_SCALE      = 1.0
-
-if FINE_TUNE:
-    BATCH_SIZE       = 4
-else:
-    BATCH_SIZE       = 4
-
-
-#true_boxes  = Input(shape=(1, 1, 1, TRUE_BOX_BUFFER , 4))
-
 
 train_image_folder = 'horse_images/' #/home/ctorney/data/coco/train2014/'
 train_annot_folder = 'train_images_1/'
@@ -55,16 +30,33 @@ valid_image_folder = train_image_folder#'/home/ctorney/data/coco/val2014/'
 valid_annot_folder = train_annot_folder#'/home/ctorney/data/coco/val2014ann/'
 
 
-
 if FINE_TUNE:
+    BATCH_SIZE= 4
+    EPOCHS=10
     model = get_yolo_model(IMAGE_W,IMAGE_H, num_class=1,headtrainable=True, trainable=True)
     model.load_weights('../weights/horses-yolo.h5')
 else:
+    BATCH_SIZE=32
+    EPOCHS=500
     model = get_yolo_model(IMAGE_W,IMAGE_H, num_class=1,headtrainable=True)
     model.load_weights('../weights/yolo-v3-coco.h5', by_name=True)
-#model = get_yolo_model(IMAGE_W,IMAGE_H, num_class=1,trainable=True)
 
-print(model.summary())
+### read saved pickle of parsed annotations
+with open (train_image_folder + '/annotations-checked.pickle', 'rb') as fp:
+    all_imgs = pickle.load(fp)
+
+
+num_ims = len(all_imgs)
+indexes = np.arange(num_ims)
+random.shuffle(indexes)
+
+num_val = 0#num_ims//10
+
+#valid_imgs = list(itemgetter(*indexes[:num_val].tolist())(all_imgs))
+train_imgs = list(itemgetter(*indexes[num_val:].tolist())(all_imgs))
+train_batch = BatchGenerator(instances= train_imgs,labels= LABELS,batch_size= BATCH_SIZE,shuffle= True,jitter= 0.0,im_dir= train_image_folder)
+#valid_batch = BatchGenerator(valid_imgs, generator_config, norm=normalize, jitter=False)
+
 
 def yolo_loss(y_true, y_pred):
     # compute grid factor and net factor
@@ -78,7 +70,6 @@ def yolo_loss(y_true, y_pred):
     net_factor  = tf.reshape(tf.cast([net_w, net_h], tf.float32), [1,1,1,1,2])
     
     pred_box_xy    = y_pred[..., 0:2]                                                       # t_wh
-    #pred_box_wh    = y_pred[..., 2:4]                                                       # t_wh
     pred_box_wh    = tf.log(y_pred[..., 2:4])                                                       # t_wh
     pred_box_conf  = tf.expand_dims(y_pred[..., 4], 4)
     pred_box_class = y_pred[..., 5:]                                            # adjust class probabilities      
@@ -86,8 +77,6 @@ def yolo_loss(y_true, y_pred):
     object_mask     = tf.expand_dims(y_true[..., 4], 4)
 
     true_box_xy    = y_true[..., 0:2] # (sigma(t_xy) + c_xy)
-    #£true_box_wh    = y_true[..., 2:4] # t_wh
-    #true_box_wh    = tf.log(tf.cast(y_true[..., 2:4],tf.float32)) # t_wh
     true_box_wh    = tf.where(y_true[...,2:4]>0, tf.log(tf.cast(y_true[..., 2:4],tf.float32)), y_true[...,2:4])
     true_box_conf  = tf.expand_dims(y_true[..., 4], 4)
     true_box_class = y_true[..., 5:]         
@@ -106,107 +95,17 @@ def yolo_loss(y_true, y_pred):
     loss_cls= tf.reduce_sum(tf.square(class_delta),    list(range(1,5)))
 
     loss = loss_xy + loss_wh + loss_obj + lossnobj + loss_cls
-    #loss = loss_xy + loss_wh# + loss_obj + lossnobj# + loss_cls
- #   loss = loss_obj + lossnobj
-    #loss = loss_obj + lossnobj + loss_cls
-    #tots_wh = tf.reduce_sum(pred_box_wh,       list(range(0,5))) 
-
-    #loss = tf.cond(loss_wh[2]>100000, lambda:  tf.Print(loss, [loss_wh[2]], message='\n\n avg_wh \n\n\t', summarize=1000),lambda: loss)
-    #loss = tf.cond(loss_wh[2]>100000, lambda:  tf.Print(loss, [true_box_wh], message='\n\n true_wh \n\n\t', summarize=1000),lambda: loss)
-    #loss = tf.cond(loss_wh[2]>100000, lambda:  tf.Print(loss, [pred_box_wh], message='\n\n pred_wh \n\n\t', summarize=1000),lambda: loss)
-    #loss = tf.cond(loss_wh[2]>100000, lambda:  tf.Print(loss, [net_factor], message='\n\n nfact_wh \n\n\t', summarize=1000),lambda: loss)
-
- #   if loss_wh[2]>1000000:
-  #  loss = tf.Print(loss, [tots_wh], message='\n\n sum wh \t', summarize=1000)
-  #  loss = tf.Print(loss, [loss_wh], message='\n\n avg_wh \n\n\t', summarize=1000)
- #   loss = tf.Print(loss, [loss_xy], message='\n\n avg_xy \n\n\t', summarize=1000)
-  #      loss = tf.Print(loss, [true_box_wh], message='\n\n true_wh \n\n\t', summarize=1000)
-   #     loss = tf.Print(loss, [pred_box_wh], message='\n\n pred_wh \n\n\t', summarize=1000)
-    #loss = tf.Print(loss, [net_factor], message='\n\n netfact_wh \t', summarize=1000)
-    #loss = tf.Print(loss, [grid_w], message=' grid \n\n\t', summarize=1000)
-
-    #ix = int(grid_w*84/107)
-    #iy = int(grid_w*23/107)
- #   loss = tf.Print(loss, [tf.shape(y_true)], message='\n\n true \t', summarize=1000)
- #   loss = tf.Print(loss, [tf.shape(y_pred)], message='\n\n pred \t', summarize=1000)
- #   loss = tf.Print(loss, [y_pred[0,:,:,2,0:4]], message='\n\n pred \t', summarize=1000)
- #   loss = tf.Print(loss, [loss_obj], message='\n\n avg_obj \t', summarize=1000)
- #   loss = tf.Print(loss, [lossnobj], message='\n\n avg_noobj \t', summarize=1000)
- #   loss = tf.Print(loss, [loss_cls], message='\n\n avg_cls \t', summarize=1000)
- 
     return loss
 
 
 
-### read saved pickle of parsed annotations
-with open (train_image_folder + '/annotations-checked.pickle', 'rb') as fp:
-    all_imgs = pickle.load(fp)
 
-#all_imgs=[]
-#all_imgs+=[all_imgsdb[0]]
-#all_imgs+=[all_imgsdb[0]]
-#all_imgs=all_imgs[0]
-
-num_ims = len(all_imgs)
-indexes = np.arange(num_ims)
-#random.shuffle(indexes)
-
-num_val = 0#num_ims//10
-
-#valid_imgs = list(itemgetter(*indexes[:num_val].tolist())(all_imgs))
-train_imgs = list(itemgetter(*indexes[num_val:].tolist())(all_imgs))
-
-
-train_batch = BatchGenerator(
-        instances           = train_imgs, 
-        labels              = LABELS,        
-        downsample          = 32, # ratio between network input's size and network output's size, 32 for YOLOv3
-        batch_size          = BATCH_SIZE,
-        min_net_size        = IMAGE_H,
-        max_net_size        = IMAGE_H,   
-        shuffle             = False, 
-        jitter              = 0.0, 
-        im_dir              = train_image_folder
-)
-print(len(train_batch))
-#sys.exit('bye')
-#train_batch = BatchGenerator(train_imgs, generator_config, norm=normalize, jitter=False)
-#valid_batch = BatchGenerator(valid_imgs, generator_config, norm=normalize, jitter=False)
-
-
-# In[104]:
-
-
-
-
-# **Setup a few callbacks and start the training**
-
-# In[105]:
-
-
-
-if FINE_TUNE:
-    optimizer = Adam(lr=0.5e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
-    EPOCHS=200
-else:
-    optimizer = Adam(lr=0.5e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
-    EPOCHS=500
-#  optimizer = SGD(lr=1e-5, decay=0.0005, momentum=0.9)
-model.compile(loss=yolo_loss, optimizer=optimizer)
 wt_file='../weights/horses-yolo.h5'
-#optimizer = RMSprop(lr=1e-4, rho=0.9, epsilon=1e-08, decay=0.0)
-early_stop = EarlyStopping(monitor='loss', 
-                           min_delta=0.001, 
-                           patience=5, 
-                           mode='min', 
-                           verbose=1)
+optimizer = Adam(lr=0.5e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+model.compile(loss=yolo_loss, optimizer=optimizer)
 
-checkpoint = ModelCheckpoint(wt_file, 
-                             monitor='loss', 
-                             verbose=1, 
-                             save_best_only=True, 
-                             mode='min', 
-                             period=1)
+early_stop = EarlyStopping(monitor='loss', min_delta=0.001,patience=5,mode='min',verbose=1)
+checkpoint = ModelCheckpoint(wt_file,monitor='loss',verbose=1,save_best_only=True,mode='min',period=1)
 
 
 start = time.time()
@@ -221,5 +120,4 @@ model.fit_generator(generator        = train_batch,
 model.save_weights(wt_file)
 end = time.time()
 print('Training took ' + str(end - start) + ' seconds')
-model.save_weights(wt_file)
 

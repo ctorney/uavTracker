@@ -55,8 +55,8 @@ class yoloDetector(object):
 
 
     def __init__(self, width, height, wt_file):
-        self.width = int(round(width / self.base) * self.base)
-        self.height = int(round(height / self.base) * self.base)
+        self.width = 608#int(round(width / self.base) * self.base)
+        self.height = 608#int(round(height / self.base) * self.base)
         self.weight_file = wt_file
         
         self.model = get_yolo_model(self.width, self.height, num_class=1,features = True)
@@ -64,13 +64,17 @@ class yoloDetector(object):
         
 
     def create_detections(self, image):
+        start_all = time.time()
         image = cv2.resize(image, (self.width, self.height))
         new_image = image[:,:,::-1]/255.
         new_image = np.expand_dims(new_image, 0)
+        batches=1
+        process  = np.tile(new_image, (batches,1,1,1))
+
         start = time.time()
-        preds = self.model.predict(new_image)
+        preds = self.model.predict(process)
         stop = time.time()
-        print(stop-start)
+        print('yolo time: ', (stop-start)/batches)
         new_boxes = np.zeros((0,261))
         features = preds[3][0]
         for i in range(3):
@@ -115,6 +119,8 @@ class yoloDetector(object):
             bbox, confidence, feature = (row[0],row[1],row[2]-row[0],row[3]-row[1]), row[4], row[5:]
             detection_list.append(Detection(bbox, confidence, feature))
 
+        stop_all = time.time()
+        print('total time: ', stop_all-start_all)
         return detection_list
 
 

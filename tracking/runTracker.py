@@ -11,7 +11,7 @@ from deep_sort.tracker import Tracker
 
 
 input_file = 'test.avi'
-image_dir =  '/home/ctorney/data/horses/still_images/'
+image_dir =  '/home/staff1/ctorney/data/horses/still_images/'
 train_images =  glob.glob( image_dir + "*.png" )
 output_file = 'out.avi'
 
@@ -26,13 +26,13 @@ tracker = Tracker(metric)
 yolo = yoloDetector(width,height, '../weights/horses-yolo.h5')
 results = []
 
-cap = cv2.VideoCapture('test2.avi')
+#cap = cv2.VideoCapture('test2.avi')
 
-fps = round(cap.get(cv2.CAP_PROP_FPS))
+#fps = round(cap.get(cv2.CAP_PROP_FPS))
     
 S = (1920,1080)
                         
-out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc('M','J','P','G'), fps, S, True)
+out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc('M','J','P','G'), 10, S, True)
 frame_idx=0
 #for i in range(1000):
 for imagename in train_images: 
