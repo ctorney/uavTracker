@@ -10,13 +10,14 @@ from deep_sort.tracker import Tracker
 
 
 
-input_file = 'test.avi'
-image_dir =  '/home/staff1/ctorney/data/horses/still_images/'
-train_images =  glob.glob( image_dir + "*.png" )
-output_file = 'out.avi'
+data_dir =  '/home/staff1/ctorney/data/horses/departures/'
+input_file = '180602-4.mp4'
+input_file = '170610-1-1.mp4'
+#train_images =  glob.glob( image_dir + "*.png" )
+output_file = 'out2.avi'
 
 width = 1920
-height = 1056
+height = 1080
 max_cosine_distance = 0.2
 display = True
 
@@ -26,43 +27,39 @@ tracker = Tracker(metric)
 yolo = yoloDetector(width,height, '../weights/horses-yolo.h5')
 results = []
 
-#cap = cv2.VideoCapture('test2.avi')
+cap = cv2.VideoCapture(data_dir + input_file)
 
-#fps = round(cap.get(cv2.CAP_PROP_FPS))
+fps = round(cap.get(cv2.CAP_PROP_FPS))
     
 S = (1920,1080)
                         
-out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc('M','J','P','G'), 10, S, True)
-frame_idx=0
-#for i in range(1000):
-for imagename in train_images: 
-#    ret, frame = cap.read() 
-    frame = cv2.imread(imagename)
- #   if i%5!=0:
- #       continue
- #   inframe = cv2.imread('birds.jpg') 
- #  frame=inframe.copy()
- #   if i>0:
- #       frame[:,:-i,:]=inframe[:,i:,:] 
- #       frame[:,-i:,:]=inframe[:,:i,:] 
-    
- #   if ret != True:
- #       break;
+fourCC = cv2.VideoWriter_fourcc('X','V','I','D')
 
-    frame = cv2.resize(frame,(width,height))
+out = cv2.VideoWriter(output_file, fourCC, fps, S, True)
+frame_idx=0
+nframes=3600
+nframes = round(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+for i in range(nframes):
+
+    sys.stdout.write('\r')
+    sys.stdout.write("[%-20s] %d%% %d/%d" % ('='*int(20*i/float(nframes)), int(100.0*i/float(nframes)), i,nframes)) 
+    sys.stdout.flush()
+    ret, frame = cap.read() 
     detections = yolo.create_detections(frame)
+
     # Update tracker.
     tracker.predict()
     tracker.update(detections)
     for det in detections:
         dt = det.to_tlbr()
-        cv2.rectangle(frame, (int(dt[0]), int(dt[1])), (int(dt[2]), int(dt[3])),(255,0,0), 4)
 
     for track in tracker.tracks:
-        if not track.is_confirmed() and track.time_since_update >1 :
+        if not track.is_confirmed():
             continue 
+        if track.time_since_update > 5 :
+            continue
         bbox = track.to_tlbr()
- #       cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),(255,255,255), 2)
+        cv2.rectangle(frame, (int(bbox[0]), int(bbox[1])), (int(bbox[2]), int(bbox[3])),(255,255,255), 2)
         cv2.putText(frame, str(track.track_id),(int(bbox[0]), int(bbox[1])),0, 5e-3 * 200, (0,255,0),2)
 
         results.append([frame_idx, track.track_id, bbox[0], bbox[1], bbox[2], bbox[3]])
@@ -71,7 +68,7 @@ for imagename in train_images:
     if display:
  #       cv2.imshow('', frame)
  #       cv2.waitKey(10)
-        frame = cv2.resize(frame,S)
+ #       frame = cv2.resize(frame,S)
         out.write(frame)
 
  #   cv2.imwrite('out.jpg',frame)
