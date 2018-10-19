@@ -25,14 +25,13 @@ COORD_SCALE      = 2.0
 CLASS_SCALE      = 1.0
 
 train_image_folder = 'horse_images/' #/home/ctorney/data/coco/train2014/'
-train_annot_folder = 'train_images_1/'
 valid_image_folder = train_image_folder#'/home/ctorney/data/coco/val2014/'
-valid_annot_folder = train_annot_folder#'/home/ctorney/data/coco/val2014ann/'
+valid_annot_folder = train_image_folder#'/home/ctorney/data/coco/val2014ann/'
 
 
 if FINE_TUNE:
     BATCH_SIZE= 4
-    EPOCHS=10
+    EPOCHS=100
     model = get_yolo_model(IMAGE_W,IMAGE_H, num_class=1,headtrainable=True, trainable=True)
     model.load_weights('../weights/horses-yolo.h5')
 else:
@@ -115,7 +114,7 @@ model.fit_generator(generator        = train_batch,
                     verbose          = 1,
             #        validation_data  = valid_batch,
             #        validation_steps = len(valid_batch),
- #                   callbacks        = [checkpoint, early_stop],#, tensorboard], 
+                    callbacks        = [checkpoint, early_stop],#, tensorboard], 
                     max_queue_size   = 3)
 model.save_weights(wt_file)
 end = time.time()

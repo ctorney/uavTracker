@@ -28,6 +28,7 @@ import glob
 import time
 import argparse
 from filterpy.kalman import KalmanFilter
+from filterpy.stats import mahalanobis
 
 #@jit
 def iou(bb_test,bb_gt):
@@ -65,7 +66,10 @@ def convert_x_to_bbox(x,score=None):
     [x1,y1,x2,y2] where x1,y1 is the top left and x2,y2 is the bottom right
   """
   w = np.sqrt(x[2]*x[3])
-  h = x[2]/w
+  if w==0:
+      h = 0.0
+  else:
+      h = x[2]/w
   if(score==None):
     return np.array([x[0]-w/2.,x[1]-h/2.,x[0]+w/2.,x[1]+h/2.]).reshape((1,4))
   else:
@@ -82,17 +86,35 @@ class KalmanBoxTracker(object):
     Initialises a tracker using initial bounding box.
     """
     #define constant velocity model
-    self.kf = KalmanFilter(dim_x=7, dim_z=4)
-    self.kf.F = np.array([[1,0,0,0,1,0,0],[0,1,0,0,0,1,0],[0,0,1,0,0,0,1],[0,0,0,1,0,0,0],  [0,0,0,0,1,0,0],[0,0,0,0,0,1,0],[0,0,0,0,0,0,1]])
-    self.kf.H = np.array([[1,0,0,0,0,0,0],[0,1,0,0,0,0,0],[0,0,1,0,0,0,0],[0,0,0,1,0,0,0]])
+    #self.kf = KalmanFilter(dim_x=7, dim_z=4)
+    #self.kf.F = np.array([[1,0,0,0,1,0,0],[0,1,0,0,0,1,0],[0,0,1,0,0,0,1],[0,0,0,1,0,0,0],  [0,0,0,0,1,0,0],[0,0,0,0,0,1,0],[0,0,0,0,0,0,1]])
+    #self.kf.H = np.array([[1,0,0,0,0,0,0],[0,1,0,0,0,0,0],[0,0,1,0,0,0,0],[0,0,0,1,0,0,0]])
 
-    self.kf.R[2:,2:] *= 10.
-    self.kf.P[4:,4:] *= 1000. #give high uncertainty to the unobservable initial velocities
+    #self.kf.R[2:,2:] *= 10.
+    #self.kf.R[:,:] *= 10.
+    #self.kf.P[4:,4:] *= 1000. #give high uncertainty to the unobservable initial velocities
+    #self.kf.P *= 10.
+    #self.kf.Q[-1,-1] *= 0.01
+    #self.kf.Q[4:,4:] *= 0.01
+
+    #self.kf.x[:4] = convert_bbox_to_z(bbox)
+    
+    # try no bbox constant velocity model
+
+    self.kf = KalmanFilter(dim_x=4, dim_z=2)
+    self.kf.F = np.array([[1,0,1,0],[0,1,0,1],[0,0,1,0],[0,0,0,1]])
+    self.kf.H = np.array([[1,0,0,0],[0,1,0,0]]) 
+
+    #self.kf.R[2:,2:] *= 10.
+    self.kf.R[:,:] *= 10.
+    self.kf.P[2:,2:] *= 1000. #give high uncertainty to the unobservable initial velocities
     self.kf.P *= 10.
-    self.kf.Q[-1,-1] *= 0.01
-    self.kf.Q[4:,4:] *= 0.01
+    #self.kf.Q[-1,-1] *= 0.01
+    #self.kf.Q[4:,4:] *= 0.01
 
-    self.kf.x[:4] = convert_bbox_to_z(bbox)
+    self.kf.x[:2] = convert_bbox_to_z(bbox)[:2]
+    self.s = 1.0
+    self.r = 1.0
     self.time_since_update = 0
     self.id = KalmanBoxTracker.count
     KalmanBoxTracker.count += 1
@@ -111,29 +133,38 @@ class KalmanBoxTracker(object):
     self.hits += 1
     self.hit_streak += 1
     self.score = (self.score*(self.hits-1.0)/float(self.hits)) + (bbox[4]/float(self.hits))
-    self.kf.update(convert_bbox_to_z(bbox))
+    z = convert_bbox_to_z(bbox)
+    self.kf.update(z[:2])
+    self.s = z[2]
+    self.r = z[3]
 
   def predict(self):
     """
     Advances the state vector and returns the predicted bounding box estimate.
     """
-    if((self.kf.x[6]+self.kf.x[2])<=0):
-      self.kf.x[6] *= 0.0
+ #   if((self.kf.x[6]+self.kf.x[2])<=0):
+ #     self.kf.x[6] *= 0.0
     self.kf.predict()
     self.age += 1
     if(self.time_since_update>0):
       self.hit_streak = 0
     self.time_since_update += 1
-    self.history.append(convert_x_to_bbox(self.kf.x))
-    return self.history[-1]
+ #   self.history.append(convert_x_to_bbox(self.kf.x))
+    self.history.append((self.kf.x))
+    return #self.history[-1]
 
   def get_state(self):
     """
     Returns the current bounding box estimate.
     """
-    return convert_x_to_bbox(self.kf.x)
-
-def associate_detections_to_trackers(detections,trackers,iou_threshold = 0.1):
+    return convert_x_to_bbox([self.kf.x[0], self.kf.x[1], self.s,self.r])
+  def get_distance(self, y):
+    """
+    Returns the mahalanobis distance to the given point.
+    """
+    #return mahalanobis(y, self.kf.x[:4],self.kf.P[0:4,0:4])
+    return mahalanobis(y, self.kf.x[:2],self.kf.P[0:2,0:2])
+def associate_detections_to_trackers(detections,trackers,iou_threshold = 5.9915):
   """
   Assigns detections to tracked object (both represented as bounding boxes)
 
@@ -142,12 +173,25 @@ def associate_detections_to_trackers(detections,trackers,iou_threshold = 0.1):
   if(len(trackers)==0):
     return np.empty((0,2),dtype=int), np.arange(len(detections)), np.empty((0,5),dtype=int)
   iou_matrix = np.zeros((len(detections),len(trackers)),dtype=np.float32)
+  dist_matrix = np.zeros((len(detections),len(trackers)),dtype=np.float32)
+  time_matrix = np.zeros((len(detections),len(trackers)),dtype=np.float32)
+  age_matrix = np.zeros((len(detections),len(trackers)),dtype=np.float32)
 
   for d,det in enumerate(detections):
     for t,trk in enumerate(trackers):
-      iou_matrix[d,t] = iou(det,trk)
+      cdet =  convert_bbox_to_z(det)[0:2]#,0:2]
+      iou_matrix[d,t] = iou(det,trk.get_state()[0])
+      dist_matrix[d,t] = trk.get_distance(cdet) 
+      # priority to current tracks
+      time_matrix[d,t] = trk.time_since_update - 1.0
+      # priority to long-standing tracks
+      age_matrix[d,t] = np.exp(-0.01*float(trk.hits))
+ #     if trk.id==2:
+ #         print(t, age_matrix[d,t], iou_matrix[d,t],dist_matrix[d,t])
+ #     if trk.id==65:
+ #         print(t, age_matrix[d,t], iou_matrix[d,t],dist_matrix[d,t])
  
-  matched_indices = linear_assignment(-iou_matrix)
+  matched_indices = linear_assignment(time_matrix+dist_matrix+age_matrix-iou_matrix)
 
   unmatched_detections = []
   for d,det in enumerate(detections):
@@ -161,7 +205,7 @@ def associate_detections_to_trackers(detections,trackers,iou_threshold = 0.1):
   #filter out matched with low IOU
   matches = []
   for m in matched_indices:
-    if(iou_matrix[m[0],m[1]]<iou_threshold):
+    if(dist_matrix[m[0],m[1]]>iou_threshold):
       unmatched_detections.append(m[0])
       unmatched_trackers.append(m[1])
     else:
@@ -201,15 +245,16 @@ class Sort(object):
     to_del = []
     ret = []
     for t,trk in enumerate(trks):
-      pos = self.trackers[t].predict()[0]
-      trk[:] = [pos[0], pos[1], pos[2], pos[3], 0]
-      if(np.any(np.isnan(pos))):
-        print(t)
-        to_del.append(t)
-    trks = np.ma.compress_rows(np.ma.masked_invalid(trks))
-    for t in reversed(to_del):
-      self.trackers.pop(t)
-    matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(dets,trks)
+      #pos = self.trackers[t].predict()[0]
+      self.trackers[t].predict()
+      #trk[:] = [pos[0], pos[1], pos[2], pos[3], 0]
+      #if(np.any(np.isnan(pos))):
+      #  to_del.append(t)
+    #trks = np.ma.compress_rows(np.ma.masked_invalid(trks))
+    #for t in reversed(to_del):
+    #  self.trackers.pop(t)
+    #matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(dets,trks)
+    matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(dets,self.trackers)
 
     #update matched trackers with assigned detections
     for t,trk in enumerate(self.trackers):
@@ -224,7 +269,6 @@ class Sort(object):
     i = len(self.trackers)
     for trk in reversed(self.trackers):
         d = trk.get_state()[0]
-        print(trk.score)
         if((trk.time_since_update < 1) and (trk.hit_streak >= self.min_hits or self.frame_count <= self.min_hits) and (trk.score>self.threshold)):
           ret.append(np.concatenate((d,[trk.id])).reshape(1,-1)) 
         i -= 1

@@ -37,8 +37,9 @@ class Tracker:
 
     """
 
-    def __init__(self, metric, max_iou_distance=0.7, max_age=30, n_init=3):
+    def __init__(self, metric, max_iou_distance=0.7, max_age=30, n_init=3, weighting=0.0):
         self.metric = metric
+        self.weighting = weighting
         self.max_iou_distance = max_iou_distance
         self.max_age = max_age
         self.n_init = n_init
@@ -96,9 +97,12 @@ class Tracker:
             features = np.array([dets[i].feature for i in detection_indices])
             targets = np.array([tracks[i].track_id for i in track_indices])
             cost_matrix = self.metric.distance(features, targets)
+ #           print(cost_matrix)
             cost_matrix = linear_assignment.gate_cost_matrix(
                 self.kf, cost_matrix, tracks, dets, track_indices,
-                detection_indices)
+                detection_indices, self.weighting)
+ #           print(cost_matrix)
+#            print('==============')
 
             return cost_matrix
 

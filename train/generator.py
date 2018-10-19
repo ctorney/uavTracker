@@ -157,12 +157,12 @@ class BatchGenerator(Sequence):
         flip = np.random.randint(2)
         im_sized = random_flip(im_sized, flip)
         #im_sized = random_flip(image, flip)
-        #flip2 = np.random.randint(2)
-        #im_sized = random_flip2(im_sized, flip2)
+        flip2 = np.random.randint(2)
+        im_sized = random_flip2(im_sized, flip2)
             
         # correct the size and pos of bounding boxes
-        all_objs = correct_bounding_boxes(instance['object'], new_w, new_h, net_w, net_h, dx, dy, flip, image_w, image_h)
-        #all_objs = correct_bounding_boxes2(instance['object'], new_w, new_h, net_w, net_h, dx, dy, flip, flip2, image_w, image_h)
+        #all_objs = correct_bounding_boxes(instance['object'], new_w, new_h, net_w, net_h, dx, dy, flip, image_w, image_h)
+        all_objs = correct_bounding_boxes2(instance['object'], new_w, new_h, net_w, net_h, dx, dy, flip, flip2, image_w, image_h)
         
         return im_sized, all_objs   
 

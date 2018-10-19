@@ -7,11 +7,13 @@ sys.path.append("../..")
 sys.path.append("..") 
 from models.yolo_models import get_yolo_model
 from utils.decoder import decode
+from random import shuffle
 
 train_dir = '../horse_images/'
 
 
-train_images =  glob.glob( train_dir + "*.png" )
+train_images =  glob.glob( train_dir + "DEP*.png" )
+shuffle(train_images)
 
 max_l=100
 min_l=10
