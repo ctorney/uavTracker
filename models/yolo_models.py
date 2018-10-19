@@ -64,7 +64,7 @@ def positions(h,w):
         return pred_box_xy 
     return Lambda(func)
 
-def get_yolo_model(in_w=416,in_h=416, num_class=80, trainable=False, headtrainable=False,features=False):
+def get_yolo_model(in_w=416,in_h=416, num_class=80, trainable=False, headtrainable=False):
 
     # for each box we have num_class outputs, 4 bbox coordinates, and 1 object confidence value
     out_size = num_class+5
@@ -166,7 +166,7 @@ def get_yolo_model(in_w=416,in_h=416, num_class=80, trainable=False, headtrainab
                                {'filter': 256, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 102},
                                {'filter': 128, 'kernel': 1, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 103},
                                {'filter': 256, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 104},], skip=False, train=trainable)
-    feature_vector = Activation('softmax')(x)
+
     if num_class!=80:
         yolo_106 = _conv_block(x, [{'filter': 3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable,'layer_idx': 9105}], skip=False, train=trainable)
     else:
@@ -207,11 +207,8 @@ def get_yolo_model(in_w=416,in_h=416, num_class=80, trainable=False, headtrainab
     l_offs = positions(in_h,in_w)(l_offs)
     l_out = concatenate([l_offs, l_szs, l_scores])
 
-    if features:
-        output = [l_out, m_out, s_out, feature_vector]  
-    else:
-        output = [l_out, m_out, s_out]  
- #       output = s_out  
+    output = [l_out, m_out, s_out]  
+
     model = Model(input_image,output)
     return model
 
