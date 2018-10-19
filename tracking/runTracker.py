@@ -3,22 +3,20 @@ import csv
 import cv2
 import numpy as np
 
-from deep_sort import nn_matching
-from deep_sort.detection import Detection
 from yolo_detector import yoloDetector
-from deep_sort.tracker import Tracker
+from yolo_tracker import yoloTracker
 
-
-from sort import *
+np.set_printoptions(suppress=True)
 
 data_dir =  '/home/staff1/ctorney/data/horses/departures/'
 #train_images =  glob.glob( image_dir + "*.png" )
-output_file1 = 'out2.avi'
+#video_file1 = 'out.avi'
 
 width = 1920
 height = 1080
 
-display = True
+display = 1
+showDetections = 0 # flag to show all detections in image
 
 filelist = glob.glob(data_dir + "*.mp4")
 
@@ -29,17 +27,12 @@ for input_file in filelist:
     video_file = data_dir + '/tracks/' +  noext + '_TR.avi'
     if os.path.isfile(data_file):
         continue
-    #print(input_file, video_file)
+    print(input_file, video_file)
     ##########################################################################
     ##          set-up yolo detector and tracker
     ##########################################################################
-    max_cosine_distance = 0.2
-
-    metric = nn_matching.NearestNeighborDistanceMetric("cosine", max_cosine_distance)
-    tracker = Tracker(metric,max_age=60)
-    tracker2 = Sort(max_age=25) 
-
-    yolo = yoloDetector(width,height, '../weights/horses-yolo.h5')
+    detector = yoloDetector(width, height, wt_file = '../weights/horses-yolo.h5', obj_threshold=0.05, nms_threshold=0.5, max_length=100)
+    tracker = yoloTracker(max_age=30, track_threshold=0.5, init_threshold=0.9, init_nms=0.0, link_iou=0.1)
     results = []
 
 
@@ -78,6 +71,7 @@ for input_file in filelist:
         sys.stdout.write("[%-20s] %d%% %d/%d" % ('='*int(20*i/float(nframes)), int(100.0*i/float(nframes)), i,nframes)) 
         sys.stdout.flush()
         ret, frame = cap.read() 
+
         if not(im1_gray.size):
             # enhance contrast in the image
             im1_gray = cv2.equalizeHist(cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY))
@@ -93,87 +87,63 @@ for input_file in filelist:
         except cv2.error as e:
             warp_matrix = np.eye(3, 3, dtype=np.float32)
 
-
-        # all moves are accumalated into a matrix
+        # all moves are accumulated into a matrix
         full_warp = np.dot(warp_matrix,full_warp)
-        #    full_warp = np.linalg.inv(full_warp)
 
-        detections = yolo.create_detections(frame, np.linalg.inv(full_warp))
+        # Run detector
+        detections = detector.create_detections(frame, np.linalg.inv(full_warp))
+        # Update tracker
+        tracks = tracker.update(np.asarray(detections))
+
+        if showDetections:
+            for detect in detections:
+                bbox = detect[0:4]
+                if display:
+                    iwarp = (full_warp)
+                    corner1 = np.expand_dims([bbox[0],bbox[1]], axis=0)
+                    corner1 = np.expand_dims(corner1,axis=0)
+                    corner1 = cv2.perspectiveTransform(corner1,iwarp)[0,0,:]
+                    minx = corner1[0]
+                    miny = corner1[1]
+                    corner2 = np.expand_dims([bbox[2],bbox[3]], axis=0)
+                    corner2 = np.expand_dims(corner2,axis=0)
+                    corner2 = cv2.perspectiveTransform(corner2,iwarp)[0,0,:]
+                    maxx = corner2[0]
+                    maxy = corner2[1]
+
+                    cv2.rectangle(frame, (int(minx)-2, int(miny)-2), (int(maxx)+2, int(maxy)+2),(0,0,0), 1)
 
 
-        # Update tracker.
-        tracks = tracker2.update(np.asarray(detections))
-
-   #     print('===========')
         for track in tracks:
             bbox = track[0:4]
             if display:
                 iwarp = (full_warp)
-                bwidth = bbox[2]-bbox[0]
-                bheight = bbox[3]-bbox[1]
-                centre = np.expand_dims([0.5*(bbox[0]+bbox[2]),0.5*(bbox[1]+bbox[3])], axis=0)
-                centre = np.expand_dims(centre,axis=0)
-                centre = cv2.perspectiveTransform(centre,iwarp)[0,0,:]
-  #              if not track.is_confirmed():
-  #                  print('uc:', bbox[0],bbox[1],bbox[2],bbox[3], corner1[0],corner1[1])
-  #              else:
-  #                  print('c:', bbox[0],bbox[1],bbox[2],bbox[3], corner1[0],corner1[1])
-             #   corner2 = np.expand_dims([[bbox[2],bbox[3]]], axis=0)
-             #   corner2 = cv2.perspectiveTransform(corner2,iwarp)[0,0,:]
-                minx = centre[0]-bwidth*0.5
-                maxx = centre[0]+bwidth*0.5
-                miny = centre[1]-bheight*0.5
-                maxy = centre[1]+bheight*0.5
 
- #               print(track[4])
-                cv2.putText(frame, str(int(track[4])),(int(minx), int(miny)),0, 5e-3 * 200, (0,255,0),2)
-   #             if bbox[1]>0:
-                cv2.rectangle(frame, (int(minx), int(miny)), (int(maxx), int(maxy)),(255,0,0), 4)
-    #            else:
-    #                cv2.rectangle(frame, (int(corner1[0]), int(corner1[1])), (int(corner2[0]), int(corner2[1])),(0,0,255), 4)
+                corner1 = np.expand_dims([bbox[0],bbox[1]], axis=0)
+                corner1 = np.expand_dims(corner1,axis=0)
+                corner1 = cv2.perspectiveTransform(corner1,iwarp)[0,0,:]
+                corner2 = np.expand_dims([bbox[2],bbox[3]], axis=0)
+                corner2 = np.expand_dims(corner2,axis=0)
+                corner2 = cv2.perspectiveTransform(corner2,iwarp)[0,0,:]
+                corner3 = np.expand_dims([[bbox[0],bbox[3]]], axis=0)
+ #               corner3 = np.expand_dims(corner3,axis=0)
+                corner3 = cv2.perspectiveTransform(corner3,iwarp)[0,0,:]
+                corner4 = np.expand_dims([bbox[2],bbox[1]], axis=0)
+                corner4 = np.expand_dims(corner4,axis=0)
+                corner4 = cv2.perspectiveTransform(corner4,iwarp)[0,0,:]
+                maxx = max(corner1[0],corner2[0],corner3[0],corner4[0]) 
+                minx = min(corner1[0],corner2[0],corner3[0],corner4[0]) 
+                maxy = max(corner1[1],corner2[1],corner3[1],corner4[1]) 
+                miny = min(corner1[1],corner2[1],corner3[1],corner4[1]) 
+
+                np.random.seed(int(track[4])) # show each track as its own colour - note can't use np random number generator in this code
+                r = np.random.randint(256)
+                g = np.random.randint(256)
+                b = np.random.randint(256)
+                cv2.rectangle(frame, (int(minx), int(miny)), (int(maxx), int(maxy)),(r,g,b), 4)
+                cv2.putText(frame, str(int(track[4])),(int(minx)-5, int(miny)-5),0, 5e-3 * 200, (r,g,b),2)
 
             results.append([frame_idx, track[4], bbox[0], bbox[1], bbox[2], bbox[3]])
-  #      print('===========')
-
-#
-#        # Update tracker.
-#        tracker.predict()
-#        tracker.update(detections)
-#        for det in detections:
-#            dt = det.to_tlbr()
-#
-#        for track in tracker.tracks:
-#            if not track.is_confirmed():
-#                continue 
-#            if track.time_since_update > 5 :
-#                continue
-#            bbox = track.to_tlbr()
-#            if display:
-#                iwarp = (full_warp)
-#                bwidth = bbox[2]-bbox[0]
-#                bheight = bbox[3]-bbox[1]
-#                centre = np.expand_dims([0.5*(bbox[0]+bbox[2]),0.5*(bbox[1]+bbox[3])], axis=0)
-#                centre = np.expand_dims(centre,axis=0)
-#                centre = cv2.perspectiveTransform(centre,iwarp)[0,0,:]
-#  #              if not track.is_confirmed():
-#  #                  print('uc:', bbox[0],bbox[1],bbox[2],bbox[3], corner1[0],corner1[1])
-#  #              else:
-#  #                  print('c:', bbox[0],bbox[1],bbox[2],bbox[3], corner1[0],corner1[1])
-#             #   corner2 = np.expand_dims([[bbox[2],bbox[3]]], axis=0)
-#             #   corner2 = cv2.perspectiveTransform(corner2,iwarp)[0,0,:]
-#                minx = centre[0]-bwidth*0.5
-#                maxx = centre[0]+bwidth*0.5
-#                miny = centre[1]-bheight*0.5
-#                maxy = centre[1]+bheight*0.5
-#
-#                cv2.putText(frame, str(track.track_id),(int(minx), int(miny)),0, 5e-3 * 200, (0,255,0),2)
-#   #             if bbox[1]>0:
-#                cv2.rectangle(frame, (int(minx), int(miny)), (int(maxx), int(maxy)),(255,0,0), 4)
-#    #            else:
-#    #                cv2.rectangle(frame, (int(corner1[0]), int(corner1[1])), (int(corner2[0]), int(corner2[1])),(0,0,255), 4)
-#
-#            results.append([frame_idx, track.track_id, bbox[0], bbox[1], bbox[2], bbox[3]])
-#
         frame_idx+=1
 
         if display:
@@ -183,8 +153,8 @@ for input_file in filelist:
          #   im_aligned = cv2.warpPerspective(frame, full_warp, (S[0],S[1]), borderMode=cv2.BORDER_TRANSPARENT, flags=cv2.WARP_INVERSE_MAP)
             out.write(frame)
 
-     #   cv2.imwrite('out.jpg',frame)
-     #   break
+        #cv2.imwrite('pout' + str(i) + '.jpg',frame)
+ #   break
 
     with open(data_file, "w") as output:
         writer = csv.writer(output, lineterminator='\n')
