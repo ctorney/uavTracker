@@ -1,3 +1,6 @@
 data_dir: '../../data/rockinghorse/'
 trained_annotations_fname: 'annotations-trained.yml'
 checked_annotations_fname: 'annotations-checked.yml'
+generic_weights: '../../data/rockinghorse/yolo-v3-coco.h5'
+specific_weights: '../../data/rockinghorse/horses-yolo.h5'
+untrained_annotations_fname: 'annotations.yml'
