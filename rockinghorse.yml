@@ -1,0 +1,3 @@
+data_dir: '../../data/rockinghorse/'
+trained_annotations_fname: 'annotations-trained.yml'
+checked_annotations_fname: 'annotations-checked.yml'
