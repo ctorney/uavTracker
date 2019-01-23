@@ -1,18 +1,24 @@
+"""
+This files is used to train ???
+
+It uses still_images which I have NOT
+"""
 import numpy as np
 import pandas as pd
 import os,sys,glob
 import cv2
-import pickle
-sys.path.append("../..") 
-sys.path.append("..") 
+import yaml
+sys.path.append("../..")
+sys.path.append("..")
 from models.yolo_models import get_yolo_model
 from utils.decoder import decode
 
 image_dir =  '/home/ctorney/data/horses/still_images/'
 train_dir = '../horse_images/'
+your_weights = '../../weights/yolo-v3-coco.h5'
+train_files_regex = "*.png"
 
-
-train_images =  glob.glob( image_dir + "*.png" )
+train_images =  glob.glob( image_dir + train_files_regex )
 
 max_l=100
 min_l=10
@@ -28,7 +34,7 @@ ny = height//im_size
 ##################################################
 #im_size=416 #size of training imageas for yolo
 yolov3 = get_yolo_model(im_size,im_size,trainable=False)
-yolov3.load_weights('../../weights/yolo-v3-coco.h5',by_name=True)
+yolov3.load_weights(your_weights,by_name=True)
 
 
 ########################################
@@ -81,7 +87,6 @@ for imagename in train_images:
                 if (xmax-xmin)>max_l: continue
                 if (ymax-ymin)<min_l: continue
                 if (ymax-ymin)>max_l: continue
-                    
 
                 obj['xmin'] = xmin
                 obj['ymin'] = ymin
@@ -95,7 +100,6 @@ for imagename in train_images:
 
 
 #print(all_imgs)
-with open(train_dir + '/annotations.pickle', 'wb') as handle:
-   pickle.dump(all_imgs, handle)
-                        
+with open(train_dir + '/annotations.pickle', 'w') as handle:
+   yaml.dump(all_imgs, handle)
 

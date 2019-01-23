@@ -2,17 +2,17 @@ import numpy as np
 import pandas as pd
 import os,sys,glob
 import cv2
-import pickle
-sys.path.append("../..") 
-sys.path.append("..") 
+import yaml
+sys.path.append("../..")
+sys.path.append("..")
 from models.yolo_models import get_yolo_model
 from utils.decoder import decode
 from random import shuffle
 
-train_dir = '../horse_images/'
-
-
-train_images =  glob.glob( train_dir + "DEP*.png" )
+train_dir = '../../data/rockinghorse/'
+train_files_regex = "DEP*.png"
+your_weights = '../../data/rockinghorse/horses-yolo.h5'
+train_images =  glob.glob( train_dir + train_files_regex )
 shuffle(train_images)
 
 max_l=100
@@ -25,13 +25,13 @@ im_size=864 #size of training imageas for yolo
 ##################################################
 #im_size=416 #size of training imageas for yolo
 yolov3 = get_yolo_model(im_size,im_size,num_class=1,trainable=False)
-yolov3.load_weights('../../weights/horses-yolo.h5')
+yolov3.load_weights(your_weights)
 
 
 ########################################
 im_num=1
 all_imgs = []
-for imagename in train_images: 
+for imagename in train_images:
     img = cv2.imread(imagename)
     print('processing image ' + imagename + ', ' + str(im_num) + ' of ' + str(len(train_images))  + '...')
     im_num+=1
@@ -39,12 +39,12 @@ for imagename in train_images:
     img_data = {'object':[]}     #dictionary? key-value pair to store image data
     head, tail = os.path.split(imagename)
     noext, ext = os.path.splitext(tail)
-    box_name = train_dir + '/bbox/' + tail 
+    box_name = train_dir + '/bbox/' + tail
     img_data['filename'] = tail
     img_data['width'] = im_size
     img_data['height'] = im_size
 
-    # use the trained yolov3 model to predict 
+    # use the trained yolov3 model to predict
 
     # preprocess the image
     image_h, image_w, _ = img.shape
@@ -72,7 +72,7 @@ for imagename in train_images:
         if (xmax-xmin)>max_l: continue
         if (ymax-ymin)<min_l: continue
         if (ymax-ymin)>max_l: continue
-            
+
 
         obj['xmin'] = xmin
         obj['ymin'] = ymin
@@ -86,7 +86,7 @@ for imagename in train_images:
 
 
 #print(all_imgs)
-with open(train_dir + '/annotations-trained.pickle', 'wb') as handle:
-    pickle.dump(all_imgs, handle)
-                
+with open(train_dir + '/annotations-trained.yml', 'w') as handle:
+    yaml.dump(all_imgs, handle)
+
 

@@ -8,7 +8,8 @@ from yolo_tracker import yoloTracker
 
 np.set_printoptions(suppress=True)
 
-data_dir =  '/home/staff1/ctorney/data/horses/departures/'
+data_dir =  '../data/rockinghorse/videos'
+video_name_regex = "*.mp4"
 #train_images =  glob.glob( image_dir + "*.png" )
 #video_file1 = 'out.avi'
 
@@ -18,7 +19,7 @@ height = 1080
 display = 1
 showDetections = 0 # flag to show all detections in image
 
-filelist = glob.glob(data_dir + "*.mp4")
+filelist = glob.glob(data_dir + video_name_regex)
 
 for input_file in filelist:
     direct, ext = os.path.split(input_file)

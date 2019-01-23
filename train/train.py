@@ -2,7 +2,7 @@ from keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
 from keras.optimizers import SGD, Adam, RMSprop
 import tensorflow as tf
 import numpy as np
-import pickle
+import yaml
 import os, sys, cv2
 import time
 from generator import BatchGenerator
@@ -24,26 +24,30 @@ OBJECT_SCALE     = 5.0
 COORD_SCALE      = 2.0
 CLASS_SCALE      = 1.0
 
-train_image_folder = 'horse_images/' #/home/ctorney/data/coco/train2014/'
+train_image_folder = '../data/rockinghorse/' #/home/ctorney/data/coco/train2014/'
 valid_image_folder = train_image_folder#'/home/ctorney/data/coco/val2014/'
 valid_annot_folder = train_image_folder#'/home/ctorney/data/coco/val2014ann/'
-
+your_weights = '../data/rockinghorse/horses-yolo.h5'
+trained_weights = '../data/rockinghorse/trained-horses-yolo.h5'
+generic_weights = "../data/horses/yolo-v3-coco.h5"
+list_of_train_files = '/annotations-checked.yml'
 
 if FINE_TUNE:
     BATCH_SIZE= 4
-    EPOCHS=100
+    EPOCHS=1
     model = get_yolo_model(IMAGE_W,IMAGE_H, num_class=1,headtrainable=True, trainable=True)
-    model.load_weights('../weights/horses-yolo.h5')
+    model.load_weights(your_weights)
 else:
     BATCH_SIZE=32
     EPOCHS=500
     model = get_yolo_model(IMAGE_W,IMAGE_H, num_class=1,headtrainable=True)
-    model.load_weights('../weights/yolo-v3-coco.h5', by_name=True)
+    model.load_weights(generic_weights, by_name=True)
 
 ### read saved pickle of parsed annotations
-with open (train_image_folder + '/annotations-checked.pickle', 'rb') as fp:
-    all_imgs = pickle.load(fp)
+with open (train_image_folder + list_of_train_files, 'r') as fp:
+    all_imgs = yaml.load(fp)
 
+print("Reading YaML file finished. Time to luck and load!\n")
 
 num_ims = len(all_imgs)
 indexes = np.arange(num_ims)
@@ -98,15 +102,15 @@ def yolo_loss(y_true, y_pred):
 
 
 
-
-wt_file='../weights/horses-yolo.h5'
+print("Prepared bathes now we will load weights")
+wt_file=your_weights
 optimizer = Adam(lr=0.5e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
 model.compile(loss=yolo_loss, optimizer=optimizer)
 
 early_stop = EarlyStopping(monitor='loss', min_delta=0.001,patience=5,mode='min',verbose=1)
 checkpoint = ModelCheckpoint(wt_file,monitor='loss',verbose=1,save_best_only=True,mode='min',period=1)
 
-
+print("Let us begin, my dear Lord!")
 start = time.time()
 model.fit_generator(generator        = train_batch, 
                     steps_per_epoch  = len(train_batch), 
@@ -116,7 +120,7 @@ model.fit_generator(generator        = train_batch,
             #        validation_steps = len(valid_batch),
                     callbacks        = [checkpoint, early_stop],#, tensorboard], 
                     max_queue_size   = 3)
-model.save_weights(wt_file)
+model.save_weights(trained_weights)
 end = time.time()
 print('Training took ' + str(end - start) + ' seconds')
 
