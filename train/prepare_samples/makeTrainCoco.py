@@ -14,31 +14,28 @@ from models.yolo_models import get_yolo_model
 from utils.decoder import decode
 
 def main(argv):
-    if(len(sys.argv) != 2):
-        print('Usage ./makeTrain.py <config.yml>')
+    if(len(sys.argv) != 3):
+        print('Usage ./makeTrainCoco.py [root_dir] [config.yml]')
         sys.exit(1)
     #Load data
-    with open(argv[1], 'r') as configfile:
+    root_dir = argv[1]  + "/" #in case we forgot
+    print("Opening file" + root_dir + argv[2])
+    with open(root_dir + argv[2], 'r') as configfile:
         config = yaml.safe_load(configfile)
 
-    image_dir = config["data_dir"]
-    train_dir = config["data_dir"]
-    your_weights = config['generic_weights']
-    annotations_file = config['untrained_annotations_fname']
-    train_files_regex = "*.png"
+    image_dir = root_dir + config["data_dir"]
+    train_dir = root_dir + config["data_dir"]
+    weights_dir = root_dir + config["weights_dir"]
+    your_weights = weights_dir + config['generic_weights']
+    annotations_file = train_dir + config['untrained_annotations_fname']
+    train_files_regex = config['generic_train_files_regex']
 
     train_images =  glob.glob( image_dir + train_files_regex )
 
     max_l=100
     min_l=10
 
-    width=1920
-    height=1080
-
     im_size=864 #size of training imageas for yolo
-
-    nx = width//im_size
-    ny = height//im_size
 
     ##################################################
     #im_size=416 #size of training imageas for yolo
@@ -52,6 +49,7 @@ def main(argv):
     for imagename in train_images: 
         im = cv2.imread(imagename)
         print('processing image ' + imagename + ', ' + str(im_num) + ' of ' + str(len(train_images))  + '...')
+        height, width = im.shape[:2]
         im_num+=1
 
         n_count=0
@@ -109,8 +107,10 @@ def main(argv):
 
 
     #print(all_imgs)
-    with open(train_dir + annotations_file, 'w') as handle:
+    print("Saving data to " + annotations_file)
+    with open(annotations_file, 'w') as handle:
         yaml.dump(all_imgs, handle)
 
+    print("Finished! :o)")
 if __name__ == '__main__':
     main(sys.argv)

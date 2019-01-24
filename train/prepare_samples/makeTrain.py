@@ -10,18 +10,20 @@ from utils.decoder import decode
 from random import shuffle
 
 def main(argv):
-    if(len(sys.argv) != 2):
-        print('Usage ./makeTrain.py <config.yml>')
+    if(len(sys.argv) != 3):
+        print('Usage ./makeTrain.py [root_dir] [config.yml]')
         sys.exit(1)
     #Load data
-    with open(argv[1], 'r') as configfile:
+    root_dir = argv[1]  + "/" #in case we forgot
+    print("Opening file" + root_dir + argv[2])
+    with open(root_dir + argv[2], 'r') as configfile:
         config = yaml.safe_load(configfile)
 
-    image_dir = config["data_dir"]
-    train_dir = config["data_dir"]
-    your_weights = config['specific_weights']
-    train_files_regex = "DEP*.png"
-    trained_annotations_fname = config['trained_annotations_fname']
+    image_dir = root_dir + config["data_dir"]
+    train_dir = root_dir + config["data_dir"]
+    your_weights = root_dir + config['weights_dir'] + config['specific_weights']
+    trained_annotations_fname = train_dir + config['trained_annotations_fname']
+    train_files_regex = config['specific_train_files_regex']
 
     train_images =  glob.glob( train_dir + train_files_regex )
     shuffle(train_images)
@@ -97,7 +99,7 @@ def main(argv):
 
 
     #print(all_imgs)
-    with open(train_dir + trained_annotations_fname, 'w') as handle:
+    with open(trained_annotations_fname, 'w') as handle:
         yaml.dump(all_imgs, handle)
 
 if __name__ == '__main__':
