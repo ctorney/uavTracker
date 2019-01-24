@@ -1,15 +1,15 @@
-"""
+'''
 This files is used to train ???
 
 It uses still_images which I have NOT
-"""
+'''
 import numpy as np
 import pandas as pd
 import os,sys,glob
 import cv2
 import yaml
-sys.path.append("../..")
-sys.path.append("..")
+sys.path.append('../..')
+sys.path.append('..')
 from models.yolo_models import get_yolo_model
 from utils.decoder import decode
 
@@ -18,14 +18,14 @@ def main(argv):
         print('Usage ./makeTrainCoco.py [root_dir] [config.yml]')
         sys.exit(1)
     #Load data
-    root_dir = argv[1]  + "/" #in case we forgot
-    print("Opening file" + root_dir + argv[2])
+    root_dir = argv[1]  + '/' #in case we forgot
+    print('Opening file' + root_dir + argv[2])
     with open(root_dir + argv[2], 'r') as configfile:
         config = yaml.safe_load(configfile)
 
-    image_dir = root_dir + config["data_dir"]
-    train_dir = root_dir + config["data_dir"]
-    weights_dir = root_dir + config["weights_dir"]
+    image_dir = root_dir + config['data_dir']
+    train_dir = root_dir + config['data_dir']
+    weights_dir = root_dir + config['weights_dir']
     your_weights = weights_dir + config['generic_weights']
     annotations_file = train_dir + config['untrained_annotations_fname']
     train_files_regex = config['generic_train_files_regex']
@@ -107,10 +107,10 @@ def main(argv):
 
 
     #print(all_imgs)
-    print("Saving data to " + annotations_file)
+    print('Saving data to ' + annotations_file)
     with open(annotations_file, 'w') as handle:
         yaml.dump(all_imgs, handle)
 
-    print("Finished! :o)")
+    print('Finished! :o)')
 if __name__ == '__main__':
     main(sys.argv)
