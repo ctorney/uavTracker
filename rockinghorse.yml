@@ -23,3 +23,7 @@ NO_OBJECT_SCALE: 1.0
 OBJECT_SCALE: 5.0
 COORD_SCALE: 2.0
 CLASS_SCALE: 1.0
+
+#Running tracker
+display: 1
+showDetections: 1 # flag to show all detections in image
