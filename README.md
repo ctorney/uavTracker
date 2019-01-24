@@ -15,7 +15,9 @@ Animal tracking from overhead using YOLO
 The toy example is called rockinghorse, and the yml config file for it is in the root of this repository. In it we specify all the directories relative to where the yml file is. Then we call the annotation preparation or training as follows:
 
 `python makeTrain.py [directory_of_configfile] [configfile_name.yml]`
+
 `python makeTrainCoco.py [directory_of_configfile] [configfile_name.yml]`
+
 `python train.py [directory_of_configfile] [configfile_name.yml]`
 
 for instance:
