@@ -25,3 +25,6 @@ for instance:
 `python train.py ../ rockinghorse.yml`
 
 It is handy to store data (or symbolic link to it) in a folder `data` in the root directory, it is already added to `.gitignore`
+
+### Tricks and treats:
+* There is a script `utils/pickle2yaml.py` which converts your old pickles int new yaml.
