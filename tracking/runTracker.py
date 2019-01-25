@@ -119,17 +119,13 @@ for input_file in filelist:
             if display:
                 iwarp = (full_warp)
 
-                corner1 = np.expand_dims([bbox[0],bbox[1]], axis=0)
-                corner1 = np.expand_dims(corner1,axis=0)
+                corner1 = np.expand_dims([[bbox[0],bbox[1]]], axis=0)
                 corner1 = cv2.perspectiveTransform(corner1,iwarp)[0,0,:]
-                corner2 = np.expand_dims([bbox[2],bbox[3]], axis=0)
-                corner2 = np.expand_dims(corner2,axis=0)
+                corner2 = np.expand_dims([[bbox[2],bbox[3]]], axis=0)
                 corner2 = cv2.perspectiveTransform(corner2,iwarp)[0,0,:]
                 corner3 = np.expand_dims([[bbox[0],bbox[3]]], axis=0)
- #               corner3 = np.expand_dims(corner3,axis=0)
                 corner3 = cv2.perspectiveTransform(corner3,iwarp)[0,0,:]
-                corner4 = np.expand_dims([bbox[2],bbox[1]], axis=0)
-                corner4 = np.expand_dims(corner4,axis=0)
+                corner4 = np.expand_dims([[bbox[2],bbox[1]]], axis=0)
                 corner4 = cv2.perspectiveTransform(corner4,iwarp)[0,0,:]
                 maxx = max(corner1[0],corner2[0],corner3[0],corner4[0]) 
                 minx = min(corner1[0],corner2[0],corner3[0],corner4[0]) 
