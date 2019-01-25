@@ -1,7 +1,6 @@
 import numpy as np
 import os, cv2, sys
 import time, math
-from deep_sort.detection import Detection
 sys.path.append("..")
 from models.yolo_models import get_yolo_model
 
