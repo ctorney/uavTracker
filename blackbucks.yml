@@ -4,8 +4,10 @@ TEST_RUN: 1
 
 data_dir: 'data/blackbucks/'
 weights_dir: 'data/blackbucks/'
+tracks_dir: "data/blackbucks/tracks/"
 generic_train_files_regex: "stills/*.png"
 specific_train_files_regex: "DEP*.png"
+test_videos_name_regex: "videos/*.avi"
 untrained_annotations_fname: 'annotations.yml'
 trained_annotations_fname: 'annotations-trained.yml'
 #checked annotations are used for training:
@@ -27,3 +29,4 @@ CLASS_SCALE: 1.0
 #Running tracker
 display: 1
 showDetections: 1 # flag to show all detections in image
+step_frames: 10 #how many frames between each step of a tracker/downsampling
