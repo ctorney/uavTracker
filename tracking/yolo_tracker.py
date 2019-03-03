@@ -124,7 +124,7 @@ class KalmanBoxTracker(object):
         self.kf.Q[2:4,2:4] *= 0.1 # process uncertainty for width/height for turning
         self.kf.Q[4:6,4:6] = 0.0 # process uncertainty for velocities is zeros - only accelerates due to accelerations
         self.kf.Q[6:,6:] *= 0.01 # process uncertainty for acceleration
-        self.kf.P[4:,4:] *= 5.0 # maximum speed
+        self.kf.P[4:,4:] *= 15.0 # maximum speed
 
         z=convert_bbox_to_kfx(bbox)
         self.kf.x[:4] = z
@@ -268,10 +268,11 @@ class yoloTracker(object):
                 d = np.expand_dims(d,0) 
                 dets = np.append(dets,d, axis=0)
 
-        dets = dets[dets[:,4]>self.init_threshold]
-        do_nms(dets,self.init_nms)
-        dets= dets[dets[:,4]<1.1]
-        dets= dets[dets[:,4]>0]
+        if len(dets)>0:
+            dets = dets[dets[:,4]>self.init_threshold]
+            do_nms(dets,self.init_nms)
+            dets= dets[dets[:,4]<1.1]
+            dets= dets[dets[:,4]>0]
        
         for det in dets:
             trk = KalmanBoxTracker(det[:]) 

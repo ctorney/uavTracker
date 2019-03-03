@@ -31,8 +31,8 @@ def main(argv):
     your_weights = weights_dir + config['specific_weights']
     generic_weights = weights_dir + config['generic_weights']
     trained_weights = weights_dir + config['trained_weights']
-    list_of_train_file = train_dir + config['checked_annotations_fname']
-    list_of_train_files = '/annotations-checked.yml'
+    list_of_train_files = config['checked_annotations_fname']
+    #list_of_train_files = '/annotations-checked.yml'
     train_files_regex = config['generic_train_files_regex']
 
     FINE_TUNE = config['FINE_TUNE']
@@ -61,12 +61,13 @@ def main(argv):
         EPOCHS=500
         model = get_yolo_model(IMAGE_W,IMAGE_H, num_class=1,headtrainable=True)
         model.load_weights(generic_weights, by_name=True)
+    print(model.summary())
 
     ### read saved pickle of parsed annotations
     with open (train_image_folder + list_of_train_files, 'r') as fp:
         all_imgs = yaml.load(fp)
 
-    print('Reading YaML file finished. Time to luck and load!\n')
+    print('Reading YaML file finished. Time to lock and load!\n')
 
     num_ims = len(all_imgs)
     indexes = np.arange(num_ims)
@@ -121,7 +122,7 @@ def main(argv):
 
 
 
-    print('Prepared bathes now we will load weights')
+    print('Prepared batches now we will load weights')
     wt_file=your_weights
     optimizer = Adam(lr=0.5e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
     model.compile(loss=yolo_loss, optimizer=optimizer)
