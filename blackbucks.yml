@@ -2,12 +2,23 @@
 TEST_RUN: 0
 
 
-data_dir: 'train/blackbuck_images/'
-weights_dir: 'weights/'
-generic_train_files_regex: "" #irrelevant now
-specific_train_files_regex: "yoloTrainData/frame*.png"
-untrained_annotations_fname: ''
-trained_annotations_fname: ''
+data_dir: 'data/blackbucks/'
+weights_dir: 'data/blackbucks/'
+tracks_dir: "data/blackbucks/tracks/"
+generic_train_files_regex: "stills/*.png"
+specific_train_files_regex: "DEP*.png"
+test_videos_name_regex: "videos/*.avi"
+untrained_annotations_fname: 'annotations.yml'
+trained_annotations_fname: 'annotations-trained.yml'
+
+#for running on euclid of Aakanksha's code:
+#data_dir: 'train/blackbuck_images/'
+#weights_dir: 'weights/'
+#generic_train_files_regex: "" #irrelevant now
+#specific_train_files_regex: "yoloTrainData/frame*.png"
+#untrained_annotations_fname: ''
+#trained_annotations_fname: ''
+
 #checked annotations are used for training:
 checked_annotations_fname: 'annotations-trained.yml' 
 generic_weights: 'yolo-v3-coco.h5'
@@ -27,3 +38,4 @@ CLASS_SCALE: 1.0
 #Running tracker
 display: 1
 showDetections: 1 # flag to show all detections in image
+step_frames: 10 #how many frames between each step of a tracker/downsampling
