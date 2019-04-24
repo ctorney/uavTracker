@@ -20,8 +20,8 @@ def main(argv):
         config = yaml.safe_load(configfile)
 
     np.set_printoptions(suppress=True)
-    data_dir = config['movie_dir']
-    video_name_regex = data_dir + "/*.avi"
+    data_dir = root_dir + config['movie_dir']
+    video_name_regex = data_dir + config['test_videos_name_regex']
     weights_dir = root_dir + config['weights_dir']
     your_weights = weights_dir + config['specific_weights']
     generic_weights = weights_dir + config['generic_weights']
@@ -37,7 +37,8 @@ def main(argv):
     showDetections = config['showDetections']
 
     filelist = glob.glob(video_name_regex)
-
+    print(video_name_regex)
+    print(filelist)
     for input_file in filelist:
 
         direct, ext = os.path.split(input_file)
