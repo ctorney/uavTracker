@@ -1,4 +1,3 @@
-
 from keras.models import Model
 from keras.layers import Conv2D, Input, BatchNormalization, LeakyReLU, ZeroPadding2D, UpSampling2D, Dense, Flatten, Activation, Reshape, Lambda
 from keras.layers.merge import add, concatenate
@@ -11,22 +10,22 @@ ANC_VALS = [[116,90,  156,198,  373,326],  [30,61, 62,45,  59,119], [10,13,  16,
 def _conv_block(inp, convs, skip=True, train=False):
     x = inp
     count = 0
-    
+
     for conv in convs:
         if count == (len(convs) - 2) and skip:
             skip_connection = x
         count += 1
-        
+
         if conv['stride'] > 1: x = ZeroPadding2D(((1,0),(1,0)))(x) # peculiar padding as darknet prefer left and top
         if 'train' in conv:
             trainflag=conv['train']#update the value for the key
         else:
             trainflag=train
-        x = Conv2D(conv['filter'], 
-                   conv['kernel'], 
-                   strides=conv['stride'], 
+        x = Conv2D(conv['filter'],
+                   conv['kernel'],
+                   strides=conv['stride'],
                    padding='valid' if conv['stride'] > 1 else 'same', # peculiar padding as darknet prefer left and top
-                   name='conv_' + str(conv['layer_idx']), 
+                   name='conv_' + str(conv['layer_idx']),
                    use_bias=False if conv['bnorm'] else True, trainable=trainflag)(x)
         if conv['bnorm']: x = BatchNormalization(epsilon=0.001, name='bnorm_' + str(conv['layer_idx']),trainable=trainflag)(x)
         if conv['leaky']: x = LeakyReLU(alpha=0.1, name='leaky_' + str(conv['layer_idx']),trainable=trainflag)(x)
@@ -42,7 +41,7 @@ def crop(start, end):
 def anchors(i):
     def func(x):
         anc = tf.constant(ANC_VALS[i], dtype='float', shape=[1,1,1,3,2])
-        return tf.exp(x) * anc 
+        return tf.exp(x) * anc
     return Lambda(func)
 
 def positions(h,w):
@@ -53,15 +52,15 @@ def positions(h,w):
 
         grid_factor = tf.reshape(tf.cast([grid_w, grid_h], tf.float32), [1,1,1,1,2])
         net_factor  = tf.reshape(tf.cast([w, h], tf.float32), [1,1,1,1,2])
-        
+
         cell_x = tf.to_float(tf.reshape(tf.tile(tf.range(tf.maximum(grid_h,grid_w)), [tf.maximum(grid_h,grid_w)]), (1, tf.maximum(grid_h,grid_w), tf.maximum(grid_h,grid_w), 1, 1)))
 
         cell_y = tf.transpose(cell_x, (0,2,1,3,4))
         cell_grid = tf.tile(tf.concat([cell_x,cell_y],-1), [1, 1, 1, 3, 1])
-        pred_box_xy = (cell_grid[:,:grid_h,:grid_w,:,:] + x) 
-        pred_box_xy = pred_box_xy * net_factor/grid_factor 
+        pred_box_xy = (cell_grid[:,:grid_h,:grid_w,:,:] + x)
+        pred_box_xy = pred_box_xy * net_factor/grid_factor
 
-        return pred_box_xy 
+        return pred_box_xy
     return Lambda(func)
 
 def get_yolo_model(in_w=416,in_h=416, num_class=80, trainable=False, headtrainable=False):
@@ -69,6 +68,10 @@ def get_yolo_model(in_w=416,in_h=416, num_class=80, trainable=False, headtrainab
     # for each box we have num_class outputs, 4 bbox coordinates, and 1 object confidence value
     out_size = num_class+5
     input_image = Input(shape=( in_h,in_w, 3))
+    if in_w % 32 != 0 or in_h %32 !=0:
+        print('######ERROR######')
+        print('ERROR: This model needs an image which size is a multiplyer of 32')
+        return []
 
     # Layer  0 => 4
     x = _conv_block(input_image, [{'filter': 32, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 0},
@@ -94,9 +97,9 @@ def get_yolo_model(in_w=416,in_h=416, num_class=80, trainable=False, headtrainab
     for i in range(7):
         x = _conv_block(x, [{'filter': 128, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 16+i*3},
                             {'filter': 256, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 17+i*3}], train=trainable)
-        
+
     skip_36 = x
-        
+
     # Layer 37 => 40
     x = _conv_block(x, [{'filter': 512, 'kernel': 3, 'stride': 2, 'bnorm': True, 'leaky': True, 'layer_idx': 37},
                         {'filter': 256, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 38},
@@ -106,9 +109,9 @@ def get_yolo_model(in_w=416,in_h=416, num_class=80, trainable=False, headtrainab
     for i in range(7):
         x = _conv_block(x, [{'filter': 256, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 41+i*3},
                             {'filter': 512, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 42+i*3}], train=trainable)
-        
+
     skip_61 = x
-        
+
     # Layer 62 => 65
     x = _conv_block(x, [{'filter': 1024, 'kernel': 3, 'stride': 2, 'bnorm': True, 'leaky': True, 'layer_idx': 62},
                         {'filter':  512, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 63},
@@ -118,7 +121,7 @@ def get_yolo_model(in_w=416,in_h=416, num_class=80, trainable=False, headtrainab
     for i in range(3):
         x = _conv_block(x, [{'filter':  512, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 66+i*3},
                             {'filter': 1024, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 67+i*3}], train=trainable)
-        
+
     # Layer 75 => 79
     x = _conv_block(x, [{'filter':  512, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 75},
                         {'filter': 1024, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 76},
@@ -176,7 +179,7 @@ def get_yolo_model(in_w=416,in_h=416, num_class=80, trainable=False, headtrainab
     final_large = Reshape((in_h//32,in_w//32,3,out_size))(yolo_82)
     final_med = Reshape((in_h//16, in_w//16,3,out_size))(yolo_94)
     final_small = Reshape((in_h//8,in_w//8,3,out_size))(yolo_106)
-    #output = [final_large, final_med, final_small]  
+    #output = [final_large, final_med, final_small]
     #model = Model(input_image,output)
     #return model
 
@@ -207,12 +210,7 @@ def get_yolo_model(in_w=416,in_h=416, num_class=80, trainable=False, headtrainab
     l_offs = positions(in_h,in_w)(l_offs)
     l_out = concatenate([l_offs, l_szs, l_scores])
 
-    output = [l_out, m_out, s_out]  
+    output = [l_out, m_out, s_out]
 
     model = Model(input_image,output)
     return model
-
-
-
-
-

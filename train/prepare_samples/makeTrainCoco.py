@@ -35,10 +35,9 @@ def main(argv):
     max_l=100
     min_l=10
 
-    im_size=864 #size of training imageas for yolo
+    im_size=config['IMAGE_H'] #size of training imageas for yolo
 
     ##################################################
-    #im_size=416 #size of training imageas for yolo
     yolov3 = get_yolo_model(im_size,im_size,trainable=False)
     yolov3.load_weights(your_weights,by_name=True)
 
@@ -51,10 +50,20 @@ def main(argv):
         print('processing image ' + imagename + ', ' + str(im_num) + ' of ' + str(len(train_images))  + '...')
         height, width = im.shape[:2]
         im_num+=1
-
         n_count=0
-        for x in np.arange(0,width-im_size,im_size):
-            for y in np.arange(0,height-im_size,im_size):
+
+        if (width-im_size < 0 or height-im_size < 0):
+            print("Image too small for a defined yolo input size, adding a black stripe")
+            new_height = height if height >= im_size else im_size
+            new_width = width if width >= im_size else im_size
+            enlarged_im = np.zeros((new_height, new_width,3), np.uint8)
+            enlarged_im[:height,:width] = im.copy()
+            im = enlarged_im.copy()
+            height, width = im.shape[:2]
+
+
+        for x in np.arange(0,1+width-im_size,im_size):#'1+' added to allow case when image has exactly size of one window
+            for y in np.arange(0,1+height-im_size,im_size):
                 img_data = {'object':[]}     #dictionary? key-value pair to store image data
                 head, tail = os.path.split(imagename)
                 noext, ext = os.path.splitext(tail)
