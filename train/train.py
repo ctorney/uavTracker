@@ -93,10 +93,10 @@ def main(argv):
     indexes = np.arange(num_ims)
     random.shuffle(indexes)
 
-    num_val = num_ims//10 #0
+    num_val = 0 #num_ims//10 
 
-    valid_imgs = list(itemgetter(*indexes[:num_val].tolist())(all_imgs))
-    valid_batch = BatchGenerator(valid_imgs, labels= LABELS, jitter=False, im_dir= train_image_folder)
+    # valid_imgs = list(itemgetter(*indexes[:num_val].tolist())(all_imgs))
+    # valid_batch = BatchGenerator(valid_imgs, labels= LABELS, jitter=False, im_dir= train_image_folder)
     train_imgs = list(itemgetter(*indexes[num_val:].tolist())(all_imgs))
     train_batch = BatchGenerator(instances= train_imgs,labels= LABELS,batch_size= BATCH_SIZE,shuffle= True,jitter= 0.0,im_dir= train_image_folder)
 
@@ -145,7 +145,7 @@ def main(argv):
     print('Prepared batches now we will load weights')
     wt_file=your_weights
     optimizer = Adam(lr=0.5e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
-    model.compile(loss=yolo_loss, optimizer=optimizer)
+    model.compile(loss=yolo_loss, optimizer=optimizer, metrics=['accuracy'])
 
     early_stop = EarlyStopping(monitor='loss', min_delta=0.001,patience=5,mode='min',verbose=1)
     checkpoint = ModelCheckpoint(wt_file,monitor='loss',verbose=1,save_best_only=True,mode='min',period=1)
@@ -158,8 +158,8 @@ def main(argv):
                         steps_per_epoch  = len(train_batch),
                         epochs           = EPOCHS,
                         verbose          = 1,
-                        validation_data  = valid_batch,
-                        validation_steps = len(valid_batch),
+                        # validation_data  = valid_batch,
+                        # validation_steps = len(valid_batch),
                         callbacks        = [checkpoint, early_stop, tensorboard], 
                         max_queue_size   = 3)
 
