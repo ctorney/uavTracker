@@ -53,7 +53,7 @@ def main(argv):
         head, tail = os.path.split(imagename)
         noext, ext = os.path.splitext(tail)
         box_name = train_dir + '/bbox/' + tail
-        img_data['filename'] = tail
+
         img_data['width'] = im_size
         img_data['height'] = im_size
 

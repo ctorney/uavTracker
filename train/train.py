@@ -3,7 +3,7 @@ from keras.optimizers import SGD, Adam, RMSprop
 import tensorflow as tf
 import numpy as np
 import yaml
-import os, sys, cv2
+import os, sys, logging, cv2
 import time
 from generator import BatchGenerator
 from operator import itemgetter
@@ -13,6 +13,10 @@ sys.path.append('..')
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 from models.yolo_models import get_yolo_model
+
+def dprint(x,debug):
+    if debug:
+        print(x)
 
 def main(argv):
     if(len(sys.argv) != 3):
@@ -35,8 +39,8 @@ def main(argv):
     #list_of_train_files = '/annotations-checked.yml'
     train_files_regex = config['generic_train_files_regex']
 
-    FINE_TUNE = config['FINE_TUNE']
-    TEST_RUN = config['TEST_RUN']
+    FINE_TUNE_PHASE_1 = config['FINE_TUNE_PHASE_1']
+    FINE_TUNE_PHASE_2 = config['FINE_TUNE_PHASE_2']
     LABELS = config['LABELS']
     IMAGE_H = config['IMAGE_H']
     IMAGE_W = config['IMAGE_W']
@@ -48,22 +52,38 @@ def main(argv):
     valid_image_folder = train_image_folder
     valid_annot_folder = train_image_folder
 
-    if FINE_TUNE:
-        BATCH_SIZE= 4
-        if TEST_RUN:
-            EPOCHS=1
-        else:
-            EPOCHS=100
-        model = get_yolo_model(IMAGE_W,IMAGE_H, num_class=1,headtrainable=True, trainable=True)
-        model.load_weights(your_weights)
-    else:
-        BATCH_SIZE=32
-        EPOCHS=500
+    #logging and debugging setup
+    DEBUG = config['DEBUG']
+    TEST_RUN = config['TEST_RUN']
+    mylevel = logging.ERROR
+    if DEBUG:
+        mylevel=logging.DEBUG
+    logging.basicConfig(level=mylevel)
+    logging.debug('This will get logged')
+
+    BATCH_SIZE = config['BATCH_SIZE']
+    EPOCHS = config['EPOCHS']
+
+    if TEST_RUN:
+        EPOCHS=1
+        BATCH_SIZE=4
+
+    if FINE_TUNE_PHASE_1:
+        logging.debug("Fine tuning phase 1. Training top layers.")
         model = get_yolo_model(IMAGE_W,IMAGE_H, num_class=1,headtrainable=True)
+        logging.debug("Loading weights %s",generic_weights)
         model.load_weights(generic_weights, by_name=True)
-    print(model.summary())
+    else:
+        logging.debug("Fine tuning phase 2. We retrain all layers with small learning rate")
+        model = get_yolo_model(IMAGE_W,IMAGE_H, num_class=1,headtrainable=True, trainable=True)
+        logging.debug("Loading weights %s",your_weights)
+        model.load_weights(your_weights)
+
+    if DEBUG:
+        print(model.summary())
 
     ### read saved pickle of parsed annotations
+    logging.debug("Loading images from %s",train_image_folder + list_of_train_files)
     with open (train_image_folder + list_of_train_files, 'r') as fp:
         all_imgs = yaml.load(fp)
 
@@ -73,12 +93,12 @@ def main(argv):
     indexes = np.arange(num_ims)
     random.shuffle(indexes)
 
-    num_val = 0#num_ims//10
+    num_val = num_ims//10 #0
 
-    #valid_imgs = list(itemgetter(*indexes[:num_val].tolist())(all_imgs))
+    valid_imgs = list(itemgetter(*indexes[:num_val].tolist())(all_imgs))
+    valid_batch = BatchGenerator(valid_imgs, labels= LABELS, jitter=False, im_dir= train_image_folder)
     train_imgs = list(itemgetter(*indexes[num_val:].tolist())(all_imgs))
     train_batch = BatchGenerator(instances= train_imgs,labels= LABELS,batch_size= BATCH_SIZE,shuffle= True,jitter= 0.0,im_dir= train_image_folder)
-    #valid_batch = BatchGenerator(valid_imgs, generator_config, norm=normalize, jitter=False)
 
 
     def yolo_loss(y_true, y_pred):
@@ -132,14 +152,17 @@ def main(argv):
 
     print('Training starts.')
     start = time.time()
-    model.fit_generator(generator        = train_batch, 
-                        steps_per_epoch  = len(train_batch), 
-                        epochs           = EPOCHS, 
+    tensorboard = TensorBoard(log_dir="logs/{}".format(time.time()))
+
+    model.fit_generator(generator        = train_batch,
+                        steps_per_epoch  = len(train_batch),
+                        epochs           = EPOCHS,
                         verbose          = 1,
-                #        validation_data  = valid_batch,
-                #        validation_steps = len(valid_batch),
-                        callbacks        = [checkpoint, early_stop],#, tensorboard], 
+                        validation_data  = valid_batch,
+                        validation_steps = len(valid_batch),
+                        callbacks        = [checkpoint, early_stop, tensorboard], 
                         max_queue_size   = 3)
+
     model.save_weights(trained_weights)
     end = time.time()
     print('Training took ' + str(end - start) + ' seconds')

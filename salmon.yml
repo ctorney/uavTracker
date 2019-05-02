@@ -1,6 +1,6 @@
 #set this up to get funny behaviour quickly. Like training for 1 epoch
-TEST_RUN: 0
-
+TEST_RUN: 1
+DEBUG: 1
 
 data_dir: 'data/salmon/'
 weights_dir: 'data/salmon/'
@@ -18,7 +18,13 @@ specific_weights: 'horses-yolo.h5'
 trained_weights: 'trained-salmon-yolo.h5'
 
 #training parameters
-FINE_TUNE: 1
+FINE_TUNE_PHASE_1: 1 # top layers, normal learning rate
+BATCH_SIZE: 32
+EPOCHS: 500
+FINE_TUNE_PHASE_2: 0 # all layers, small learning rate
+# BATCH_SIZE: 4
+# EPOCHS: 100
+
 LABELS: ['aoi']
 IMAGE_H: 864 #must match whatever yolo model was trained on
 IMAGE_W: 864 # or must be a multiplier of 32 in current version
