@@ -31,16 +31,16 @@ def main(argv):
     image_dir = root_dir + config['data_dir']
     train_dir = root_dir + config['data_dir']
     train_image_folder = root_dir + config['data_dir']
+    training_type = config['training_type']
     weights_dir = root_dir + config['weights_dir']
-    your_weights = weights_dir + config['specific_weights']
-    generic_weights = weights_dir + config['generic_weights']
+    your_weights = weights_dir + config['specific']['weights']
+    generic_weights = weights_dir + config['generic']['weights']
     trained_weights = weights_dir + config['trained_weights']
     list_of_train_files = config['checked_annotations_fname']
     #list_of_train_files = '/annotations-checked.yml'
-    train_files_regex = config['generic_train_files_regex']
+    train_files_regex = config['generic']['train_files_regex']
 
-    FINE_TUNE_PHASE_1 = config['FINE_TUNE_PHASE_1']
-    FINE_TUNE_PHASE_2 = config['FINE_TUNE_PHASE_2']
+    training_phase = config['FINE_TUNE_PHASE']
     LABELS = config['LABELS']
     IMAGE_H = config['IMAGE_H']
     IMAGE_W = config['IMAGE_W']
@@ -61,14 +61,16 @@ def main(argv):
     logging.basicConfig(level=mylevel)
     logging.debug('This will get logged')
 
-    BATCH_SIZE = config['BATCH_SIZE']
-    EPOCHS = config['EPOCHS']
+
+    BATCH_SIZE = config[training_phase]['BATCH_SIZE']
+    EPOCHS = config[training_phase]['EPOCHS']
+    LR = config[training_phase]['LR']
 
     if TEST_RUN:
         EPOCHS=1
         BATCH_SIZE=4
 
-    if FINE_TUNE_PHASE_1:
+    if training_phase=='phase_one':
         logging.debug("Fine tuning phase 1. Training top layers.")
         model = get_yolo_model(IMAGE_W,IMAGE_H, num_class=1,headtrainable=True)
         logging.debug("Loading weights %s",generic_weights)
@@ -144,7 +146,7 @@ def main(argv):
 
     print('Prepared batches now we will load weights')
     wt_file=your_weights
-    optimizer = Adam(lr=0.5e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+    optimizer = Adam(lr=LR, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
     model.compile(loss=yolo_loss, optimizer=optimizer, metrics=['accuracy'])
 
     early_stop = EarlyStopping(monitor='loss', min_delta=0.001,patience=5,mode='min',verbose=1)
