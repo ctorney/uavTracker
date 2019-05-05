@@ -1,7 +1,6 @@
 '''
-This files is used to train ???
-
-It uses still_images which I have NOT
+This program is used to pre-annotate images with generic objects (generic) or other pre-trained objects from similar domain (specific).
+Then, you can use a jupyter notebook to correct annotations before re-training yolo to your specific domain.
 '''
 import numpy as np
 import pandas as pd
@@ -23,14 +22,25 @@ def main(argv):
     with open(root_dir + argv[2], 'r') as configfile:
         config = yaml.safe_load(configfile)
 
+
+    #TODO: since this is the first file to use, maybe add a check if all directories exist?
+
     image_dir = root_dir + config['data_dir']
     train_dir = root_dir + config['data_dir']
     weights_dir = root_dir + config['weights_dir']
-    your_weights = weights_dir + config['generic_weights']
-    annotations_file = train_dir + config['untrained_annotations_fname']
-    train_files_regex = config['generic_train_files_regex']
+
+    #Training type dependent
+    training_type = config['training_type']
+    your_weights = weights_dir + config[training_type]['weights']
+    train_files_regex = config[training_type + '_train_files_regex']
+
+    #based on get_yolo_model defaults and previous makTrain.py files
+    num_class=config[training_type]['num_class']
+    obj_thresh=config[training_type]['obj_thresh']
+    nms_thresh=config[training_type]['nms_thresh']
 
     train_images =  glob.glob( image_dir + train_files_regex )
+    annotations_file = train_dir + config['untrained_annotations_fname']
 
     max_l=100
     min_l=10
@@ -38,14 +48,14 @@ def main(argv):
     im_size=config['IMAGE_H'] #size of training imageas for yolo
 
     ##################################################
-    yolov3 = get_yolo_model(im_size,im_size,trainable=False)
-    yolov3.load_weights(your_weights,by_name=True)
+    yolov3 = get_yolo_model(im_size,im_size,num_class,trainable=False)
+    yolov3.load_weights(your_weights,by_name=True) #TODO is by_name necessary here?
 
 
     ########################################
     im_num=1
     all_imgs = []
-    for imagename in train_images: 
+    for imagename in train_images:
         im = cv2.imread(imagename)
         print('processing image ' + imagename + ', ' + str(im_num) + ' of ' + str(len(train_images))  + '...')
         height, width = im.shape[:2]
@@ -61,6 +71,7 @@ def main(argv):
             im = enlarged_im.copy()
             height, width = im.shape[:2]
 
+        print(".")
 
         for x in np.arange(0,1+width-im_size,im_size):#'1+' added to allow case when image has exactly size of one window
             for y in np.arange(0,1+height-im_size,im_size):
@@ -83,9 +94,17 @@ def main(argv):
                 new_image = np.expand_dims(new_image, 0)
 
                 # run the prediction
+                sys.stdout.write('Y')
+                sys.stdout.flush()
                 yolos = yolov3.predict(new_image)
+                sys.stdout.write(str(len(yolos)))
+                sys.stdout.flush()
 
-                boxes = decode(yolos, obj_thresh=0.005, nms_thresh=0.5)
+                sys.stdout.write('D')
+                sys.stdout.flush()
+                boxes = decode(yolos, obj_thresh, nms_thresh)
+                sys.stdout.write(str(len(boxes)))
+                sys.stdout.flush()
                 for b in boxes:
                     xmin=int(b[0])
                     xmax=int(b[2])

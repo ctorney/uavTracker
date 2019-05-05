@@ -6,18 +6,32 @@ data_dir: 'data/salmon/'
 weights_dir: 'data/salmon/'
 movie_dir: 'data/salmon/'
 tracks_dir: "tracks/"
+
+training_type: 'specific' # generic|specific
 generic_train_files_regex: "stills/*.png"
-specific_train_files_regex: "DEP*.png"
+specific_train_files_regex: "stills/*.png"
+# specific_train_files_regex: "DEP*.png"
 untrained_annotations_fname: 'annotations.yml'
 trained_annotations_fname: 'annotations-trained.yml'
 test_videos_name_regex: "videos/*.mp4"
+
 #checked annotations are used for training:
 checked_annotations_fname: 'annotations-checked.yml' 
-generic_weights: 'yolo-v3-coco.h5'
-specific_weights: 'horses-yolo.h5'
+generic:
+  weights: 'yolo-v3-coco.h5'
+  num_class: 80
+  obj_thresh: 0.2
+  nms_thresh: 0.3
+
+specific:
+  weights: 'horses-yolo.h5'
+  num_class: 1
+  obj_thresh: 0.7
+  nms_thresh: 0.5
+
 trained_weights: 'trained-salmon-yolo.h5'
 
-#training parameters
+#training parameters TODO make a single flag
 FINE_TUNE_PHASE_1: 1 # top layers, normal learning rate
 BATCH_SIZE: 32
 EPOCHS: 500
