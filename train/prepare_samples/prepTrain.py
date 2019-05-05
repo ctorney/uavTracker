@@ -32,7 +32,7 @@ def main(argv):
     #Training type dependent
     training_type = config['training_type']
     your_weights = weights_dir + config[training_type]['weights']
-    train_files_regex = config[training_type + '_train_files_regex']
+    train_files_regex = config[training_type]['train_files_regex']
 
     #based on get_yolo_model defaults and previous makTrain.py files
     num_class=config[training_type]['num_class']
