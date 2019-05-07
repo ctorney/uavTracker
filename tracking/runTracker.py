@@ -23,8 +23,8 @@ def main(argv):
     data_dir = root_dir + config['movie_dir']
     video_name_regex = data_dir + config['test_videos_name_regex']
     weights_dir = root_dir + config['weights_dir']
-    your_weights = weights_dir + config['specific_weights']
-    generic_weights = weights_dir + config['generic_weights']
+    # your_weights = weights_dir + config['specific_weights']
+    # generic_weights = weights_dir + config['generic_weights']
     trained_weights = weights_dir + config['trained_weights']
     #train_images =  glob.glob( image_dir + "*.png" )
     #video_file1 = 'out.avi'
@@ -47,8 +47,20 @@ def main(argv):
         video_file = data_dir + '/tracks/' +  noext + '_TR.avi'
         tr_file = data_dir + '/tracks/' +  noext + '_MAT.npy'
         if os.path.isfile(data_file):
+            print("File already analysed, dear sir. Remove output files to redo")
             continue
         print(input_file, video_file)
+
+
+        cap = cv2.VideoCapture(input_file)
+        fps = round(cap.get(cv2.CAP_PROP_FPS))
+        width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+        height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        S = (height,width)
+        print(width)
+        print(height)
+        print(fps)
+        print("using file: " + trained_weights)
         ##########################################################################
         ##          set-up yolo detector and tracker
         ##########################################################################
@@ -64,9 +76,6 @@ def main(argv):
         ##########################################################################
         ##          open the video file for inputs and outputs
         ##########################################################################
-        cap = cv2.VideoCapture(input_file)
-        fps = round(cap.get(cv2.CAP_PROP_FPS))
-        S = (1920,1080)
         if display:
             fourCC = cv2.VideoWriter_fourcc('X','V','I','D')
             out = cv2.VideoWriter(video_file, fourCC, 5, S, True)
