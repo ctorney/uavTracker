@@ -56,7 +56,7 @@ def main(argv):
         fps = round(cap.get(cv2.CAP_PROP_FPS))
         width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
         height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
-        S = (height,width)
+        S = (width,height)
         print(width)
         print(height)
         print(fps)
