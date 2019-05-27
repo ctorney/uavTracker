@@ -7,7 +7,7 @@ weights_dir: 'data/salmon/'
 movie_dir: 'data/salmon/'
 tracks_dir: "tracks/"
 
-training_type: 'generic' # generic|specific
+training_type: 'specific' # generic|specific
 untrained_annotations_fname: 'annotations.yml'
 trained_annotations_fname: 'annotations-trained.yml'
 test_videos_name_regex: "videos/*.mp4"
@@ -23,10 +23,12 @@ generic:
 
 specific:
   train_files_regex: "stills/*.png"
-  weights: 'horses-yolo.h5'
+  weights: 'trained-salmon-yoloMk4.h5'
   num_class: 1
-  obj_thresh: 0.005
-  nms_thresh: 0.5
+  obj_thresh: 0.2
+  nms_thresh: 0.3
+  # obj_thresh: 0.005
+  # nms_thresh: 0.5
 
 trained_weights: 'trained-salmon-yolo.h5'
 
@@ -37,7 +39,7 @@ FINE_TUNE_PHASE: 'phase_one'
 phase_one:
   BATCH_SIZE: 32
   EPOCHS: 500
-  LR: 0.5e-4
+  LR: 5e-4
 phase_two:
   BATCH_SIZE: 4
   EPOCHS: 100
