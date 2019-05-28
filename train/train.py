@@ -3,12 +3,15 @@ from keras.optimizers import SGD, Adam, RMSprop
 import tensorflow as tf
 import numpy as np
 import yaml
-import os, sys, logging, cv2
+import os, sys, cv2
 import time
 from generator import BatchGenerator
 from operator import itemgetter
 import random
 sys.path.append('..')
+from utils.utils import md5check
+
+
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -28,14 +31,22 @@ def main(argv):
     with open(root_dir + argv[2], 'r') as configfile:
         config = yaml.safe_load(configfile)
 
+    #logging and debugging setup
+    DEBUG = config['DEBUG']
+    TEST_RUN = config['TEST_RUN']
+    print(config)
+
     image_dir = root_dir + config['data_dir']
     train_dir = root_dir + config['data_dir']
     train_image_folder = root_dir + config['data_dir']
     training_type = config['training_type']
     weights_dir = root_dir + config['weights_dir']
     your_weights = weights_dir + config['specific']['weights']
+    md5check(config['specific']['weights_md5'],your_weights)
     generic_weights = weights_dir + config['generic']['weights']
+    md5check(config['generic']['weights_md5'],generic_weights)
     trained_weights = weights_dir + config['trained_weights']
+
     list_of_train_files = config['checked_annotations_fname']
     #list_of_train_files = '/annotations-checked.yml'
     train_files_regex = config['generic']['train_files_regex']
@@ -52,14 +63,6 @@ def main(argv):
     valid_image_folder = train_image_folder
     valid_annot_folder = train_image_folder
 
-    #logging and debugging setup
-    DEBUG = config['DEBUG']
-    TEST_RUN = config['TEST_RUN']
-    mylevel = logging.ERROR
-    if DEBUG:
-        mylevel=logging.DEBUG
-    logging.basicConfig(level=mylevel)
-    logging.debug('This will get logged')
 
 
     BATCH_SIZE = config[training_phase]['BATCH_SIZE']
@@ -71,21 +74,21 @@ def main(argv):
         BATCH_SIZE=4
 
     if training_phase=='phase_one':
-        logging.debug("Fine tuning phase 1. Training top layers.")
+        print("Fine tuning phase 1. Training top layers.")
         model = get_yolo_model(IMAGE_W,IMAGE_H, num_class=1,headtrainable=True)
-        logging.debug("Loading weights %s",generic_weights)
+        print("Loading weights %s",generic_weights)
         model.load_weights(generic_weights, by_name=True)
     else:
-        logging.debug("Fine tuning phase 2. We retrain all layers with small learning rate")
+        print("Fine tuning phase 2. We retrain all layers with small learning rate")
         model = get_yolo_model(IMAGE_W,IMAGE_H, num_class=1,headtrainable=True, trainable=True)
-        logging.debug("Loading weights %s",your_weights)
+        print("Loading weights %s",your_weights)
         model.load_weights(your_weights)
 
     if DEBUG:
         print(model.summary())
 
     ### read saved pickle of parsed annotations
-    logging.debug("Loading images from %s",train_image_folder + list_of_train_files)
+    print("Loading images from %s",train_image_folder + list_of_train_files)
     with open (train_image_folder + list_of_train_files, 'r') as fp:
         all_imgs = yaml.load(fp)
 

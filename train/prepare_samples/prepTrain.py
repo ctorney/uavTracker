@@ -17,7 +17,7 @@ from utils.utils import md5check
 
 def main(argv):
     if(len(sys.argv) != 3):
-        print('Usage ./makeTrainCoco.py [root_dir] [config.yml]')
+        print('Usage ./prepTrain.py [root_dir] [config.yml]')
         sys.exit(1)
     #Load data
     root_dir = argv[1]  + '/' #in case we forgot
