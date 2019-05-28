@@ -12,6 +12,8 @@ sys.path.append('../..')
 sys.path.append('..')
 from models.yolo_models import get_yolo_model, get_yolo_model_feats
 from utils.decoder import decode
+from utils.utils import md5check
+
 
 def main(argv):
     if(len(sys.argv) != 3):
@@ -34,6 +36,12 @@ def main(argv):
     print("Training type is " + training_type)
     print(config[training_type])
     your_weights = weights_dir + config[training_type]['weights']
+
+
+    #check md5 of a weights file if available
+    md5check(config[training_type]['weights_md5'],your_weights)
+
+
     train_files_regex = config[training_type]['train_files_regex']
 
     #based on get_yolo_model defaults and previous makTrain.py files

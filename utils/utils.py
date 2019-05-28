@@ -3,6 +3,18 @@ import numpy as np
 import os
 from .bbox import BoundBox, bbox_iou
 from scipy.special import expit
+import hashlib
+
+def md5check(md5sum,weights_file):
+    if md5sum != "":
+        read_file_hex = hashlib.md5(open(weights_file,'rb').read()).hexdigest()
+        if read_file_hex != md5sum:
+            print("ERROR: md5 checksum of the provided weights file doesn't match!")
+            sys.exit(1)
+        else:
+            print("MD5 check on your weights: correct.")
+    else:
+        print(":: Kind notice :: No md5 sum provided. Consider adding it once you have some trained weights to avoid great confusion in the future")
 
 def _sigmoid(x):
     return expit(x)
