@@ -327,8 +327,8 @@ def get_yolo_model_feats(in_w=416,in_h=416, num_class=80, trainable=False, headt
     else:
         yolo_106 = _conv_block(x, [{'filter': 3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable,'layer_idx': 105}], skip=False, train=trainable)
 
-    print("AAAAAAAAAAAAAAAAA")
-    print(in_h/32)
+    print("Work in progress to return heatmap of detections")
+    # print(in_h/32)
     final_large = Reshape((in_h//32,in_w//32,3,out_size))(yolo_82)
     final_med = Reshape((in_h//16, in_w//16,3,out_size))(yolo_94)
     final_small = Reshape((in_h//8,in_w//8,3,out_size))(yolo_106)

@@ -25,7 +25,7 @@ specific:
   train_files_regex: "DEP*.png"
   weights: 'horses-yolo.h5'
   num_class: 1
-  obj_thresh: 0.005
+  obj_thresh: 0.7
   nms_thresh: 0.5
 
 trained_weights: 'trained-horses-yolo.h5'
