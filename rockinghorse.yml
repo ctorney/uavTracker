@@ -2,9 +2,6 @@
 TEST_RUN: 1
 DEBUG: 1
 
-#various helper behaviours
-save_images_with_detections: 1
-
 data_dir: 'data/rockinghorse/'
 weights_dir: 'data/rockinghorse/'
 tracks_dir: "tracks/"
