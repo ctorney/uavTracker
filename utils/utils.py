@@ -3,7 +3,7 @@ import numpy as np
 import os
 from .bbox import BoundBox, bbox_iou
 from scipy.special import expit
-import hashlib
+import hashlib, math
 
 def md5check(md5sum,weights_file):
     if md5sum != "":
@@ -327,3 +327,14 @@ def compute_ap(recall, precision):
     # and sum (\Delta recall) * prec
     ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
     return ap          
+
+
+"""
+Cut the image to a multiply of 32
+"""
+def makeYoloCompatible(image):
+    im_height, im_width = image.shape[:2]
+    new_width = 32 * math.floor(im_width / 32)
+    new_height = 32 * math.floor(im_height / 32)
+    im_yolo = image[0:new_height,0:new_width,:]
+    return im_yolo

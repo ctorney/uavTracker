@@ -12,7 +12,7 @@ sys.path.append('../..')
 sys.path.append('..')
 from models.yolo_models import get_yolo_model, get_yolo_model_feats
 from utils.decoder import decode
-from utils.utils import md5check
+from utils.utils import md5check, makeYoloCompatible
 
 
 def main(argv):
@@ -55,16 +55,17 @@ def main(argv):
     max_l=config['MAX_L'] #maximal object size in pixels
     min_l=config['MIN_L']
 
-    im_size=config['IMAGE_H'] #size of training imageas for yolo
+    im_width=config['IMAGE_W'] #size of training imageas for yolo
+    im_height=config['IMAGE_H']
 
     ##################################################
     print("Loading YOLO models")
-    yolov3 = get_yolo_model(im_size,im_size,num_class,trainable=False)
+    yolov3 = get_yolo_model(im_width,im_height,num_class,trainable=False)
     yolov3.load_weights(your_weights,by_name=True) #TODO is by_name necessary here?
 
     # Creating another model to provide visualisation and/or extraction of high level features
 
-    yolov3_feats = get_yolo_model_feats(im_size,im_size,num_class,trainable=False)
+    yolov3_feats = get_yolo_model_feats(im_width,im_height,num_class,trainable=False)
     yolov3_feats.load_weights(your_weights,by_name=True) #TODO is by_name necessary here?
 
 
@@ -75,31 +76,24 @@ def main(argv):
     for imagename in train_images:
         im = cv2.imread(imagename)
         print('processing image ' + imagename + ', ' + str(im_num) + ' of ' + str(len(train_images))  + '...')
-        height, width = im.shape[:2]
+        im_yolo = makeYoloCompatible(im)
+        height, width = im_yolo.shape[:2]
         im_num+=1
         n_count=0
 
-        if (width-im_size < 0 or height-im_size < 0):
-            print("Image too small for a defined yolo input size, adding a black stripe")
-            new_height = height if height >= im_size else im_size
-            new_width = width if width >= im_size else im_size
-            enlarged_im = np.zeros((new_height, new_width,3), np.uint8)
-            enlarged_im[:height,:width] = im.copy()
-            im = enlarged_im.copy()
-            height, width = im.shape[:2]
-
-        for x in np.arange(0,1+width-im_size,im_size):#'1+' added to allow case when image has exactly size of one window
-            for y in np.arange(0,1+height-im_size,im_size):
+        for x in np.arange(0,1+width-im_width,im_width):#'1+' added to allow case when image has exactly size of one window
+            for y in np.arange(0,1+height-im_height,im_height):
                 img_data = {'object':[]}     #dictionary? key-value pair to store image data
                 head, tail = os.path.split(imagename)
                 noext, ext = os.path.splitext(tail)
                 save_name = train_dir + '/TR_' + noext + '-' + str(n_count) + '.png'
                 box_name = train_dir + '/bbox/' + noext + '-' + str(n_count) + '.png'
-                img = im[y:y+im_size,x:x+im_size,:]
+                img = im[y:y+im_height,x:x+im_width,:]
                 cv2.imwrite(save_name, img)
                 img_data['filename'] = save_name
-                img_data['width'] = im_size
-                img_data['height'] = im_size
+                img_data['width'] = im_width
+                img_data['height'] = im_height
+
                 n_count+=1
                 # use the yolov3 model to predict 80 classes on COCO
 
@@ -142,8 +136,8 @@ def main(argv):
 
                     if xmin<0: continue
                     if ymin<0: continue
-                    if xmax>im_size: continue
-                    if ymax>im_size: continue
+                    if xmax>im_width: continue
+                    if ymax>im_height: continue
                     if (xmax-xmin)<min_l: continue
                     if (xmax-xmin)>max_l: continue
                     if (ymax-ymin)<min_l: continue

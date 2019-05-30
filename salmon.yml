@@ -7,14 +7,15 @@ movie_dir: ''
 tracks_dir: "tracks/"
 
 training_type: 'specific' # generic|specific
-untrained_annotations_fname: 'annotations.yml'
+untrained_annotations_fname: 'pre-annotations.yml'
 trained_annotations_fname: 'annotations-trained.yml'
 test_videos_name_regex: "videos/*.mp4"
 
 #checked annotations are used for training:
 checked_annotations_fname: 'annotations-checked.yml' 
+
 generic:
-  train_files_regex: "stills2/*.png"
+  train_files_regex: "stills/*.png"
   weights: 'yolo-v3-coco.h5'
   weights_md5: "" #leave empty if you are retraining
   num_class: 80
@@ -23,8 +24,8 @@ generic:
 
 specific:
   train_files_regex: "stills/*.png"
-  weights: 'horses-yolo.h5'
-  weights_md5: "eea943779c713c89bab51cd94bf7ae71"
+  weights: 'trained-salmon-yoloMk4.h5'
+  weights_md5: ""
   num_class: 1
   obj_thresh: 0.2
   nms_thresh: 0.3
@@ -47,8 +48,10 @@ phase_two:
   LR: 0.5e-4
 
 LABELS: ['aoi']
-IMAGE_H: 864 #must match whatever yolo model was trained on
-IMAGE_W: 864 # or must be a multiplier of 32 in current version
+IMAGE_W: 1280 # or must be a multiplier of 32 in current version
+IMAGE_H: 704 #must match whatever yolo model was trained on
+# IMAGE_W: 640 # or must be a multiplier of 32 in current version
+# IMAGE_H: 352 #must match whatever yolo model was trained on
 MAX_L: 400
 MIN_L: 4
 
