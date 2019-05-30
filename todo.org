@@ -1,0 +1,4 @@
+* Usability improvements
+** Config read-in change
+Change it to form [program.py path_to_data path_to_config_file]
+max and min detection sizes need to be moved to a config file
