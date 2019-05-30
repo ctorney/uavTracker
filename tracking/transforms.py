@@ -36,6 +36,8 @@ def main(argv):
 
     filelist = glob.glob(video_name_regex)
 
+    scalefact=4.0
+
     for input_file in filelist:
 
         direct, ext = os.path.split(input_file)
@@ -43,8 +45,6 @@ def main(argv):
         data_file = data_dir + '/tracks/' +  noext + '_POS.txt'
         video_file = data_dir + '/tracks/' +  noext + '_TR.avi'
         tr_file = data_dir + '/tracks/' +  noext + '_MAT.npy'
-        if os.path.isfile(data_file):
-            continue
         if os.path.isfile(tr_file):
             continue
         print(input_file, video_file)
@@ -60,7 +60,7 @@ def main(argv):
         ##########################################################################
         ##          corrections for camera motion
         ##########################################################################
-        warp_mode = cv2.MOTION_AFFINE
+        warp_mode = cv2.MOTION_EUCLIDEAN
         number_of_iterations = 20
         # Specify the threshold of the increment in the correlation coefficient between two iterations
         termination_eps = 1e-6;
@@ -68,7 +68,7 @@ def main(argv):
         criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, number_of_iterations,  termination_eps)
 
         im1_gray = np.array([])
-        warp_matrix = np.eye(3, 3, dtype=np.float32) 
+        warp_matrix = np.eye(2, 3, dtype=np.float32) 
         full_warp = np.eye(3, 3, dtype=np.float32)
 
         save_warp = np.zeros((nframes,3,3,))
@@ -84,11 +84,12 @@ def main(argv):
             sys.stdout.write("[%-20s] %d%% %d/%d" % ('='*int(20*i/float(nframes)), int(100.0*i/float(nframes)), i,nframes)) 
             sys.stdout.flush()
 
+            frame2 =cv2.resize(frame,None, fx=1.0/scalefact, fy=1.0/scalefact)
             if not(im1_gray.size):
                 # enhance contrast in the image
-                im1_gray = cv2.equalizeHist(cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY))#[200:-200,200:-200])
+                im1_gray = cv2.equalizeHist(cv2.cvtColor(frame2,cv2.COLOR_BGR2GRAY))#[200:-200,200:-200])
 
-            im2_gray =  cv2.equalizeHist(cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY))#[200:-200,200:-200])
+            im2_gray =  cv2.equalizeHist(cv2.cvtColor(frame2,cv2.COLOR_BGR2GRAY))#[200:-200,200:-200])
 
 
  #           start=time.time()
@@ -98,10 +99,11 @@ def main(argv):
                 # this frame becames the last frame for the next iteration
                 im1_gray = im2_gray.copy()
             except cv2.error as e:
-                warp_matrix = np.eye(3, 3, dtype=np.float32)
+                warp_matrix = np.eye(2, 3, dtype=np.float32)
 
+            warp_matrix[:,2]=warp_matrix[:,2]*scalefact
             # all moves are accumulated into a matrix
-            full_warp = np.dot(warp_matrix,full_warp)
+            full_warp = np.dot(full_warp,np.vstack((warp_matrix,[0,0,1])))
             save_warp[i,:,:] = full_warp
   #          print('ecc ', time.time()-start)
 
