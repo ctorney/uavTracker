@@ -2,8 +2,8 @@
 TEST_RUN: 1
 DEBUG: 1
 
+data_dir: 'data/termites/'
 weights_dir: 'weights/'
-movie_dir: ''
 tracks_dir: "tracks/"
 
 training_type: 'specific' # generic|specific
@@ -14,7 +14,7 @@ test_videos_name_regex: "videos/*.mp4"
 #checked annotations are used for training:
 checked_annotations_fname: 'annotations-checked.yml' 
 generic:
-  train_files_regex: "stills2/*.png"
+  train_files_regex: "stills/*.png"
   weights: 'yolo-v3-coco.h5'
   weights_md5: "" #leave empty if you are retraining
   num_class: 80
@@ -27,11 +27,9 @@ specific:
   weights_md5: "eea943779c713c89bab51cd94bf7ae71"
   num_class: 1
   obj_thresh: 0.2
-  nms_thresh: 0.3
-  # obj_thresh: 0.005
-  # nms_thresh: 0.5
+  nms_thresh: 0.5
 
-trained_weights: 'trained-salmon-yolo.h5'
+trained_weights: 'trained-horses-yolo.h5'
 
 # Training parameters:
 # phase_one top layers, normal learning rate
@@ -40,18 +38,14 @@ FINE_TUNE_PHASE: 'phase_one'
 phase_one:
   BATCH_SIZE: 32
   EPOCHS: 500
-  LR: 5e-4
+  LR: 0.5e-4
 phase_two:
   BATCH_SIZE: 4
   EPOCHS: 100
   LR: 0.5e-4
-
 LABELS: ['aoi']
-IMAGE_H: 864 #must match whatever yolo model was trained on
-IMAGE_W: 864 # or must be a multiplier of 32 in current version
-MAX_L: 400
-MIN_L: 4
-
+IMAGE_H: 864
+IMAGE_W: 864
 NO_OBJECT_SCALE: 1.0
 OBJECT_SCALE: 5.0
 COORD_SCALE: 2.0

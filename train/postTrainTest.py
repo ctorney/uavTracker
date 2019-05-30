@@ -44,17 +44,17 @@ def bbox_iou(box1, box2):
 
 def main(argv):
     if(len(sys.argv) != 3):
-        print('Usage ./prepTrain.py [root_dir] [config.yml]')
+        print('Usage ./postTrainTest.py [data_dir] [config.yml]')
         sys.exit(1)
     #Load data
-    root_dir = argv[1]  + '/' #in case we forgot
-    print('Opening file' + root_dir + argv[2])
-    with open(root_dir + argv[2], 'r') as configfile:
+    data_dir = argv[1]  + '/' #in case we forgot '/'
+    print('Opening file' + argv[2])
+    with open(argv[2], 'r') as configfile:
         config = yaml.safe_load(configfile)
 
-    image_dir = root_dir + config['data_dir']
-    train_dir = root_dir + config['data_dir']
-    weights_dir = root_dir + config['weights_dir']
+    image_dir = data_dir
+    train_dir = data_dir
+    weights_dir = data_dir + config['weights_dir']
 
     #Training type dependent
     trained_weights = weights_dir + config['trained_weights']
@@ -70,10 +70,8 @@ def main(argv):
     with open (annotations_file, 'r') as fp:
         all_imgs = yaml.load(fp)
 
-    #TODO: those numbers should not be hardcoded
-    max_l=400
-    min_l=2
-
+    max_l=config['MAX_L'] #maximal object size in pixels
+    min_l=config['MIN_L']
     im_size=config['IMAGE_H'] #size of training imageas for yolo
 
     ##################################################

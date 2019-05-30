@@ -11,21 +11,21 @@ from yolo_tracker import yoloTracker
 
 def main(argv):
     if(len(sys.argv) != 3):
-        print('Usage ./runTracker.py [root_dir] [config.yml]')
+        print('Usage ./runTracker.py [data_dir] [config.yml]')
         sys.exit(1)
     #Load data
-    root_dir = argv[1]  + '/' #in case we forgot
-    print('Opening config file' + root_dir + argv[2])
-    with open(root_dir + argv[2], 'r') as configfile:
+    data_dir = argv[1]  + '/' #in case we forgot '/'
+    print('Opening file' + argv[2])
+    with open(argv[2], 'r') as configfile:
         config = yaml.safe_load(configfile)
 
     np.set_printoptions(suppress=True)
-    data_dir = root_dir + config['movie_dir']
+    data_dir = data_dir + config['movie_dir']
     video_name_regex = data_dir + config['test_videos_name_regex']
-    weights_dir = root_dir + config['weights_dir']
+    weights_dir = data_dir + config['weights_dir']
     # your_weights = weights_dir + config['specific_weights']
     # generic_weights = weights_dir + config['generic_weights']
-    trained_weights = weights_dir + config['trained_weights']
+    trained_weights = data_dir + config['trained_weights']
     #train_images =  glob.glob( image_dir + "*.png" )
     #video_file1 = 'out.avi'
 

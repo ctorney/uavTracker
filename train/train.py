@@ -23,12 +23,12 @@ def dprint(x,debug):
 
 def main(argv):
     if(len(sys.argv) != 3):
-        print('Usage ./train.py [root_dir] [config.yml]')
+        print('Usage ./train.py [data_dir] [config.yml]')
         sys.exit(1)
     #Load data
-    root_dir = argv[1]  + '/' #in case we forgot
-    print('Opening file' + root_dir + argv[2])
-    with open(root_dir + argv[2], 'r') as configfile:
+    data_dir = argv[1]  + '/' #in case we forgot '/'
+    print('Opening file' + argv[2])
+    with open(argv[2], 'r') as configfile:
         config = yaml.safe_load(configfile)
 
     #logging and debugging setup
@@ -36,11 +36,12 @@ def main(argv):
     TEST_RUN = config['TEST_RUN']
     print(config)
 
-    image_dir = root_dir + config['data_dir']
-    train_dir = root_dir + config['data_dir']
-    train_image_folder = root_dir + config['data_dir']
+    image_dir = data_dir
+    train_dir = data_dir
+    weights_dir = data_dir + config['weights_dir']
+    train_image_folder = data_dir
+
     training_type = config['training_type']
-    weights_dir = root_dir + config['weights_dir']
     your_weights = weights_dir + config['specific']['weights']
     md5check(config['specific']['weights_md5'],your_weights)
     generic_weights = weights_dir + config['generic']['weights']

@@ -17,19 +17,19 @@ from utils.utils import md5check
 
 def main(argv):
     if(len(sys.argv) != 3):
-        print('Usage ./prepTrain.py [root_dir] [config.yml]')
+        print('Usage ./prepTrain.py [data_dir] [config.yml]')
         sys.exit(1)
     #Load data
-    root_dir = argv[1]  + '/' #in case we forgot
-    print('Opening file' + root_dir + argv[2])
-    with open(root_dir + argv[2], 'r') as configfile:
+    data_dir = argv[1]  + '/' #in case we forgot '/'
+    print('Opening file' + argv[2])
+    with open(argv[2], 'r') as configfile:
         config = yaml.safe_load(configfile)
 
     #TODO: since this is the first file to use, maybe add a check if all directories exist?
 
-    image_dir = root_dir + config['data_dir']
-    train_dir = root_dir + config['data_dir']
-    weights_dir = root_dir + config['weights_dir']
+    image_dir = data_dir
+    train_dir = data_dir
+    weights_dir = data_dir + config['weights_dir']
 
     #Training type dependent
     training_type = config['training_type']
@@ -52,8 +52,8 @@ def main(argv):
     train_images =  glob.glob( image_dir + train_files_regex )
     annotations_file = train_dir + config['untrained_annotations_fname']
 
-    max_l=400
-    min_l=2
+    max_l=config['MAX_L'] #maximal object size in pixels
+    min_l=config['MIN_L']
 
     im_size=config['IMAGE_H'] #size of training imageas for yolo
 
