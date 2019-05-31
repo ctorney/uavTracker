@@ -1,25 +1,57 @@
 #set this up to get funny behaviour quickly. Like training for 1 epoch
-TEST_RUN: 0
+TEST_RUN: 1
+DEBUG: 0
 
-
-data_dir: 'train/blackbuck_images/'
 weights_dir: 'weights/'
-generic_train_files_regex: "" #irrelevant now
-specific_train_files_regex: "yoloTrainData/frame*.png"
-untrained_annotations_fname: ''
-trained_annotations_fname: ''
-#checked annotations are used for training:
-checked_annotations_fname: 'annotations-trained.yml' 
-generic_weights: 'yolo-v3-coco.h5'
-specific_weights: 'trained-blackbucks-yolo.h5'
-trained_weights: 'trained-blackbucks-yolo.h5'
-movie_dir: '/home/staff1/ctorney/data/blackbuck/'
+movie_dir: ''
+tracks_dir: "tracks/"
 
-#training parameters
-FINE_TUNE: 1
+training_type: 'specific' # generic|specific
+untrained_annotations_fname: 'pre-annotations.yml'
+trained_annotations_fname: 'annotations-trained.yml'
+test_videos_name_regex: "videos/*.mp4"
+
+#checked annotations are used for training:
+checked_annotations_fname: 'annotations-checked.yml' 
+
+generic:
+  train_files_regex: "yoloTrainData/*.png"
+  weights: 'yolo-v3-coco.h5'
+  weights_md5: "" #leave empty if you are retraining
+  num_class: 80
+  obj_thresh: 0.2
+  nms_thresh: 0.3
+
+specific:
+  train_files_regex: "yoloTrainData/*.png"
+  weights: 'trained-blackbucks-yolo.h5'
+  weights_md5: ""
+  num_class: 1
+  obj_thresh: 0.8
+  nms_thresh: 0.3
+
+trained_weights: 'trained-blackbucks-yoloMk2.h5'
+
+# Training parameters:
+# phase_one top layers, normal learning rate
+# phase_two all layers, small learning rate
+FINE_TUNE_PHASE: 'phase_two'
+phase_one:
+  BATCH_SIZE: 32
+  EPOCHS: 500
+  LR: 5e-4
+phase_two:
+  BATCH_SIZE: 4
+  EPOCHS: 100
+  LR: 0.5e-4
+
 LABELS: ['aoi']
-IMAGE_H: 864
-IMAGE_W: 864
+IMAGE_W: 864 
+IMAGE_H: 864 
+
+MAX_L: 100
+MIN_L: 10
+
 NO_OBJECT_SCALE: 1.0
 OBJECT_SCALE: 5.0
 COORD_SCALE: 2.0
@@ -27,4 +59,5 @@ CLASS_SCALE: 1.0
 
 #Running tracker
 display: 1
-showDetections: 0 # flag to show all detections in image
+showDetections: 1 # flag to show all detections in image
+step_frames: 1 #how many frames between each step of a tracker/downsampling

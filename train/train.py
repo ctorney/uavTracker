@@ -69,6 +69,7 @@ def main(argv):
     BATCH_SIZE = config[training_phase]['BATCH_SIZE']
     EPOCHS = config[training_phase]['EPOCHS']
     LR = config[training_phase]['LR']
+    input_weights = weights_dir + config[training_type]['weights']
 
     if TEST_RUN:
         EPOCHS=1
@@ -77,13 +78,13 @@ def main(argv):
     if training_phase=='phase_one':
         print("Fine tuning phase 1. Training top layers.")
         model = get_yolo_model(IMAGE_W,IMAGE_H, num_class=1,headtrainable=True)
-        print("Loading weights %s",generic_weights)
-        model.load_weights(generic_weights, by_name=True)
+        print("Loading weights %s",input_weights)
+        model.load_weights(input_weights, by_name=True)
     else:
         print("Fine tuning phase 2. We retrain all layers with small learning rate")
         model = get_yolo_model(IMAGE_W,IMAGE_H, num_class=1,headtrainable=True, trainable=True)
-        print("Loading weights %s",your_weights)
-        model.load_weights(your_weights)
+        print("Loading weights %s",input_weights)
+        model.load_weights(input_weights)
 
     if DEBUG:
         print(model.summary())
@@ -149,12 +150,12 @@ def main(argv):
 
 
     print('Prepared batches now we will load weights')
-    wt_file=your_weights
+    wt_file=input_weights
     optimizer = Adam(lr=LR, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
     model.compile(loss=yolo_loss, optimizer=optimizer, metrics=['accuracy'])
 
     early_stop = EarlyStopping(monitor='loss', min_delta=0.001,patience=5,mode='min',verbose=1)
-    checkpoint = ModelCheckpoint(wt_file,monitor='loss',verbose=1,save_best_only=True,mode='min',period=1)
+    checkpoint = ModelCheckpoint(trained_weights + '_checkpoint' ,monitor='loss',verbose=1,save_best_only=True,mode='min',period=1)
 
     print('Training starts.')
     start = time.time()
