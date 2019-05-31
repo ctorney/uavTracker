@@ -3,3 +3,5 @@ data/
 .*
 __pycache*
 models/*.h5
+logs/
+weights/

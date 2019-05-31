@@ -3,6 +3,18 @@ import numpy as np
 import os
 from .bbox import BoundBox, bbox_iou
 from scipy.special import expit
+import hashlib, math
+
+def md5check(md5sum,weights_file):
+    if md5sum != "":
+        read_file_hex = hashlib.md5(open(weights_file,'rb').read()).hexdigest()
+        if read_file_hex != md5sum:
+            print("ERROR: md5 checksum of the provided weights file doesn't match!")
+            sys.exit(1)
+        else:
+            print("MD5 check on your weights: correct.")
+    else:
+        print(":: Kind notice :: No md5 sum provided. Consider adding it once you have some trained weights to avoid great confusion in the future")
 
 def _sigmoid(x):
     return expit(x)
@@ -315,3 +327,14 @@ def compute_ap(recall, precision):
     # and sum (\Delta recall) * prec
     ap = np.sum((mrec[i + 1] - mrec[i]) * mpre[i + 1])
     return ap          
+
+
+"""
+Cut the image to a multiply of 32
+"""
+def makeYoloCompatible(image):
+    im_height, im_width = image.shape[:2]
+    new_width = 32 * math.floor(im_width / 32)
+    new_height = 32 * math.floor(im_height / 32)
+    im_yolo = image[0:new_height,0:new_width,:]
+    return im_yolo
