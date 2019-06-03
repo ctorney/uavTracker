@@ -16,12 +16,15 @@ To prepare transformations and a config file containing information parts of the
 ```
 python3 transforms.py ../data/blackbucks ../blackbucks.yml
 ```
+You can also prepare this file manually, an example is called `videos_template.yml`.
+
 Then you can run tracker
 ```
 python3 runTracker.py ../data/blackbucks ../blackbucks.yml
 ```
 
-The working yml file is `blackbucks.yml`
+The working yml file is `blackbucks.yml` and `rockinghorse.yml`
+You can now defined many different setups under config variable `training_setup`.
 
 ### Toy example:
 The toy example is called rockinghorse, and the yml config file for it is in the root of this repository. In it we specify all the directories relative to where the yml file is. Then we call the annotation preparation or training as follows:
