@@ -9,7 +9,6 @@ tracks_dir: "tracks/"
 training_type: 'specific' # generic|specific
 untrained_annotations_fname: 'pre-annotations.yml'
 trained_annotations_fname: 'annotations-trained.yml'
-test_videos_name_regex: "videos/*.mp4"
 
 #checked annotations are used for training:
 checked_annotations_fname: 'annotations-checked.yml' 
@@ -30,7 +29,7 @@ specific:
   obj_thresh: 0.8
   nms_thresh: 0.3
 
-trained_weights: 'trained-blackbucks-yoloMk2.h5'
+trained_weights: 'trained-blackbucks-yolo.h5'
 
 # Training parameters:
 # phase_one top layers, normal learning rate
@@ -52,12 +51,28 @@ IMAGE_H: 864
 MAX_L: 100
 MIN_L: 10
 
+#TRACKING:
+tracking_setup: "mk1"
+
+mk1:
+  videos_name_regex: "videos/*.avi" #for use by transform.py which also preps the following yml file
+  videos_list: "videos.yml"
+  weights: 'trained-blackbucks-yolo.h5'
+  weights_md5: "25a868c1961806fb5faf0f2a80a1454d"
+  obj_thresh: 0.8
+  nms_thresh: 0.3
+  max_age: 30
+  track_thresh: 0.3
+  init_thresh: 0.8
+  init_nms: 0.0
+  link_iou: 0.1
+  step_frames: 15 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
+
 NO_OBJECT_SCALE: 1.0
 OBJECT_SCALE: 5.0
 COORD_SCALE: 2.0
 CLASS_SCALE: 1.0
 
 #Running tracker
-display: 1
+save_output: 1
 showDetections: 1 # flag to show all detections in image
-step_frames: 1 #how many frames between each step of a tracker/downsampling
