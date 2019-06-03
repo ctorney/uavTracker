@@ -118,8 +118,8 @@ def main(argv):
         print("videos_info")
         print(videos_info)
 
-    print("overwriting existing file" + videos_list)
-    with open(videos_list, 'w') as handle:
+    print("appending existing file" + videos_list)
+    with open(videos_list, 'a') as handle:
         yaml.dump(videos_info, handle)
 
 
