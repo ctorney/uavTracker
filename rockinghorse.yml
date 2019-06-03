@@ -3,8 +3,9 @@ TEST_RUN: 1
 DEBUG: 1
 
 data_dir: 'data/rockinghorse/'
-weights_dir: 'data/rockinghorse/'
+weights_dir: 'weights/'
 tracks_dir: "tracks/"
+movie_dir: ''
 
 training_type: 'specific' # generic|specific
 untrained_annotations_fname: 'annotations.yml'
@@ -50,12 +51,28 @@ IMAGE_W: 864
 MAX_L: 400
 MIN_L: 4
 
+#TRACKING:
+tracking_setup: "mk1"
+
+mk1:
+  videos_name_regex: "videos/*.mp4" #for use by transform.py which also preps the following yml file
+  videos_list: "horse_videos.yml"
+  weights: 'horses-yolo.h5'
+  weights_md5: "eea943779c713c89bab51cd94bf7ae71"
+  obj_thresh: 0.8
+  nms_thresh: 0.5
+  max_age: 30
+  track_thresh: 0.3
+  init_thresh: 0.8
+  init_nms: 0.0
+  link_iou: 0.1
+  step_frames: 5 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
+
 NO_OBJECT_SCALE: 1.0
 OBJECT_SCALE: 5.0
 COORD_SCALE: 2.0
 CLASS_SCALE: 1.0
 
 #Running tracker
-display: 1
+save_output: 1
 showDetections: 1 # flag to show all detections in image
-step_frames: 1 #how many frames between each step of a tracker/downsampling
