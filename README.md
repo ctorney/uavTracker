@@ -11,6 +11,21 @@ Animal tracking from overhead using YOLO
 
    Step 2 is to train the model with the created training samples. This is done with train.py. We use freeze lower levels and use pretrained weights, then fine tune the whole network
 
+### Running tracker
+To prepare transformations and a config file containing information parts of the clips which needs to be tracker run 
+```
+python3 transforms.py ../data/blackbucks ../blackbucks.yml
+```
+You can also prepare this file manually, an example is called `videos_template.yml`.
+
+Then you can run tracker
+```
+python3 runTracker.py ../data/blackbucks ../blackbucks.yml
+```
+
+The working yml file is `blackbucks.yml` and `rockinghorse.yml`
+You can now defined many different setups under config variable `training_setup`.
+
 ### Toy example:
 The toy example is called rockinghorse, and the yml config file for it is in the root of this repository. In it we specify all the directories relative to where the yml file is. Then we call the annotation preparation or training as follows:
 

@@ -34,7 +34,7 @@ def main(argv):
     #Training type dependent
     training_type = config['training_type']
     print("Training type is " + training_type)
-    print(config[training_type])
+    print(yaml.dump(config[training_type]))
     your_weights = weights_dir + config[training_type]['weights']
 
 
