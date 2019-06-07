@@ -5,3 +5,5 @@ __pycache*
 models/*.h5
 logs/
 weights/
+tracks/
+videos/

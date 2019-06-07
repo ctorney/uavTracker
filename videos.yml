@@ -1,0 +1,5 @@
+- filename: "videos/04MarchMor2_02_03.avi"
+  transform: "tracks/04MarchMor2_02_03_MAT.npy"
+  periods:
+  - {start: 14400, stop: 23400, clipname: "04MarchMor2_02_03_clip1"}
+
