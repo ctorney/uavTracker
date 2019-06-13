@@ -24,8 +24,9 @@ generic:
 
 specific:
   train_files_regex: "stills/*.png"
-  weights: 'trained-salmon-yoloMk4.h5'
-  weights_md5: ""
+  # weights: 'trained-salmon-yoloMk4.h5'
+  weights: 'yolo-v3-coco.h5'
+  weights_md5: "26cf8e8b5ba9d9d4a3778f9747e3407a" #leave empty if you are retraining
   num_class: 1
   obj_thresh: 0.2
   nms_thresh: 0.3
@@ -41,7 +42,7 @@ FINE_TUNE_PHASE: 'phase_one'
 phase_one:
   BATCH_SIZE: 32
   EPOCHS: 500
-  LR: 5e-4
+  LR: 0.5e-3
 phase_two:
   BATCH_SIZE: 4
   EPOCHS: 100
