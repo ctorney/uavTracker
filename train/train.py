@@ -105,7 +105,7 @@ def main(argv):
     # valid_imgs = list(itemgetter(*indexes[:num_val].tolist())(all_imgs))
     # valid_batch = BatchGenerator(valid_imgs, labels= LABELS, jitter=False, im_dir= train_image_folder)
     train_imgs = list(itemgetter(*indexes[num_val:].tolist())(all_imgs))
-    train_batch = BatchGenerator(instances= train_imgs,labels= LABELS,batch_size= BATCH_SIZE,shuffle= True,jitter= 0.0,im_dir= train_image_folder)
+    train_batch = BatchGenerator(instances= train_imgs,labels= LABELS,batch_size= BATCH_SIZE,shuffle= True,jitter= 0.0,im_dir= train_image_folder, net_h=IMAGE_H, net_w=IMAGE_W)
 
 
     def yolo_loss(y_true, y_pred):
