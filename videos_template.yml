@@ -1,9 +1,9 @@
 - filename: "videos/25March_eve_01_1.avi"
-  transform: "tracks/25March_eve_01_1_MAT.npy"
+  transforms: "tracks/25March_eve_01_1_MAT.npy"
   periods:
   - {start: 0, stop: 20, clipname: "clip1"}
   - {start: 21, stop: 23, clipname: "another_clip"}
 - filename: "videos/25March_eve_05_4.avi"
-  transform: ""
+  transforms: ""
   periods:
   - {start: 0, stop: 0}
