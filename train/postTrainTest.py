@@ -72,11 +72,12 @@ def main(argv):
 
     max_l=config['MAX_L'] #maximal object size in pixels
     min_l=config['MIN_L']
-    im_size=config['IMAGE_H'] #size of training imageas for yolo
+    im_size_h=config['IMAGE_H'] #size of training imageas for yolo
+    im_size_w=config['IMAGE_W'] #size of training imageas for yolo
 
     ##################################################
     print("Loading YOLO models")
-    yolov3 = get_yolo_model(im_size,im_size,num_class,trainable=False)
+    yolov3 = get_yolo_model(im_size_w,im_size_h,num_class,trainable=False)
     yolov3.load_weights(trained_weights,by_name=True) #TODO is by_name necessary here?
     print("YOLO models loaded, my dear.")
     ########################################
@@ -154,8 +155,8 @@ def main(argv):
 
                 if xmin<0: continue
                 if ymin<0: continue
-                if xmax>im_size: continue
-                if ymax>im_size: continue
+                if xmax>im_size_w: continue
+                if ymax>im_size_h: continue
                 if (xmax-xmin)<min_l: continue
                 if (xmax-xmin)>max_l: continue
                 if (ymax-ymin)<min_l: continue
