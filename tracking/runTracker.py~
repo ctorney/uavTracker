@@ -117,7 +117,7 @@ def main(argv):
     #     full_warp = np.eye(3, 3, dtype=np.float32)
 
             ###::. Loading Transformations .::###
-            tr_file = data_dir + input_file_dict["transforms"]
+            tr_file = data_dir + input_file_dict["transform"]
             print("Loading transformations from " + tr_file)
             if os.path.isfile(tr_file):
                 save_warp = np.load(tr_file)

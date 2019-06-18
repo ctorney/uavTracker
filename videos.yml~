@@ -1,5 +1,194 @@
-- filename: "videos/04MarchMor2_02_03.avi"
-  transform: "tracks/04MarchMor2_02_03_MAT.npy"
+- filename: "videos/20MarchEve_02_03.avi"
+  transform: "tracks/20MarchEve_02_03_MAT.npy"
+  periods:
+  - {start: 12600, stop: 21600, clipname: ""}
+
+- filename: "videos/20MarchEve_04_05.avi"
+  transform: "tracks/20MarchEve_04_05_MAT.npy"
+  periods:
+  - {start: 11550, stop: 20550, clipname: ""}
+
+- filename: "videos/20MarchEve_06_07.avi"
+  transform: "tracks/20MarchEve_06_07_MAT.npy"
+  periods:
+  - {start: 9000, stop: 18000, clipname: ""}
+
+- filename: "videos/20MarchMor_05_06.avi"
+  transform: "tracks/20MarchMor_05_06_MAT.npy"
+  periods:
+  - {start: 12600, stop: 21600, clipname: ""}
+
+- filename: "videos/20MarchMor_07_08.avi"
+  transform: "tracks/20MarchMor_07_08_MAT.npy"
+  periods:
+  - {start: 10050, stop: 19050, clipname: ""}
+
+- filename: "videos/20MarchMor_09_10.avi"
+  transform: "tracks/20MarchMor_09_10_MAT.npy"
+  periods:
+  - {start: 10800, stop: 19800, clipname: ""}
+
+- filename: "videos/21MarchEve_01_02.avi"
+  transform: "tracks/21MarchEve_01_02_MAT.npy"
+  periods:
+  - {start: 16200, stop: 25200, clipname: ""}
+
+- filename: "videos/21MarchEve_03_04.avi"
+  transform: "tracks/21MarchEve_03_04_MAT.npy"
+  periods:
+  - {start: 9300, stop: 18000, clipname: ""}
+
+- filename: "videos/21MarchEve_05_06.avi"
+  transform: "tracks/21MarchEve_05_06_MAT.npy"
+  periods:
+  - {start: 12600, stop: 21600, clipname: ""}
+
+- filename: "videos/21MarchMor_02_03.avi"
+  transform: "tracks/21MarchMor_02_03_MAT.npy"
+  periods:
+  - {start: 11700, stop: 20700, clipname: ""}
+
+- filename: "videos/21MarchMor_04_05.avi"
+  transform: "tracks/21MarchMor_04_05_MAT.npy"
+  periods:
+  - {start: 12600, stop: 21600, clipname: ""}
+
+- filename: "videos/21MarchMor_06_07.avi"
+  transform: "tracks/21MarchMor_06_07_MAT.npy"
   periods:
   - {start: 14400, stop: 23400, clipname: ""}
 
+- filename: "videos/22MarchEve_01_02.avi"
+  transform: "tracks/22MarchEve_01_02_MAT.npy"
+  periods:
+  - {start: 5850, stop: 11700, clipname: ""}
+
+- filename: "videos/22MarchEve_03_04.avi"
+  transform: "tracks/22MarchEve_03_04_MAT.npy"
+  periods:
+  - {start: 11700, stop: 20700, clipname: ""}
+
+- filename: "videos/22MarchEve_05_06.avi"
+  transform: "tracks/22MarchEve_05_06_MAT.npy"
+  periods:
+  - {start: 13500, stop: 22500, clipname: ""}
+
+- filename: "videos/22MarchMor_01_02.avi"
+  transform: "tracks/22MarchMor_01_02_MAT.npy"
+  periods:
+  - {start: 11250, stop: 20250, clipname: ""}
+
+- filename: "videos/22MarchMor_03_04.avi"
+  transform: "tracks/22MarchMor_03_04_MAT.npy"
+  periods:
+  - {start: 14850, stop: 23400, clipname: ""}
+
+- filename: "videos/22MarchMor_08_09.avi"
+  transform: "tracks/22MarchMor_08_09_MAT.npy"
+  periods:
+  - {start: 10800, stop: 19800, clipname: ""}
+
+- filename: "videos/23MarchEve_09_10.avi"
+  transform: "tracks/23MarchEve_09_10_MAT.npy"
+  periods:
+  - {start: 7200, stop: 16200, clipname: ""}
+
+- filename: "videos/23MarchMor_01_02.avi"
+  transform: "tracks/23MarchMor_01_02_MAT.npy"
+  periods:
+  - {start: 7200, stop: 16200, clipname: ""}
+
+- filename: "videos/23MarchMor_06_07.avi"
+  transform: "tracks/23MarchMor_06_07_MAT.npy"
+  periods:
+  - {start: 10800, stop: 19800, clipname: ""}
+
+- filename: "videos/23MarchMor_08_09.avi"
+  transform: "tracks/23MarchMor_08_09_MAT.npy"
+  periods:
+  - {start: 9900, stop: 18900, clipname: ""}
+
+- filename: "videos/24MarchEve_01_02.avi"
+  transform: "tracks/24MarchEve_01_02_MAT.npy"
+  periods:
+  - {start: 13500, stop: 22500, clipname: ""}
+
+- filename: "videos/24MarchEve_06_07.avi"
+  transform: "tracks/24MarchEve_06_07_MAT.npy"
+  periods:
+  - {start: 7500, stop: 16500, clipname: ""}
+
+- filename: "videos/24MarchMor_01_02.avi"
+  transform: "tracks/24MarchMor_01_02_MAT.npy"
+  periods:
+  - {start: 9000, stop: 10800, clipname: ""}
+
+- filename: "videos/24MarchMor_04_05.avi"
+  transform: "tracks/24MarchMor_04_05_MAT.npy"
+  periods:
+  - {start: 13500, stop: 22500, clipname: ""}
+
+- filename: "videos/24MarchMor_06_07.avi"
+  transform: "tracks/24MarchMor_06_07_MAT.npy"
+  periods:
+  - {start: 8100, stop: 17100, clipname: ""}
+
+- filename: "videos/25MarchEve_01_02.avi"
+  transform: "tracks/25MarchEve_01_02_MAT.npy"
+  periods:
+  - {start: 11250, stop: 20250, clipname: ""}
+
+- filename: "videos/25MarchEve_09_10.avi"
+  transform: "tracks/25MarchEve_09_10_MAT.npy"
+  periods:
+  - {start: 14400, stop: 23400, clipname: ""}
+
+- filename: "videos/25MarchMor_01_02.avi"
+  transform: "tracks/25MarchMor_01_02_MAT.npy"
+  periods:
+  - {start: 15750, stop: 24750, clipname: ""}
+
+- filename: "videos/26MarchEve_04_05.avi"
+  transform: "tracks/26MarchEve_04_05_MAT.npy"
+  periods:
+  - {start: 10800, stop: 19800, clipname: ""}
+
+- filename: "videos/26MarchEve_06_07.avi"
+  transform: "tracks/26MarchEve_06_07_MAT.npy"
+  periods:
+  - {start: 10350, stop: 19350, clipname: ""}
+
+- filename: "videos/27MarchEve_03_04.avi"
+  transform: "tracks/27MarchEve_03_04_MAT.npy"
+  periods:
+  - {start: 10800, stop: 19800, clipname: ""}
+
+- filename: "videos/27MarchMor_03_04.avi"
+  transform: "tracks/27MarchMor_03_04_MAT.npy"
+  periods:
+  - {start: 13050, stop: 19050, clipname: ""}
+
+- filename: "videos/27MarchMor_06_07.avi"
+  transform: "tracks/27MarchMor_06_07_MAT.npy"
+  periods:
+  - {start: 11250, stop: 19250, clipname: ""}
+
+- filename: "videos/28MarchEve_01_02.avi"
+  transform: "tracks/28MarchEve_01_02_MAT.npy"
+  periods:
+  - {start: 13050, stop: 22050, clipname: ""}
+
+- filename: "videos/28MarchEve_03_04.avi"
+  transform: "tracks/28MarchEve_03_04_MAT.npy"
+  periods:
+  - {start: 10800, stop: 19800, clipname: ""}
+
+- filename: "videos/28MarchEve_05_06.avi"
+  transform: "tracks/28MarchEve_05_06_MAT.npy"
+  periods:
+  - {start: 18000, stop: 25200, clipname: ""}
+
+- filename: "videos/28MarchMor_01_02.avi"
+  transform: "tracks/28MarchMor_01_02_MAT.npy"
+  periods:
+  - {start: 14400, stop: 23400, clipname: ""}
