@@ -1,19 +1,33 @@
-#set this up to get funny behaviour quickly. Like training for 1 epoch
-TEST_RUN: 1
-DEBUG: 0
-
+######
+##DiR
+#####
+#the following directories
 weights_dir: 'weights/'
-movie_dir: ''
+tracks_dir: "tracks/"
+movie_dir: 'videos/'
 tracks_dir: "tracks/"
 
-training_type: 'specific' # generic|specific
-untrained_annotations_fname: 'pre-annotations.yml'
+#output directories, will be created if don't exist:
+preped_images_dir: 'input_imgs/'
+bbox_images_dir: 'extracted_bboxes/'
+groundtruths_dir: 'groundtruths/'
+tracks_dir: 'tracks/'
+predictions_dir: 'predictions/'
+annotations_dir: 'annotations/'
+
+pretrained_annotations_fname: 'annotations.yml'
 trained_annotations_fname: 'annotations-trained.yml'
+testing_annotations_fname: 'annotations-testing.yml'
+test_videos_name_regex: "*.mp4"
+checked_annotations_fname: 'annotations-checked.yml' #checked annotations are used for training
 
-#checked annotations are used for training:
-checked_annotations_fname: 'annotations-checked.yml' 
+##########
+# TRAINING
+##########
+#You can specify multiple training setups:
+training_setup: 'from_bb'
 
-generic:
+from_yolo:
   train_files_regex: "yoloTrainData/*.png"
   weights: 'yolo-v3-coco.h5'
   weights_md5: "" #leave empty if you are retraining
@@ -21,7 +35,15 @@ generic:
   obj_thresh: 0.2
   nms_thresh: 0.3
 
-specific:
+from_horses:
+  train_files_regex: "yoloTrainData/*.png"
+  weights: 'horses-yolo.h5'
+  weights_md5: ""
+  num_class: 1
+  obj_thresh: 0.8
+  nms_thresh: 0.3
+
+from_bb:
   train_files_regex: "yoloTrainData/*.png"
   weights: 'trained-blackbucks-yolo.h5'
   weights_md5: ""
@@ -34,7 +56,6 @@ trained_weights: 'trained-blackbucks-yolo.h5'
 # Training parameters:
 # phase_one top layers, normal learning rate
 # phase_two all layers, small learning rate
-FINE_TUNE_PHASE: 'phase_two'
 phase_one:
   BATCH_SIZE: 32
   EPOCHS: 500
@@ -47,7 +68,6 @@ phase_two:
 LABELS: ['aoi']
 IMAGE_W: 864 
 IMAGE_H: 864 
-
 MAX_L: 100
 MIN_L: 10
 
@@ -55,8 +75,9 @@ MIN_L: 10
 tracking_setup: "mk1"
 
 mk1:
-  videos_name_regex: "videos/*.avi" #for use by transform.py which also preps the following yml file
+  videos_name_regex: "videos/*.mp4" #for use by transform.py which also preps the following yml file
   videos_list: "videos.yml"
+  videos_fps: 30
   weights: 'trained-blackbucks-yolo.h5'
   weights_md5: "25a868c1961806fb5faf0f2a80a1454d"
   obj_thresh: 0.8
