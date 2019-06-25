@@ -15,4 +15,3 @@ $WHICH_PYTHON runTracker.py --config ../rockinghorse.yml --ddir ../rockinghorse
 echo "::>- O O -<::>- O O -<::>- O O -<::>- O O -<::>- O O -<::>- O O -<::"
 echo "It all seem to be working... Testing script completed. Ufff!"
 echo "::>- O O -<::>- O O -<::>- O O -<::>- O O -<::>- O O -<::>- O O -<::"
-return 0
