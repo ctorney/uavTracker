@@ -97,7 +97,7 @@ def main(argv):
             ##########################################################################
             if save_output:
                 fourCC = cv2.VideoWriter_fourcc('X','V','I','D')
-                out = cv2.VideoWriter(video_file, fourCC, 5, S, True)
+                out = cv2.VideoWriter(video_file, fourCC, 30, S, True)  ##Set required FPS for the output video, changong to 30 on 18/06/2019
 
 
             ##########################################################################

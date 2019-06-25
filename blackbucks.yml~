@@ -66,7 +66,7 @@ mk1:
   init_thresh: 0.8
   init_nms: 0.0
   link_iou: 0.1
-  step_frames: 1 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
+  step_frames: 15 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
 
 NO_OBJECT_SCALE: 1.0
 OBJECT_SCALE: 5.0
