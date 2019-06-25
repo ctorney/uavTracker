@@ -347,8 +347,10 @@ def pleaseCheckMyDirectories(config, data_dir):
     predictions_dir = data_dir + config['predictions_dir']
     annotations_dir = data_dir + config['annotations_dir']
     bbox_images_dir = data_dir + config['bbox_images_dir']
+    tracks_dir = data_dir + config['tracks_dir']
+
     dirs = [
-        preped_images_dir, groundtruths_dir, predictions_dir, annotations_dir, bbox_images_dir
+        preped_images_dir, groundtruths_dir, predictions_dir, annotations_dir, bbox_images_dir, tracks_dir
     ]
 
     for dir in dirs:

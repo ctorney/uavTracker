@@ -17,8 +17,6 @@ def main(args):
     tracking_setup = config["tracking_setup"]
     np.set_printoptions(suppress=True)
 
-    data_dir = root_dir + config['movie_dir']
-
     videos_name_regex_short = config[tracking_setup]['videos_name_regex']
     videos_list = data_dir + config[tracking_setup]['videos_list']
     videos_info = []  #this list will be saved into videos_list file

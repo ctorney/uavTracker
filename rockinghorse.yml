@@ -11,6 +11,7 @@ movie_dir: 'videos/'
 preped_images_dir: 'input_imgs/'
 bbox_images_dir: 'extracted_bboxes/'
 groundtruths_dir: 'groundtruths/'
+tracks_dir: 'tracks/'
 predictions_dir: 'predictions/'
 annotations_dir: 'annotations/'
 
@@ -69,7 +70,10 @@ tracking_setup: "mk1"
 
 mk1:
   videos_name_regex: "videos/*.mp4" #for use by transform.py which also preps the following yml file
-  videos_list: "horse_videos.yml"
+  videos_fps: 30
+  link_iou: 0.1
+  step_frames: 5 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
+  videos_list: "horse_videos.yml" #after transforms.py was run this is where video list live
   weights: 'horses-yolo.h5'
   weights_md5: "eea943779c713c89bab51cd94bf7ae71"
   obj_thresh: 0.8
@@ -78,8 +82,6 @@ mk1:
   track_thresh: 0.3
   init_thresh: 0.8
   init_nms: 0.0
-  link_iou: 0.1
-  step_frames: 5 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
 
 NO_OBJECT_SCALE: 1.0
 OBJECT_SCALE: 5.0
