@@ -188,7 +188,7 @@ def main(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Detect objects in images using a pre-trained model, and prepare images for the further processing. \n \n  This program is used to pre-annotate images with a pre-trained network (for instance yolo weights). It creates necessary output directories and cuts your images to a given size and writes them to disk.',epilog='Any issues and clarifications: github.com/ctorney/uavtracker/issues')
+    parser = argparse.ArgumentParser(description='Fine tune a yolo model. You have to run phase_one, or phase_one followed by phase_two. So basically you will run this program twice with different value for --phase flag. Good luck!',epilog='Any issues and clarifications: github.com/ctorney/uavtracker/issues')
     parser.add_argument('--config', '-c', required=True, nargs=1, help='Your yml config file')
     parser.add_argument('--ddir', '-d', required=True, nargs=1, help='Root of your data directory' )
     parser.add_argument('--debug', default=False, action='store_true',
