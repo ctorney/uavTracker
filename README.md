@@ -1,7 +1,7 @@
 # uavTracker
 Animal tracking from overhead using YOLO
 
-To check if it works run the following script which downloads some pretrained model and data and makes a test-run at re-training and tracking. It is interactive so at some point expect to annotate files
+To check if it works run the following script which downloads some pretrained model and data and makes a test-run at re-training and tracking. It is interactive so at some point expect to annotate files - if you don't have X-server then you might need to remove this step and manually create a checked annotations file as per `rockinghorse.yml` config
 ```
 export WHICH_PYTHON=python3 && ./test.sh 
 ```

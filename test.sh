@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-wget https://www.dropbox.com/s/fredcwheohguypa/rockinghorse.zip?dl=0
+wget https://www.dropbox.com/s/fredcwheohguypa/rockinghorse.zip
 unzip rockinghorse.zip
 cd train
 $WHICH_PYTHON prepTrain.py --config ../rockinghorse.yml --ddir ../rockinghorse
