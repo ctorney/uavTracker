@@ -139,10 +139,13 @@ def main(argv):
                 sys.stdout.flush()
 
                 #jump frames
-                if ((i%step_frames)!=0) and (i < period["start"]):
-                    continue
+                #jump frames
                 if (i > period["stop"]) and (period["stop"] != 0):
                     break
+                if (i < period["start"]):
+                    continue
+                if ((i - period["start"]) % step_frames):
+                    continue
 
 
             #   if not(im1_gray.size):
