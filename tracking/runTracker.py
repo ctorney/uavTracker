@@ -156,8 +156,9 @@ def main(args):
                 #avoid crash when matrix is singular (det is 0 and cannot invert, crashes instead, joy!
                 try:
                     inv_warp = np.linalg.inv(full_warp)
-                except LinAlgErr as err:
-                    inv_warp = None
+                except:
+                    print('Couldn\'t invert matrix, not transforming this frame')
+                    inv_warp = np.linalg.inv(np.eye(3, 3, dtype=np.float32))
 
 
                 # Run detector
