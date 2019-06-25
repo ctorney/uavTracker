@@ -225,7 +225,7 @@ def main(argv):
                         cv2.putText(frame, str(int(track[4])),(int(minx)-5, int(miny)-5),0, 5e-3 * 200, (r,g,b),2)
 
                     results.append([frame_idx, track[4], bbox[0], bbox[1], bbox[2], bbox[3]])
-                frame_idx+=1
+                frame_idx=i
 
                 if save_output:
             #       cv2.imshow('', frame)
