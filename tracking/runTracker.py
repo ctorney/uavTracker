@@ -140,7 +140,14 @@ def main(args):
                 sys.stdout.flush()
 
                 #jump frames
-                if i > period["stop"] and period["stop"] != 0:
+                if (i > period["stop"] and period["stop"] != 0) or not ret:
+                    print("::Hey, hey! :: The end of the defined period, skipping to the next file or period (or maybe the file was shorter than you think")
+                    print("nothing read from file: ")
+                    sys.stdout.write('It is ')
+                    sys.stdout.write(str( not ret))
+                    sys.stdout.write(' that it is the end of the file :)')
+                    sys.stdout.flush()
+                    cap.release()
                     break
                 if i < period["start"]:
                     continue
@@ -159,7 +166,6 @@ def main(args):
                 except:
                     print('Couldn\'t invert matrix, not transforming this frame')
                     inv_warp = np.linalg.inv(np.eye(3, 3, dtype=np.float32))
-
 
                 # Run detector
                 detections = detector.create_detections(
