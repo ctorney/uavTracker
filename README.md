@@ -1,6 +1,10 @@
 # uavTracker
 Animal tracking from overhead using YOLO
 
+To check if it works run the following script which downloads some pretrained model and data and makes a test-run at re-training and tracking. It is interactive so at some point expect to annotate files
+```
+export WHICH_PYTHON=python3 && ./test.sh 
+```
 
 ## Steps to create the tracker are 
 ### 1. Training
@@ -23,11 +27,12 @@ optional arguments:
 ```
   
   * Once candidate detections are created the annotate.py can be used to filter out errors or objects that aren't of interest.
+  
 ```
 usage: annotate.py [-h] --config CONFIG --ddir DDIR [--resume]
                    [--from-scratch]
 
-Annotate or correct annotations from non-domain specific model.
+Annotate or correct annotations from non-domain specific model.To remove annotation double left click. To add one, Middle Click and move. \'c\' accepts changes and goes to the next image, \'q\' ends the session and saves files done so far (resume option is used to continue this work).
 
 optional arguments:
   -h, --help            show this help message and exit

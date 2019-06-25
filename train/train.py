@@ -74,7 +74,6 @@ def main(args):
             "Fine tuning phase 2. We retrain all layers with small learning rate"
         )
         pretrained_weights = weights_dir + config['phase_one']['trained_weights']
-        md5check(config['specific']['weights_md5'], pretrained_weights)
         model = get_yolo_model(
             IMAGE_W, IMAGE_H, num_class=1, headtrainable=True, trainable=True)
         print("Loading weights %s", pretrained_weights)
@@ -102,7 +101,7 @@ def main(args):
         batch_size=BATCH_SIZE,
         shuffle=True,
         jitter=0.0,
-        im_dir=train_image_folder,
+        im_dir=preped_images_dir,
         net_h=IMAGE_H,
         net_w=IMAGE_W)
 

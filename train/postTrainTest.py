@@ -51,21 +51,25 @@ def main(args):
     with open(args.config[0], 'r') as configfile:
         config = yaml.safe_load(configfile)
 
-    image_dir = data_dir
+    image_dir = data_dir + config['preped_images_dir']
     train_dir = data_dir
     weights_dir = data_dir + config['weights_dir']
+    groundtruths_dir = data_dir + config['groundtruths_dir']
+    predictions_dir = data_dir + config['predictions_dir']
 
     #Training type dependent
-    trained_weights = weights_dir + config['trained_weights']
+    tracking_setup = config["tracking_setup"]
+    trained_weights = weights_dir + config[tracking_setup]['weights']
 
     #based on get_yolo_model defaults and previous makTrain.py files
-    num_class = config['specific']['num_class']
-    obj_thresh = config['specific']['obj_thresh']
-    nms_thresh = config['specific']['nms_thresh']
+    num_class = config[tracking_setup]['num_class']
+    obj_thresh = config[tracking_setup]['obj_thresh']
+    nms_thresh = config[tracking_setup]['nms_thresh']
 
-    list_of_train_files = config['checked_annotations_fname']
+    annotations_dir = data_dir + config['annotations_dir']
+    list_of_train_files = annotations_dir + config['checked_annotations_fname']
+    annotations_file = annotations_dir + config['checked_annotations_fname']
 
-    annotations_file = train_dir + config['untrained_annotations_fname']
     with open(annotations_file, 'r') as fp:
         all_imgs = yaml.load(fp)
 
@@ -76,6 +80,8 @@ def main(args):
 
     ##################################################
     print("Loading YOLO models")
+    print("We will use the following model for testing: ")
+    print(trained_weights)
     yolov3 = get_yolo_model(im_size_w, im_size_h, num_class, trainable=False)
     yolov3.load_weights(
         trained_weights, by_name=True)  #TODO is by_name necessary here?
@@ -89,8 +95,8 @@ def main(args):
         #remove extension from basename:
         name_seed_split = basename.split('.')[:-1]
         name_seed = '.'.join(name_seed_split)
-        fname_gt = image_dir + "/groundtruths/" + name_seed + ".txt"
-        fname_pred = image_dir + "/predictions/" + name_seed + ".txt"
+        fname_gt = groundtruths_dir + name_seed + ".txt"
+        fname_pred = predictions_dir + name_seed + ".txt"
 
         img_data = {'object': []}
         img_data['filename'] = basename

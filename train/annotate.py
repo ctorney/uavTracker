@@ -194,7 +194,7 @@ def main(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Annotate or correct annotations from non-domain specific model.',epilog='Any issues and clarifications: github.com/ctorney/uavtracker/issues')
+    parser = argparse.ArgumentParser(description='Annotate or correct annotations from non-domain specific model. To remove annotation double left click. To add one, Middle Click and move. \'c\' accepts changes and goes to the next image, \'q\' ends the session and saves files done so far (resume option is used to continue this work).',epilog='Any issues and clarifications: github.com/ctorney/uavtracker/issues')
     parser.add_argument('--config', '-c', required=True, nargs=1, help='Your yml config file')
     parser.add_argument('--ddir', '-d', required=True, nargs=1, help='Root of your data directory' )
     parser.add_argument('--resume', '-r', default=False, action='store_true',
