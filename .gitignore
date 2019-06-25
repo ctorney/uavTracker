@@ -5,3 +5,8 @@ __pycache*
 models/*.h5
 logs/
 weights/
+rockinghorse
+rockinghorse.zip
+tracks/
+videos/
+*~

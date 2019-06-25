@@ -338,3 +338,22 @@ def makeYoloCompatible(image):
     new_height = 32 * math.floor(im_height / 32)
     im_yolo = image[0:new_height,0:new_width,:]
     return im_yolo
+
+def pleaseCheckMyDirectories(config, data_dir):
+    print('Checking if all output directories exist alright')
+
+    preped_images_dir = data_dir + config['preped_images_dir']
+    groundtruths_dir = data_dir + config['groundtruths_dir']
+    predictions_dir = data_dir + config['predictions_dir']
+    annotations_dir = data_dir + config['annotations_dir']
+    bbox_images_dir = data_dir + config['bbox_images_dir']
+    tracks_dir = data_dir + config['tracks_dir']
+
+    dirs = [
+        preped_images_dir, groundtruths_dir, predictions_dir, annotations_dir, bbox_images_dir, tracks_dir
+    ]
+
+    for dir in dirs:
+        if not os.path.isdir(dir):
+            print('Creating ' + dir)
+            os.mkdir(dir)

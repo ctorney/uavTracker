@@ -1,20 +1,35 @@
-#set this up to get funny behaviour quickly. Like training for 1 epoch
-TEST_RUN: 1
-DEBUG: 1
-
+######
+##DiR
+#####
+#the following directories
 data_dir: 'data/rockinghorse/'
 weights_dir: 'weights/'
 tracks_dir: "tracks/"
-movie_dir: ''
+movie_dir: 'videos/'
 
-training_type: 'specific' # generic|specific
-untrained_annotations_fname: 'annotations.yml'
+#output directories, will be created if don't exist:
+preped_images_dir: 'input_imgs/'
+bbox_images_dir: 'extracted_bboxes/'
+groundtruths_dir: 'groundtruths/'
+tracks_dir: 'tracks/'
+predictions_dir: 'predictions/'
+annotations_dir: 'annotations/'
+
+pretrained_annotations_fname: 'annotations.yml'
 trained_annotations_fname: 'annotations-trained.yml'
-test_videos_name_regex: "videos/*.mp4"
+testing_annotations_fname: 'annotations-testing.yml'
+test_videos_name_regex: "*.mp4"
 
 #checked annotations are used for training:
 checked_annotations_fname: 'annotations-checked.yml' 
-generic:
+
+##########
+# TRAINING
+##########
+#You can specify multiple training setups:
+training_setup: 'training_2' 
+
+training_1:
   train_files_regex: "stills/*.png"
   weights: 'yolo-v3-coco.h5'
   weights_md5: "26cf8e8b5ba9d9d4a3778f9747e3407a" #leave empty if you are retraining
@@ -22,28 +37,28 @@ generic:
   obj_thresh: 0.2
   nms_thresh: 0.3
 
-specific:
-  train_files_regex: "DEP*.png"
+training_2:
+  train_files_regex: "stills/*.png"
   weights: 'horses-yolo.h5'
   weights_md5: "eea943779c713c89bab51cd94bf7ae71"
   num_class: 1
   obj_thresh: 0.7
   nms_thresh: 0.5
 
-trained_weights: 'trained-horses-yolo.h5'
 
 # Training parameters:
 # phase_one top layers, normal learning rate
 # phase_two all layers, small learning rate
-FINE_TUNE_PHASE: 'phase_one'
 phase_one:
   BATCH_SIZE: 32
   EPOCHS: 500
   LR: 0.5e-4
+  trained_weights: 'trained-rockinghorse_p1.h5'
 phase_two:
   BATCH_SIZE: 4
   EPOCHS: 100
   LR: 0.5e-4
+  trained_weights: 'trained-rockinghorse_p2.h5'
 
 LABELS: ['aoi']
 IMAGE_H: 864
@@ -51,22 +66,24 @@ IMAGE_W: 864
 MAX_L: 400
 MIN_L: 4
 
-#TRACKING:
+#TRACKING and TESTING setup:
 tracking_setup: "mk1"
 
 mk1:
   videos_name_regex: "videos/*.mp4" #for use by transform.py which also preps the following yml file
-  videos_list: "horse_videos.yml"
-  weights: 'horses-yolo.h5'
-  weights_md5: "eea943779c713c89bab51cd94bf7ae71"
+  videos_fps: 30
+  link_iou: 0.1
+  step_frames: 5 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
+  videos_list: "horse_videos.yml" #after transforms.py was run this is where video list live
+  weights: 'trained-rockinghorse_p2.h5'
+  weights_md5: ""
+  num_class: 1
   obj_thresh: 0.8
   nms_thresh: 0.5
   max_age: 30
   track_thresh: 0.3
   init_thresh: 0.8
   init_nms: 0.0
-  link_iou: 0.1
-  step_frames: 5 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
 
 NO_OBJECT_SCALE: 1.0
 OBJECT_SCALE: 5.0
