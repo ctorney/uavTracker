@@ -139,9 +139,9 @@ def main(argv):
                 sys.stdout.flush()
 
                 #jump frames
-                if (i%step_frames)!=0 and i < period["start"]:
+                if ((i%step_frames)!=0) and (i < period["start"]):
                     continue
-                if i > period["stop"] and period["stop"] != 0:
+                if (i > period["stop"]) and (period["stop"] != 0):
                     break
 
 
