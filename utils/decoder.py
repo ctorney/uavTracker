@@ -40,7 +40,7 @@ def decode_netout(netout, obj_thresh):
     ypos = netout[...,1]
     wpos = netout[...,2]
     hpos = netout[...,3]
-                    
+
     objectness = netout[...,4]
 
     # select only objects above threshold
@@ -53,11 +53,11 @@ def decode_netout(netout, obj_thresh):
         objectness[indexes])).tolist()
 
     return new_boxes
-        
+
 def do_nms(boxes, nms_thresh):
     if len(boxes) == 0:
         return
-        
+
     sorted_indices = np.argsort([-box[4] for box in boxes])
 
     for i in range(len(sorted_indices)):
@@ -80,12 +80,12 @@ def decode(yolos, obj_thresh=0.9, nms_thresh=0.5):
         boxes += decode_netout(yolos[i][0], obj_thresh)
 
     # suppress non-maximal boxes
-    do_nms(boxes, nms_thresh)     
+    do_nms(boxes, nms_thresh)
 
     return_boxes = []
 
     for b in boxes:
         if b[4]>0:
-            return_boxes.append([b[0],b[1],b[2],b[3]])
+            return_boxes.append([b[0],b[1],b[2],b[3],b[4]])
 
     return return_boxes
