@@ -78,6 +78,12 @@ def main(args):
 
         frame_idx = 0
         for i in range(nframes):
+            if args.static: #non-moving camera. 
+                warp_matrix = np.eye(2, 3, dtype=np.float32)
+                full_warp = np.dot(full_warp, np.vstack((warp_matrix, [0, 0, 1])))
+                save_warp[i, :, :] = full_warp
+                continue
+
             ret, frame = cap.read()
             sys.stdout.write('\r')
             sys.stdout.write("[%-20s] %d%% %d/%d" %
@@ -144,6 +150,8 @@ if __name__ == '__main__':
         required=True,
         nargs=1,
         help='Root of your data directory')
+    parser.add_argument('--static', '-s', default=False, action='store_true',
+                        help='Static camera. The program will create videos file for you but will set all transformations to identity. It will be quick, I promise.')
 
     args = parser.parse_args()
     main(args)
