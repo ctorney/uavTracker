@@ -88,6 +88,11 @@ def main(args):
             height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
             S = (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
                  int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+
+            if width == 0:
+                print('WIDTH is 0. It is safe to assume that the file doesn\'t exist or is corrupted. Hope the next one isn\'t... Skipping - obviously. ')
+                break
+
             ##########################################################################
             ##          set-up yolo detector and tracker
             ##########################################################################
@@ -141,6 +146,8 @@ def main(args):
 
                 #jump frames
                 if (i > period["stop"] and period["stop"] != 0) or not ret:
+                    sys.stdout.write('\n')
+                    sys.stdout.flush()
                     print("::Hey, hey! :: The end of the defined period, skipping to the next file or period (or maybe the file was shorter than you think")
                     print("nothing read from file: ")
                     sys.stdout.write('It is ')
