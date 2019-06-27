@@ -76,9 +76,9 @@ mk1:
   videos_name_regex: "videos/*.mp4" #for use by transform.py which also preps the following yml file
   videos_fps: 8
   link_iou: 0.1
-  step_frames: 5 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
+  step_frames: 1 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
   videos_list: "salmo_videos.yml" #after transforms.py was run this is where video list live
-  weights: 'trained-salmon-yoloMk4.h5'
+  # weights: 'trained-salmon-yoloMk4.h5'
   weights: 'trained-salmon-yoloMk4p2.h5'
   weights_md5: ""
   num_class: 1
