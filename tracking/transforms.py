@@ -7,7 +7,13 @@ import numpy as np
 import time
 
 
+
 def main(args):
+
+    padding = 1000
+    shift_display = np.array([1,0,padding/2,0,1,padding/2,0,0,1])
+    shift_display = shift_display.reshape((3,3))
+
     #Load data
     data_dir = args.ddir[0] + '/'  #in case we forgot '/'
     print('Opening file' + args.config[0])
@@ -77,6 +83,9 @@ def main(args):
         vid_info['transforms'] = tr_file_short
 
         frame_idx = 0
+        if args.visual:
+            cv2.namedWindow('image transformed', cv2.WINDOW_GUI_EXPANDED)
+            cv2.moveWindow('image transformed', 20,20)
         for i in range(nframes):
             if args.static: #non-moving camera. 
                 warp_matrix = np.eye(2, 3, dtype=np.float32)
@@ -122,6 +131,13 @@ def main(args):
             full_warp = np.dot(full_warp, np.vstack((warp_matrix, [0, 0, 1])))
             save_warp[i, :, :] = full_warp
 
+            if args.visual:
+                inv_warp = np.linalg.inv(full_warp)
+                shifted = shift_display.dot(inv_warp)
+                warped_frame = cv2.warpPerspective(frame, shifted,(padding+frame.shape[1],padding+frame.shape[0]))
+                cv2.imshow('image transformed', warped_frame)
+                key = cv2.waitKey(1)  #& 0xFF
+
 #          print('ecc ', time.time()-start)
 
         print("saving tr")
@@ -152,6 +168,8 @@ if __name__ == '__main__':
         help='Root of your data directory')
     parser.add_argument('--static', '-s', default=False, action='store_true',
                         help='Static camera. The program will create videos file for you but will set all transformations to identity. It will be quick, I promise.')
+    parser.add_argument('--visual', '-v', default=False, action='store_true',
+                        help='Show camera transformations (for debugging)')
 
     args = parser.parse_args()
     main(args)
