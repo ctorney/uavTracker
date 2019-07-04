@@ -98,13 +98,16 @@ def main(args):
             ##########################################################################
             #detector = yoloDetector(width, height, wt_file = weights, obj_threshold=0.05, nms_threshold=0.5, max_length=100)
             #tracker = yoloTracker(max_age=30, track_threshold=0.5, init_threshold=0.9, init_nms=0.0, link_iou=0.1)
+            print("Loading YOLO models")
+            print("We will use the following model for testing: ")
+            print(weights)
             detector = yoloDetector(
                 width,
                 height,
                 wt_file=weights,
                 obj_threshold=obj_thresh,
                 nms_threshold=nms_thresh,
-                max_length=100)  #TODO max_length?
+                max_length=max_l)
 
             tracker = yoloTracker(
                 max_age=max_age_val,
@@ -135,6 +138,9 @@ def main(args):
                 print(":: oh dear! :: No transformations found.")
 
             nframes = round(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            if args.visual:
+                cv2.namedWindow('tracker', cv2.WINDOW_GUI_EXPANDED)
+                cv2.moveWindow('tracker', 20,20)
             for i in range(nframes):
 
                 ret, frame = cap.read() #we have to keep reading frames
@@ -182,6 +188,7 @@ def main(args):
                 if showDetections:
                     for detect in detections:
                         bbox = detect[0:4]
+                        class_prob = detect[4]
                         if save_output:
                             iwarp = (full_warp)
                             corner1 = np.expand_dims(
@@ -202,6 +209,8 @@ def main(args):
                             cv2.rectangle(
                                 frame, (int(minx) - 2, int(miny) - 2),
                                 (int(maxx) + 2, int(maxy) + 2), (0, 0, 0), 1)
+                            cv2.putText(frame, str(int(class_prob*100)),  (int(maxx),int(maxy)), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.8, (200,200,250), 1);
+
 
                 for track in tracks:
                     bbox = track[0:4]
@@ -256,6 +265,10 @@ def main(args):
                     #   im_aligned = cv2.warpPerspective(frame, full_warp, (S[0],S[1]), borderMode=cv2.BORDER_TRANSPARENT, flags=cv2.WARP_INVERSE_MAP)
                     out.write(frame)
 
+                if args.visual:
+                    frame = cv2.resize(frame, S)
+                    cv2.imshow('tracker', frame)
+                    key = cv2.waitKey(1)  #& 0xFF
                 #cv2.imwrite('pout' + str(i) + '.jpg',frame)
         #   break
 
@@ -281,6 +294,9 @@ if __name__ == '__main__':
         required=True,
         nargs=1,
         help='Root of your data directory')
+    parser.add_argument('--visual', '-v', default=False, action='store_true',
+                        help='Display tracking progress')
+
 
     args = parser.parse_args()
     main(args)

@@ -148,9 +148,12 @@ def main(args):
         print("videos_info")
         print(videos_info)
 
-    print("appending existing file" + videos_list)
-    with open(videos_list, 'a') as handle:
-        yaml.dump(videos_info, handle)
+    if len(videos_info)!=0:
+        print("appending existing file" + videos_list)
+        with open(videos_list, 'a') as handle:
+            yaml.dump(videos_info, handle)
+    else:
+        print('No videos to add to file')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
