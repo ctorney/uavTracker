@@ -82,11 +82,11 @@ mk1:
   weights: 'trained-salmon-yoloMk4p2.h5'
   weights_md5: ""
   num_class: 1
-  obj_thresh: 0.8
-  nms_thresh: 0.5
+  obj_thresh: 0.2
+  nms_thresh: 0.3
   max_age: 30
-  track_thresh: 0.3
-  init_thresh: 0.8
+  track_thresh: 0.2
+  init_thresh: 0.2
   init_nms: 0.0
 
 #Running tracker

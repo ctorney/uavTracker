@@ -3,4 +3,6 @@ filterpy
 numpy
 pandas
 tensorflow
-
+pyaml
+opencv-contrib-python
+keras
