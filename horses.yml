@@ -15,68 +15,25 @@ tracks_dir: 'tracks/'
 predictions_dir: 'predictions/'
 annotations_dir: 'annotations/'
 
-pretrained_annotations_fname: 'annotations.yml'
-trained_annotations_fname: 'annotations-trained.yml'
-testing_annotations_fname: 'annotations-testing.yml'
-test_videos_name_regex: "*.mp4"
 
-#checked annotations are used for training:
-checked_annotations_fname: 'annotations-checked.yml' 
-
-##########
-# TRAINING
-##########
-#You can specify multiple training setups:
-training_setup: 'training_2' 
-
-training_1:
-  train_files_regex: "stills/*.png"
-  weights: 'yolo-v3-coco.h5'
-  weights_md5: "26cf8e8b5ba9d9d4a3778f9747e3407a" #leave empty if you are retraining
-  num_class: 80
-  obj_thresh: 0.2
-  nms_thresh: 0.3
-
-training_2:
-  train_files_regex: "stills/*.png"
-  weights: 'horses-yolo.h5'
-  weights_md5: "eea943779c713c89bab51cd94bf7ae71"
-  num_class: 1
-  obj_thresh: 0.7
-  nms_thresh: 0.5
-
-
-# Training parameters:
-# phase_one top layers, normal learning rate
-# phase_two all layers, small learning rate
-phase_one:
-  BATCH_SIZE: 32
-  EPOCHS: 500
-  LR: 0.5e-4
-  trained_weights: 'trained-rockinghorse_p1.h5'
-phase_two:
-  BATCH_SIZE: 4
-  EPOCHS: 100
-  LR: 0.5e-4
-  trained_weights: 'trained-rockinghorse_p2.h5'
 
 LABELS: ['aoi']
-IMAGE_H: 864
-IMAGE_W: 864
-MAX_L: 400
+IMAGE_H: 1080
+IMAGE_W: 1920
+MAX_L: 200
 MIN_L: 4
 
 #TRACKING and TESTING setup:
-tracking_setup: "mk1"
+tracking_setup: "10oct"
 
 mk1:
   videos_name_regex: "videos/*.mp4" #for use by transform.py which also preps the following yml file
   videos_fps: 30
-  link_iou: 0.1
-  step_frames: 5 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
+  link_iou: 0.1 #_intersection of union between bounding boxes
+  step_frames: 3  #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
   videos_list: "horse_videos.yml" #after transforms.py was run this is where video list live
-  weights: 'trained-rockinghorse_p2.h5'
-  weights_md5: ""
+  weights: 'horses_yolo.h5'
+  weights_md5: "eea943779c713c89bab51cd94bf7ae71"
   num_class: 1
   obj_thresh: 0.8
   nms_thresh: 0.5
