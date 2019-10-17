@@ -84,7 +84,7 @@ def main(args):
 
     print("Loading images from %s", list_of_train_files)
     with open(list_of_train_files, 'r') as fp:
-        all_imgs = yaml.load(fp)
+        all_imgs = yaml.safe_load(fp)
 
     print('Reading YaML file finished. Time to lock and load!\n')
 
@@ -96,6 +96,8 @@ def main(args):
 
     train_imgs = list(itemgetter(*indexes[num_val:].tolist())(all_imgs))
     train_batch = BatchGenerator(
+        data_dir = data_dir,
+        preped_images_dir = preped_images_dir,
         instances=train_imgs,
         labels=LABELS,
         batch_size=BATCH_SIZE,

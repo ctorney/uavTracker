@@ -141,25 +141,25 @@ def main(args):
     preped_images_dir = data_dir + config['preped_images_dir']
 
     with open(trained_annotations_fname, 'r') as fp:
-        all_imgs = yaml.load(fp)
+        all_imgs = yaml.safe_load(fp)
 
     if not resume:
         new_imgs = []
     else:
         with open(checked_annotations_fname, 'r') as fp:
-            new_imgs = yaml.load(fp)
+            new_imgs = yaml.safe_load(fp)
 
     for i in range(len(all_imgs)):
-        basename = os.path.basename(all_imgs[i]['filename'])
+        fname = all_imgs[i]['filename']
         if resume:
-            if any(d['filename'] == basename for d in new_imgs):
+            if any(doneimg['filename'] == fname for doneimg in new_imgs):
                 continue
         img_data = {'object': []}
-        img_data['filename'] = basename
+        img_data['filename'] = fname
         img_data['width'] = all_imgs[i]['width']
         img_data['height'] = all_imgs[i]['height']
         sys.stdout.write('\r')
-        sys.stdout.write(img_data['filename'] + ", " + str(i) + ' of ' + str(
+        sys.stdout.write(fname + ", " + str(i) + ' of ' + str(
             len(all_imgs)) + " \n=====================================\n")
         sys.stdout.flush()
 
@@ -170,7 +170,7 @@ def main(args):
                     [obj['xmin'], obj['ymin'], obj['xmax'], obj['ymax']])
 
         #do box processing
-        img = cv2.imread(preped_images_dir + basename)
+        img = cv2.imread(data_dir + fname)
         if check_boxes(img, boxes, im_width, im_height):
             break
         for b in boxes:
