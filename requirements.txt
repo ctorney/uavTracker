@@ -2,5 +2,7 @@ sklearn
 filterpy
 numpy
 pandas
-tensorflow
-
+tensorflow==1.14
+pyaml
+opencv-contrib-python
+keras

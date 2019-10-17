@@ -9,7 +9,7 @@ groundtruths_dir: 'groundtruths/'
 predictions_dir: 'predictions/'
 annotations_dir: 'annotations/'
 
-untrained_annotations_fname: 'pre-annotations.yml'
+pretrained_annotations_fname: 'pre-annotations.yml'
 trained_annotations_fname: 'annotations-trained.yml'
 test_videos_name_regex: "videos/*.mp4"
 
@@ -21,7 +21,7 @@ training_setup: 'salmon' # generic|specific
 
 yolo:
   train_files_regex: "stills/*.png"
-  input_weights: 'yolo-v3-coco.h5'
+  weights: 'yolo-v3-coco.h5'
   weights_md5: "" #leave empty if you are retraining
   num_class: 80
   obj_thresh: 0.2
@@ -29,7 +29,7 @@ yolo:
 
 salmon:
   train_files_regex: "stills/*.png"
-  input_weights: 'trained-salmon-yoloMk4.h5'
+  weights: 'trained-salmon-yoloMk4.h5'
   weights_md5: "" #leave empty if you are retraining
   num_class: 1
   obj_thresh: 0.2
@@ -76,16 +76,17 @@ mk1:
   videos_name_regex: "videos/*.mp4" #for use by transform.py which also preps the following yml file
   videos_fps: 8
   link_iou: 0.1
-  step_frames: 5 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
+  step_frames: 1 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
   videos_list: "salmo_videos.yml" #after transforms.py was run this is where video list live
-  weights: 'trained-salmon-yoloMk4.h5'
+  # weights: 'trained-salmon-yoloMk4.h5'
+  weights: 'trained-salmon-yoloMk4p2.h5'
   weights_md5: ""
   num_class: 1
-  obj_thresh: 0.8
-  nms_thresh: 0.5
+  obj_thresh: 0.2
+  nms_thresh: 0.3
   max_age: 30
-  track_thresh: 0.3
-  init_thresh: 0.8
+  track_thresh: 0.2
+  init_thresh: 0.2
   init_nms: 0.0
 
 #Running tracker

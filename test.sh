@@ -1,7 +1,13 @@
-#!/bin/bash
-set -e
-wget https://www.dropbox.com/s/fredcwheohguypa/rockinghorse.zip
-unzip rockinghorse.zip
+#!/usr/bin/env bash
+set -ex
+echo "Using python:"
+$WHICH_PYTHON -V
+echo "Downloading all libraries, please wait :) "
+$WHICH_PYTHON -m pip install -r requirements.txt
+if [ ! -f rockinghorse.zip ]; then
+	wget https://www.dropbox.com/s/fredcwheohguypa/rockinghorse.zip
+	unzip rockinghorse.zip
+fi
 cd train
 $WHICH_PYTHON prepTrain.py --config ../rockinghorse.yml --ddir ../rockinghorse
 $WHICH_PYTHON annotate.py --config ../rockinghorse.yml --ddir ../rockinghorse
