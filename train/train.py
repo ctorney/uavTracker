@@ -36,7 +36,7 @@ def main(args):
 
     training_setup = config['training_setup']
 
-    list_of_train_files = annotations_dir + config['checked_annotations_fname']
+    list_of_train_files = annotations_dir + config[training_setup]['annotations_fname']
     LABELS = config['LABELS']
     IMAGE_H = config['IMAGE_H']
     IMAGE_W = config['IMAGE_W']
