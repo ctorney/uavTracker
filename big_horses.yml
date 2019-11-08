@@ -1,0 +1,67 @@
+#Sota's config file for horses Autumn 2019
+######
+##DiR
+#####
+#the following directories
+weights_dir: 'weights/'
+tracks_dir: "tracks/"
+movie_dir: 'videos/'
+
+#output directories, will be created if don't exist:
+preped_images_dir: 'input_imgs/'
+bbox_images_dir: 'extracted_bboxes/'
+groundtruths_dir: 'groundtruths/'
+tracks_dir: 'tracks/'
+predictions_dir: 'predictions/'
+annotations_dir: 'annotations/'
+
+pretrained_annotations_fname: 'annotations_pretrained.yml'
+trained_annotations_fname: 'annotations-trained.yml'
+testing_annotations_fname: 'annotations-testing.yml'
+
+
+LABELS: ['aoi']
+IMAGE_H: 2144
+IMAGE_W: 3840
+MAX_L: 200
+MIN_L: 4
+
+training_setup: 'smallhorsecheck'
+
+smallhorsecheck:
+  train_files_regex: "stills/*.png"
+  weights: 'horses-yolo.h5'
+  weights_md5: "eea943779c713c89bab51cd94bf7ae71"
+  num_class: 1
+  obj_thresh: 0.7
+  nms_thresh: 0.5
+
+
+
+#TRACKING and TESTING setup:
+tracking_setup: "10oct"
+
+10oct:
+  videos_name_regex: "videos/*.mp4" #for use by transform.py which also preps the following yml file
+  videos_fps: 30
+  link_iou: 0.1 #_intersection of union between bounding boxes
+  step_frames: 3  #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
+  videos_list: "horse_videos.yml" #after transforms.py was run this is where video list live
+  weights: 'horses-yolo.h5'
+  weights_md5: "eea943779c713c89bab51cd94bf7ae71"
+  num_class: 1
+  obj_thresh: 0.8
+  nms_thresh: 0.5
+  max_age: 30
+  track_thresh: 0.3
+  init_thresh: 0.8
+  init_nms: 0.0
+
+NO_OBJECT_SCALE: 1.0
+OBJECT_SCALE: 5.0
+COORD_SCALE: 2.0
+CLASS_SCALE: 1.0
+
+#Running tracker
+save_output: 1
+showDetections: 1 # flag to show all detections in image
