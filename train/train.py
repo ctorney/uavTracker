@@ -75,7 +75,7 @@ def main(args):
         )
         pretrained_weights = weights_dir + config['phase_one']['trained_weights']
         model = get_yolo_model(
-            IMAGE_W, IMAGE_H, num_class=1, headtrainable=True, trainable=True)
+            IMAGE_W, IMAGE_H, num_class=len(LABELS), headtrainable=True, trainable=False)
         print("Loading weights %s", pretrained_weights)
         model.load_weights(pretrained_weights)
 
@@ -98,6 +98,7 @@ def main(args):
     train_batch = BatchGenerator(
         instances=train_imgs,
         labels=LABELS,
+        objects=len(LABELS),
         batch_size=BATCH_SIZE,
         shuffle=True,
         jitter=0.0,
@@ -105,6 +106,7 @@ def main(args):
         net_h=IMAGE_H,
         net_w=IMAGE_W)
 
+    #   @tf.function
     def yolo_loss(y_true, y_pred):
         # compute grid factor and net factor
         grid_h = tf.shape(y_true)[1]
@@ -142,6 +144,11 @@ def main(args):
         no_obj_delta = NO_OBJECT_SCALE * (1 - object_mask) * pred_box_conf
         class_delta = CLASS_SCALE * object_mask * (
             pred_box_class - true_box_class)
+        #tf.print(pred_box_class,summarize=-1,output_stream= "file:///home/ctorney/workspace/uavTracker/train/true_cls.out")
+        #tf.print("============",output_stream= "file:///home/ctorney/workspace/uavTracker/train/true_cls.out")
+        #tf.print(true_box_class,summarize=-1,output_stream= "file:///home/ctorney/workspace/uavTracker/train/true_cls.out")
+        #tf.print("***************============",output_stream= "file:///home/ctorney/workspace/uavTracker/train/true_cls.out")
+
 
         loss_xy = tf.reduce_sum(tf.square(xy_delta), list(range(1, 5)))
         loss_wh = tf.reduce_sum(tf.square(wh_delta), list(range(1, 5)))
