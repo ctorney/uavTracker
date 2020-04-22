@@ -36,7 +36,7 @@ def main(args):
 
     training_setup = config['training_setup']
 
-    list_of_train_files = annotations_dir + config['checked_annotations_fname']
+    list_of_train_files = annotations_dir + config[training_setup]['annotations_fname']
     LABELS = config['LABELS']
     IMAGE_H = config['IMAGE_H']
     IMAGE_W = config['IMAGE_W']
@@ -84,7 +84,7 @@ def main(args):
 
     print("Loading images from %s", list_of_train_files)
     with open(list_of_train_files, 'r') as fp:
-        all_imgs = yaml.load(fp)
+        all_imgs = yaml.safe_load(fp)
 
     print('Reading YaML file finished. Time to lock and load!\n')
 
@@ -96,6 +96,8 @@ def main(args):
 
     train_imgs = list(itemgetter(*indexes[num_val:].tolist())(all_imgs))
     train_batch = BatchGenerator(
+        data_dir = data_dir,
+        preped_images_dir = preped_images_dir,
         instances=train_imgs,
         labels=LABELS,
         objects=len(LABELS),

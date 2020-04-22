@@ -3,7 +3,6 @@
 #####
 #the following directories
 weights_dir: 'weights/'
-tracks_dir: "tracks/"
 movie_dir: 'videos/'
 
 #output directories, will be created if don't exist:

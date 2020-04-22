@@ -24,6 +24,7 @@ def main(args):
     weights_dir = data_dir + config['weights_dir']
     annotations_dir = data_dir + config['annotations_dir']
     preped_images_dir = data_dir + config['preped_images_dir']
+    preped_images_dir_short = config['preped_images_dir']
     bbox_images_dir = data_dir + config['bbox_images_dir']
 
     ###### TRAINING DETAILS:
@@ -77,13 +78,13 @@ def main(args):
                 }  #dictionary? key-value pair to store image data
                 head, tail = os.path.split(imagename)
                 noext, ext = os.path.splitext(tail)
-                save_name = preped_images_dir + '/TR_' + noext + '-' + str(
-                    n_count) + '.png'
+                save_name = preped_images_dir + '/TR_' + noext + '-' + str(n_count) + '.png'
+                save_name_short = preped_images_dir_short + '/TR_' + noext + '-' + str(n_count) + '.png'
                 box_name = bbox_images_dir + '/ ' + noext + '-' + str(
                     n_count) + '.png'
                 img = im[y:y + im_height, x:x + im_width, :]
                 cv2.imwrite(save_name, img)
-                img_data['filename'] = save_name
+                img_data['filename'] = save_name_short
                 img_data['width'] = im_width
                 img_data['height'] = im_height
 
