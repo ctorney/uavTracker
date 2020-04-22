@@ -8,7 +8,7 @@ movie_dir: 'videos/'
 tracks_dir: "tracks/"
 
 #output directories, will be created if don't exist:
-preped_images_dir: 'input_imgs/'
+preped_images_dir: 'frames_1/'
 bbox_images_dir: 'extracted_bboxes/'
 groundtruths_dir: 'groundtruths/'
 tracks_dir: 'tracks/'
@@ -36,7 +36,7 @@ from_yolo:
   nms_thresh: 0.3
 
 from_horses:
-  train_files_regex: "yoloTrainData/*.png"
+  train_files_regex: "frames_1/*.png"
   weights: 'horses-yolo.h5'
   weights_md5: ""
   num_class: 1
@@ -44,7 +44,7 @@ from_horses:
   nms_thresh: 0.3
 
 from_bb:
-  train_files_regex: "yoloTrainData/*.png"
+  train_files_regex: "frames_1/*.png"
   weights: 'trained-blackbucks-yolo.h5'
   weights_md5: ""
   num_class: 1
@@ -66,8 +66,8 @@ phase_two:
   LR: 0.5e-4
 
 LABELS: ['aoi']
-IMAGE_W: 864 
-IMAGE_H: 864 
+IMAGE_W: 3840
+IMAGE_H: 2144
 MAX_L: 100
 MIN_L: 10
 
@@ -87,7 +87,8 @@ mk1:
   init_thresh: 0.8
   init_nms: 0.0
   link_iou: 0.1
-  step_frames: 1 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
+  num_class: 1
+  step_frames: 5 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
 
 NO_OBJECT_SCALE: 1.0
 OBJECT_SCALE: 5.0

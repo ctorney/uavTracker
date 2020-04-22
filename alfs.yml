@@ -3,17 +3,18 @@
 #####
 #the following directories
 weights_dir: 'weights/'
+tracks_dir: "tracks/"
 movie_dir: 'videos/'
 
 #output directories, will be created if don't exist:
-preped_images_dir: 'input_imgs/'
+preped_images_dir: 'images/'
 bbox_images_dir: 'extracted_bboxes/'
 groundtruths_dir: 'groundtruths/'
 tracks_dir: 'tracks/'
 predictions_dir: 'predictions/'
 annotations_dir: 'annotations/'
 
-pretrained_annotations_fname: 'annotations.yml'
+pretrained_annotations_fname: 'train_data.yml'
 trained_annotations_fname: 'annotations-trained.yml'
 testing_annotations_fname: 'annotations-testing.yml'
 test_videos_name_regex: "*.mp4"
@@ -28,7 +29,7 @@ checked_annotations_fname: 'annotations-checked.yml'
 training_setup: 'training_2' 
 
 training_1:
-  train_files_regex: "stills/*.png"
+  train_files_regex: "images/*.jpg"
   weights: 'yolo-v3-coco.h5'
   weights_md5: "26cf8e8b5ba9d9d4a3778f9747e3407a" #leave empty if you are retraining
   num_class: 80
@@ -36,9 +37,9 @@ training_1:
   nms_thresh: 0.3
 
 training_2:
-  train_files_regex: "stills/*.png"
-  weights: 'horses-yolo.h5'
-  weights_md5: "eea943779c713c89bab51cd94bf7ae71"
+  train_files_regex: "images/*.jpg"
+  weights: 'yolo-v3-coco.h5'
+  weights_md5: "26cf8e8b5ba9d9d4a3778f9747e3407a" #leave empty if you are retraining
   num_class: 1
   obj_thresh: 0.7
   nms_thresh: 0.5
@@ -51,17 +52,17 @@ phase_one:
   BATCH_SIZE: 32
   EPOCHS: 500
   LR: 0.5e-4
-  trained_weights: 'trained-rockinghorse_p1.h5'
+  trained_weights: 'trained-alfs.h5'
 phase_two:
   BATCH_SIZE: 4
   EPOCHS: 100
   LR: 0.5e-4
-  trained_weights: 'trained-rockinghorse_p2.h5'
+  trained_weights: 'trained-alfs-p2.h5'
 
-LABELS: ['aoi']
-IMAGE_H: 864
-IMAGE_W: 864
-MAX_L: 400
+LABELS: ['alf']
+IMAGE_H: 416
+IMAGE_W: 416
+MAX_L: 100
 MIN_L: 4
 
 #TRACKING and TESTING setup:
