@@ -1,9 +1,9 @@
-from keras.models import Model
-from keras.layers import Conv2D, Input, BatchNormalization, LeakyReLU, ZeroPadding2D, UpSampling2D, Dense, Flatten, Activation, Reshape, Lambda
-from keras.layers.merge import add, concatenate
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Conv2D, Input, BatchNormalization, LeakyReLU, ZeroPadding2D, UpSampling2D, Dense, Flatten, Activation, Reshape, Lambda
+from tensorflow.keras.layers import add, concatenate
 import tensorflow as tf
 
-from keras import backend as K
+from tensorflow.keras import backend as K
 
 ANC_VALS = [[116,90,  156,198,  373,326],  [30,61, 62,45,  59,119], [10,13,  16,30,  33,23]]
 
@@ -53,7 +53,7 @@ def positions(h,w):
         grid_factor = tf.reshape(tf.cast([grid_w, grid_h], tf.float32), [1,1,1,1,2])
         net_factor  = tf.reshape(tf.cast([w, h], tf.float32), [1,1,1,1,2])
 
-        cell_x = tf.to_float(tf.reshape(tf.tile(tf.range(tf.maximum(grid_h,grid_w)), [tf.maximum(grid_h,grid_w)]), (1, tf.maximum(grid_h,grid_w), tf.maximum(grid_h,grid_w), 1, 1)))
+        cell_x = tf.cast(tf.reshape(tf.tile(tf.range(tf.maximum(grid_h,grid_w)), [tf.maximum(grid_h,grid_w)]), (1, tf.maximum(grid_h,grid_w), tf.maximum(grid_h,grid_w), 1, 1)),dtype=tf.float32)
 
         cell_y = tf.transpose(cell_x, (0,2,1,3,4))
         cell_grid = tf.tile(tf.concat([cell_x,cell_y],-1), [1, 1, 1, 3, 1])
@@ -184,31 +184,37 @@ def get_yolo_model(in_w=416,in_h=416, num_class=80, trainable=False, headtrainab
     #return model
 
     s_offs =crop(0,2)(final_small)
-    s_szs =crop(2,4)(final_small)
-    s_scores =crop(4,out_size)(final_small)
-    s_scores = Activation('sigmoid')(s_scores)
-    s_szs = anchors(2)(s_szs)
     s_offs = Activation('sigmoid')(s_offs)
     s_offs = positions(in_h,in_w)(s_offs)
-    s_out = concatenate([s_offs, s_szs, s_scores])
+    s_szs =crop(2,4)(final_small)
+    s_szs = anchors(2)(s_szs)
+    s_scores =crop(4,5)(final_small)
+    s_scores = Activation('sigmoid')(s_scores)
+    s_cls =crop(5,out_size)(final_small)
+    s_cls = Activation('softmax')(s_cls)
+    s_out = concatenate([s_offs, s_szs, s_scores, s_cls])
 
     m_offs =crop(0,2)(final_med)
     m_szs =crop(2,4)(final_med)
-    m_scores =crop(4,out_size)(final_med)
+    m_scores =crop(4,5)(final_med)
     m_scores = Activation('sigmoid')(m_scores)
     m_szs = anchors(1)(m_szs)
     m_offs = Activation('sigmoid')(m_offs)
     m_offs = positions(in_h,in_w)(m_offs)
-    m_out = concatenate([m_offs, m_szs, m_scores])
+    m_cls =crop(5,out_size)(final_med)
+    m_cls = Activation('softmax')(m_cls)
+    m_out = concatenate([m_offs, m_szs, m_scores, m_cls])
 
     l_offs =crop(0,2)(final_large)
     l_szs =crop(2,4)(final_large)
-    l_scores =crop(4,out_size)(final_large)
+    l_scores =crop(4,5)(final_large)
     l_scores = Activation('sigmoid')(l_scores)
     l_szs = anchors(0)(l_szs)
     l_offs = Activation('sigmoid')(l_offs)
     l_offs = positions(in_h,in_w)(l_offs)
-    l_out = concatenate([l_offs, l_szs, l_scores])
+    l_cls =crop(5,out_size)(final_large)
+    l_cls = Activation('softmax')(l_cls)
+    l_out = concatenate([l_offs, l_szs, l_scores, l_cls])
 
     output = [l_out, m_out, s_out]
 
