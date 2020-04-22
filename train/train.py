@@ -36,7 +36,7 @@ def main(args):
 
     training_setup = config['training_setup']
 
-    list_of_train_files = annotations_dir + config['checked_annotations_fname']
+    list_of_train_files = annotations_dir + config[training_setup]['annotations_fname']
     LABELS = config['LABELS']
     IMAGE_H = config['IMAGE_H']
     IMAGE_W = config['IMAGE_W']
@@ -84,7 +84,7 @@ def main(args):
 
     print("Loading images from %s", list_of_train_files)
     with open(list_of_train_files, 'r') as fp:
-        all_imgs = yaml.load(fp)
+        all_imgs = yaml.safe_load(fp)
 
     print('Reading YaML file finished. Time to lock and load!\n')
 
@@ -96,6 +96,8 @@ def main(args):
 
     train_imgs = list(itemgetter(*indexes[num_val:].tolist())(all_imgs))
     train_batch = BatchGenerator(
+        data_dir = data_dir,
+        preped_images_dir = preped_images_dir,
         instances=train_imgs,
         labels=LABELS,
         objects=len(LABELS),
@@ -108,10 +110,9 @@ def main(args):
 
     #   @tf.function
     def yolo_loss(y_true, y_pred):
-        # compute grid factor and net factor
+        #grid factor and net factor are different at different scle levels (yolo has 3)
         grid_h = tf.shape(y_true)[1]
         grid_w = tf.shape(y_true)[2]
-
         grid_factor = tf.reshape(
             tf.cast([grid_w, grid_h], tf.float32), [1, 1, 1, 1, 2])
 
@@ -125,7 +126,7 @@ def main(args):
         pred_box_conf = tf.expand_dims(y_pred[..., 4], 4)
         pred_box_class = y_pred[..., 5:]  # adjust class probabilities
         # initialize the masks
-        object_mask = tf.expand_dims(y_true[..., 4], 4)
+        object_mask = tf.expand_dims(y_true[..., 4], 4)#zeroes outside object of interest mean that we only penalise incorrect box for current object.
 
         true_box_xy = y_true[..., 0:2]  # (sigma(t_xy) + c_xy)
         true_box_wh = tf.where(y_true[..., 2:4] > 0,

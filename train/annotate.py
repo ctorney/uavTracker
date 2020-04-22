@@ -39,13 +39,13 @@ def check_boxes(img_clean, bbox_list, im_width, im_height):
         # if the left mouse button was clicked, record the starting
         # (x, y) coordinates and indicate that drawing is being
         # performed. set rect_endpoint_tmp empty list.
-        if event == cv2.EVENT_MBUTTONDOWN:
+        if event == cv2.EVENT_LBUTTONDOWN:
             rect_endpoint_tmp = []
             rect_bbox = [(x, y)]
             drawing = True
 
         # check to see if the left mouse button was released
-        elif event == cv2.EVENT_MBUTTONUP:
+        elif event == cv2.EVENT_LBUTTONUP:
             # record the ending (x, y) coordinates and indicate that
             # drawing operation is finished
             rect_bbox.append((x, y))
@@ -87,7 +87,8 @@ def check_boxes(img_clean, bbox_list, im_width, im_height):
             draw_all_boxes()
 
     cv2.namedWindow('image', cv2.WINDOW_GUI_EXPANDED)
-    cv2.resizeWindow('image', im_width, im_height)
+    #cv2.resizeWindow('image', im_width, im_height)
+    cv2.resizeWindow('image', 1900, 1100)
     cv2.moveWindow('image', 20,20)
     cv2.setMouseCallback('image', draw_rect_roi)
     draw_all_boxes()
@@ -142,25 +143,25 @@ def main(args):
     preped_images_dir = data_dir + config['preped_images_dir']
 
     with open(trained_annotations_fname, 'r') as fp:
-        all_imgs = yaml.load(fp)
+        all_imgs = yaml.safe_load(fp)
 
     if not resume:
         new_imgs = []
     else:
         with open(checked_annotations_fname, 'r') as fp:
-            new_imgs = yaml.load(fp)
+            new_imgs = yaml.safe_load(fp)
 
     for i in range(len(all_imgs)):
-        basename = os.path.basename(all_imgs[i]['filename'])
+        fname = all_imgs[i]['filename']
         if resume:
-            if any(d['filename'] == basename for d in new_imgs):
+            if any(doneimg['filename'] == fname for doneimg in new_imgs):
                 continue
         img_data = {'object': []}
-        img_data['filename'] = basename
+        img_data['filename'] = fname
         img_data['width'] = all_imgs[i]['width']
         img_data['height'] = all_imgs[i]['height']
         sys.stdout.write('\r')
-        sys.stdout.write(img_data['filename'] + ", " + str(i) + ' of ' + str(
+        sys.stdout.write(fname + ", " + str(i) + ' of ' + str(
             len(all_imgs)) + " \n=====================================\n")
         sys.stdout.flush()
 
@@ -171,7 +172,7 @@ def main(args):
                     [obj['xmin'], obj['ymin'], obj['xmax'], obj['ymax']])
 
         #do box processing
-        img = cv2.imread(preped_images_dir + basename)
+        img = cv2.imread(data_dir + fname)
         if check_boxes(img, boxes, im_width, im_height):
             break
         for b in boxes:

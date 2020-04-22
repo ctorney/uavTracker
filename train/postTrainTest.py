@@ -75,6 +75,13 @@ def main(args):
     with open(annotations_file, 'r') as fp:
         all_imgs = yaml.load(fp)
 
+    if args.annotated:
+        print('Opening the already predicted files in file ' + args.annotated[0])
+        with open(args.annotated[0], 'r') as fp:
+            pred_imgs = yaml.load(fp)
+
+
+
     if args.visual:
         cv2.namedWindow('tracker', cv2.WINDOW_GUI_EXPANDED)
         cv2.moveWindow('tracker', 20,20)
@@ -113,13 +120,17 @@ def main(args):
         for obj in all_imgs[i]['object']:
             boxes_gt.append(
                 [obj['xmin'], obj['ymin'], obj['xmax'], obj['ymax']])
-        sys.stdout.write('GT objects:')
-        sys.stdout.write(str(len(boxes_gt)))
-        sys.stdout.flush()
+       # sys.stdout.write('GT objects:')
+       # sys.stdout.write(str(len(boxes_gt)))
+       # sys.stdout.flush()
         #do box processing
         img = cv2.imread(image_dir + basename)
 
-        print("File, {}".format(image_dir + basename))
+        # print("File, {}".format(image_dir + basename))
+        mmFname = basename.split('_f')[-1].split('_')[0]
+        mmFrame = basename.split('_f')[-1].split('_')[1].split('f')[0]
+        mmGT = str(len(boxes_gt))
+
         frame = img.copy()
 
         with open(fname_gt, 'w') as file_gt:  #left top righ bottom
@@ -145,62 +156,115 @@ def main(args):
                         frame, (int(obj['xmin']) - 2, int(obj['ymin']) - 2),
                         (int(obj['xmax']) + 2, int(obj['ymax']) + 2), (200, 0, 0), 1)
 
-        # preprocess the image
-        image_h, image_w, _ = img.shape
-        new_image = img[:, :, ::-1] / 255.
-        new_image = np.expand_dims(new_image, 0)
+        if args.annotated:
+            boxes_pred = []
+            for obj in pred_imgs[i]['object']:
+                boxes_pred.append(
+                    [obj['xmin'], obj['ymin'], obj['xmax'], obj['ymax']])
+            with open(fname_pred, 'w') as file_pred:  #left top righ bottom
+                for b in boxes_pred:
+                    obj = {}
+                    if ((b[2] - b[0]) * (b[3] - b[1])) < 10:
+                        continue
+                    obj['name'] = 'aoi'
+                    obj['xmin'] = int(b[0])
+                    obj['ymin'] = int(b[1])
+                    obj['xmax'] = int(b[2])
+                    obj['ymax'] = int(b[3])
+                    img_data['object'] += [obj]
+                    file_pred.write(obj['name'] + " ")
+                    file_pred.write('100' + " ") # we don't store probability of detection in annotations
+                    file_pred.write(str(obj['xmin']) + " ")
+                    file_pred.write(str(obj['ymin']) + " ")
+                    file_pred.write(str(obj['xmax']) + " ")
+                    file_pred.write(str(obj['ymax']))
+                    file_pred.write('\n')
 
-        # run the prediction
-        sys.stdout.write('Yolo predicting...')
-        sys.stdout.flush()
-        yolos = yolov3.predict(new_image)
-        sys.stdout.write('decoding...')
-        sys.stdout.flush()
-        boxes_predict = decode(yolos, obj_thresh, nms_thresh)
-        sys.stdout.write('done!#of boxes_predict:')
-        sys.stdout.write(str(len(boxes_predict)))
-        sys.stdout.write('\n')
-        sys.stdout.flush()
+                    if args.visual:
+                        cv2.rectangle(
+                            frame, (int(obj['xmin']) - 2, int(obj['ymin']) - 2),
+                            (int(obj['xmax']) + 2, int(obj['ymax']) + 2), (200, 0, 0), 1)
 
-        with open(fname_pred, 'w') as file_pred:  #left top righ bottom
-            for b in boxes_predict:
-                xmin = int(b[0])
-                xmax = int(b[2])
-                ymin = int(b[1])
-                ymax = int(b[3])
-                confidence = float(b[4])
-                objpred = {}
+            #caluclate scores for this image
+            mmTP = 0
+            for bgt in boxes_gt:
+                for bpred in boxes_pred:
+                    if bbox_iou(bgt,bpred) > 0.5:
+                        mmTP = mmTP + 1 #find one matching prediction
+                        break
 
-                objpred['name'] = 'aoi'
+            mmFP = 0
+            has_match = False
+            for bpred in boxes_pred:
+                for bgt in boxes_gt:
+                    if bbox_iou(bgt,bpred) > 0.5:
+                        has_match = True
+                        break # found a match for predicion
+                if has_match == True:
+                    has_match = False
+                else:
+                    mmFP = mmFP + 1
 
-                if xmin < 0: continue
-                if ymin < 0: continue
-                if xmax > im_size_w: continue
-                if ymax > im_size_h: continue
-                if (xmax - xmin) < min_l: continue
-                if (xmax - xmin) > max_l: continue
-                if (ymax - ymin) < min_l: continue
-                if (ymax - ymin) > max_l: continue
+            #display scores for this image
+            print(mmFname + ', ' + mmFrame + ', ' + str(mmGT) + ', ' + str(mmTP) + ', ' + str(mmFP))
+ 
+        else:
+            # preprocess the image
+            image_h, image_w, _ = img.shape
+            new_image = img[:, :, ::-1] / 255.
+            new_image = np.expand_dims(new_image, 0)
 
-                objpred['xmin'] = xmin
-                objpred['ymin'] = ymin
-                objpred['xmax'] = xmax
-                objpred['ymax'] = ymax
-                objpred['confidence'] = confidence
-                file_pred.write(objpred['name'] + " ")
-                file_pred.write(str(objpred['confidence']) + " ")
-                file_pred.write(str(objpred['xmin']) + " ")
-                file_pred.write(str(objpred['ymin']) + " ")
-                file_pred.write(str(objpred['xmax']) + " ")
-                file_pred.write(str(objpred['ymax']))
-                file_pred.write('\n')
+            # run the prediction
+            sys.stdout.write('Yolo predicting...')
+            sys.stdout.flush()
+            yolos = yolov3.predict(new_image)
+            sys.stdout.write('decoding...')
+            sys.stdout.flush()
+            boxes_predict = decode(yolos, obj_thresh, nms_thresh)
+            sys.stdout.write('done!#of boxes_predict:')
+            sys.stdout.write(str(len(boxes_predict)))
+            sys.stdout.write('\n')
+            sys.stdout.flush()
 
-                if args.visual:
-                    cv2.rectangle(
-                        frame, (int(objpred['xmin']) - 2, int(objpred['ymin']) - 2),
-                        (int(objpred['xmax']) + 2, int(objpred['ymax']) + 2), (0, 0, 198), 1)
-                    str_conf = "{:.1f}".format(objpred['confidence'])
-                    cv2.putText(frame, str_conf,  (int(objpred['xmax']),int(objpred['ymax'])), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.8, (200,200,250), 1);
+            with open(fname_pred, 'w') as file_pred:  #left top righ bottom
+                for b in boxes_predict:
+                    xmin = int(b[0])
+                    xmax = int(b[2])
+                    ymin = int(b[1])
+                    ymax = int(b[3])
+                    confidence = float(b[4])
+                    objpred = {}
+
+                    objpred['name'] = 'aoi'
+
+                    if xmin < 0: continue
+                    if ymin < 0: continue
+                    if xmax > im_size_w: continue
+                    if ymax > im_size_h: continue
+                    if (xmax - xmin) < min_l: continue
+                    if (xmax - xmin) > max_l: continue
+                    if (ymax - ymin) < min_l: continue
+                    if (ymax - ymin) > max_l: continue
+
+                    objpred['xmin'] = xmin
+                    objpred['ymin'] = ymin
+                    objpred['xmax'] = xmax
+                    objpred['ymax'] = ymax
+                    objpred['confidence'] = confidence
+                    file_pred.write(objpred['name'] + " ")
+                    file_pred.write(str(objpred['confidence']) + " ")
+                    file_pred.write(str(objpred['xmin']) + " ")
+                    file_pred.write(str(objpred['ymin']) + " ")
+                    file_pred.write(str(objpred['xmax']) + " ")
+                    file_pred.write(str(objpred['ymax']))
+                    file_pred.write('\n')
+
+                    if args.visual:
+                        cv2.rectangle(
+                            frame, (int(objpred['xmin']) - 2, int(objpred['ymin']) - 2),
+                            (int(objpred['xmax']) + 2, int(objpred['ymax']) + 2), (0, 0, 198), 1)
+                        str_conf = "{:.1f}".format(objpred['confidence'])
+                        cv2.putText(frame, str_conf,  (int(objpred['xmax']),int(objpred['ymax'])), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.8, (200,200,250), 1);
 
         if args.visual:
             cv2.imshow('tracker', frame)
@@ -233,6 +297,8 @@ if __name__ == '__main__':
         help='Root of your data directory')
     parser.add_argument('--visual', '-v', default=False, action='store_true',
                         help='Display tracking progress')
+    parser.add_argument('--annotated', '-a', required=False, nargs=1,
+                        help='Provide file with annotated results if you have already run prediction')
 
     args = parser.parse_args()
     main(args)
