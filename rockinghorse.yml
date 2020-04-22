@@ -2,7 +2,6 @@
 ##DiR
 #####
 #the following directories
-data_dir: 'data/rockinghorse/'
 weights_dir: 'weights/'
 tracks_dir: "tracks/"
 movie_dir: 'videos/'

@@ -1,7 +1,7 @@
 import os, sys, cv2
 import copy
 import numpy as np
-from keras.utils import Sequence
+from tensorflow.keras.utils import Sequence
 sys.path.append("..")
 from utils.bbox import BoundBox, bbox_iou
 from utils.image import apply_random_scale_and_crop, random_distort_image, random_flip, correct_bounding_boxes, random_flip2, correct_bounding_boxes2
@@ -12,7 +12,7 @@ class BatchGenerator(Sequence):
     def __init__(self, 
         instances, 
         labels,        
-        objects=1,        
+        objects,        
         downsample=32, # ratio between network input's size and network output's size, 32 for YOLOv3
         batch_size=1,
         im_dir='./',
@@ -109,6 +109,7 @@ class BatchGenerator(Sequence):
                 yolo[instance_count, grid_y, grid_x, max_index%3, 0:4] = box
                 yolo[instance_count, grid_y, grid_x, max_index%3, 4  ] = 1.
                 yolo[instance_count, grid_y, grid_x, max_index%3, 5+obj_indx] = 1
+
 
 
             # assign input image to x_batch

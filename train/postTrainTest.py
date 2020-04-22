@@ -69,9 +69,15 @@ def main(args):
     annotations_dir = data_dir + config['annotations_dir']
     list_of_train_files = annotations_dir + config['checked_annotations_fname']
     annotations_file = annotations_dir + config['checked_annotations_fname']
+    print("With annotations file")
+    print(annotations_file)
 
     with open(annotations_file, 'r') as fp:
         all_imgs = yaml.load(fp)
+
+    if args.visual:
+        cv2.namedWindow('tracker', cv2.WINDOW_GUI_EXPANDED)
+        cv2.moveWindow('tracker', 20,20)
 
     max_l = config['MAX_L']  #maximal object size in pixels
     min_l = config['MIN_L']
@@ -91,7 +97,6 @@ def main(args):
     #read in all images from checked annotations (GROUND TRUTH)
     for i in range(len(all_imgs)):
         basename = os.path.basename(all_imgs[i]['filename'])
-
         #remove extension from basename:
         name_seed_split = basename.split('.')[:-1]
         name_seed = '.'.join(name_seed_split)
@@ -114,6 +119,9 @@ def main(args):
         #do box processing
         img = cv2.imread(image_dir + basename)
 
+        print("File, {}".format(image_dir + basename))
+        frame = img.copy()
+
         with open(fname_gt, 'w') as file_gt:  #left top righ bottom
             for b in boxes_gt:
                 obj = {}
@@ -131,6 +139,11 @@ def main(args):
                 file_gt.write(str(obj['xmax']) + " ")
                 file_gt.write(str(obj['ymax']))
                 file_gt.write('\n')
+
+                if args.visual:
+                    cv2.rectangle(
+                        frame, (int(obj['xmin']) - 2, int(obj['ymin']) - 2),
+                        (int(obj['xmax']) + 2, int(obj['ymax']) + 2), (200, 0, 0), 1)
 
         # preprocess the image
         image_h, image_w, _ = img.shape
@@ -182,6 +195,16 @@ def main(args):
                 file_pred.write(str(objpred['ymax']))
                 file_pred.write('\n')
 
+                if args.visual:
+                    cv2.rectangle(
+                        frame, (int(objpred['xmin']) - 2, int(objpred['ymin']) - 2),
+                        (int(objpred['xmax']) + 2, int(objpred['ymax']) + 2), (0, 0, 198), 1)
+                    str_conf = "{:.1f}".format(objpred['confidence'])
+                    cv2.putText(frame, str_conf,  (int(objpred['xmax']),int(objpred['ymax'])), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.8, (200,200,250), 1);
+
+        if args.visual:
+            cv2.imshow('tracker', frame)
+            key = cv2.waitKey(1)  #& 0xFF
         #precision = tp / (tp + fp)
         # for box_gt in boxes_gt:
         #     for box_predict in boxes_predict:
@@ -208,6 +231,8 @@ if __name__ == '__main__':
         required=True,
         nargs=1,
         help='Root of your data directory')
+    parser.add_argument('--visual', '-v', default=False, action='store_true',
+                        help='Display tracking progress')
 
     args = parser.parse_args()
     main(args)

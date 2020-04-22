@@ -266,7 +266,11 @@ class yoloTracker(object):
                 d = convert_kfx_to_bbox(trk.kf.x)[0]
                 d = np.append(d,np.array([2]), axis=0)
                 d = np.expand_dims(d,0) 
-                dets = np.append(dets,d, axis=0)
+
+                if len(dets)>0:
+                    dets = np.append(dets,d, axis=0)
+                else:
+                    dets = d
 
         if len(dets)>0:
             dets = dets[dets[:,4]>self.init_threshold]
