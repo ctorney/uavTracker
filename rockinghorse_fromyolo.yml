@@ -25,7 +25,7 @@ checked_annotations_fname: 'annotations-checked.yml'
 # TRAINING
 ##########
 #You can specify multiple training setups:
-training_setup: 'training_2' 
+training_setup: 'training_1' 
 
 training_1:
   annotations_fname: 'annotations-checked.yml' #annotations to be used for training
@@ -33,8 +33,8 @@ training_1:
   weights: 'yolo-v3-coco.h5'
   weights_md5: "26cf8e8b5ba9d9d4a3778f9747e3407a" #leave empty if you are retraining
   num_class: 80
-  obj_thresh: 0.2
-  nms_thresh: 0.3
+  obj_thresh: 0.8
+  nms_thresh: 0.8
 
 training_2:
   annotations_fname: 'annotations-checked.yml' #annotations to be used for training

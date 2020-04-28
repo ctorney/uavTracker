@@ -6,7 +6,7 @@ import os, sys, glob, yaml, argparse
 import cv2
 sys.path.append('../..')
 sys.path.append('..')
-from models.yolo_models import get_yolo_model, get_yolo_model_feats
+from models.yolo_models import get_yolo_model
 from utils.decoder import decode
 from utils.utils import md5check, makeYoloCompatible, pleaseCheckMyDirectories
 

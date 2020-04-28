@@ -63,283 +63,517 @@ def positions(h,w):
         return pred_box_xy
     return Lambda(func)
 
-def get_yolo_model(in_w=416,in_h=416, num_class=80, trainable=False, headtrainable=False):
+def convert_output(final_large, final_med, final_small, in_w, in_h, out_size):
 
-    # for each box we have num_class outputs, 4 bbox coordinates, and 1 object confidence value
-    out_size = num_class+5
-    input_image = Input(shape=( in_h,in_w, 3))
-    if in_w % 32 != 0 or in_h %32 !=0:
-        print('######ERROR######')
-        print('ERROR: This model needs an image which size is a multiplyer of 32')
-        return []
-
-    # Layer  0 => 4
-    x = _conv_block(input_image, [{'filter': 32, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 0},
-                                  {'filter': 64, 'kernel': 3, 'stride': 2, 'bnorm': True, 'leaky': True, 'layer_idx': 1},
-                                  {'filter': 32, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 2},
-                                  {'filter': 64, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 3}], train=trainable)
-
-    # Layer  5 => 8
-    x = _conv_block(x, [{'filter': 128, 'kernel': 3, 'stride': 2, 'bnorm': True, 'leaky': True, 'layer_idx': 5},
-                        {'filter':  64, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 6},
-                        {'filter': 128, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 7}], train=trainable)
-
-    # Layer  9 => 11
-    x = _conv_block(x, [{'filter':  64, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 9},
-                        {'filter': 128, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 10}], train=trainable)
-
-    # Layer 12 => 15
-    x = _conv_block(x, [{'filter': 256, 'kernel': 3, 'stride': 2, 'bnorm': True, 'leaky': True, 'layer_idx': 12},
-                        {'filter': 128, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 13},
-                        {'filter': 256, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 14}], train=trainable)
-
-    # Layer 16 => 36
-    for i in range(7):
-        x = _conv_block(x, [{'filter': 128, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 16+i*3},
-                            {'filter': 256, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 17+i*3}], train=trainable)
-
-    skip_36 = x
-
-    # Layer 37 => 40
-    x = _conv_block(x, [{'filter': 512, 'kernel': 3, 'stride': 2, 'bnorm': True, 'leaky': True, 'layer_idx': 37},
-                        {'filter': 256, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 38},
-                        {'filter': 512, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 39}], train=trainable)
-
-    # Layer 41 => 61
-    for i in range(7):
-        x = _conv_block(x, [{'filter': 256, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 41+i*3},
-                            {'filter': 512, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 42+i*3}], train=trainable)
-
-    skip_61 = x
-
-    # Layer 62 => 65
-    x = _conv_block(x, [{'filter': 1024, 'kernel': 3, 'stride': 2, 'bnorm': True, 'leaky': True, 'layer_idx': 62},
-                        {'filter':  512, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 63},
-                        {'filter': 1024, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 64}], train=trainable)
-
-    # Layer 66 => 74
-    for i in range(3):
-        x = _conv_block(x, [{'filter':  512, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 66+i*3},
-                            {'filter': 1024, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 67+i*3}], train=trainable)
-
-    # Layer 75 => 79
-    x = _conv_block(x, [{'filter':  512, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 75},
-                        {'filter': 1024, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 76},
-                        {'filter':  512, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 77},
-                        {'filter': 1024, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 78},
-                        {'filter':  512, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 79}], skip=False, train=trainable)
-
-    # Layer 80 => 82
-    if num_class!=80:
-        yolo_82 = _conv_block(x, [{'filter': 1024, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 80},
-                              {'filter':  3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False,'train': headtrainable, 'layer_idx': 981}], skip=False, train=trainable)
-    else:
-        yolo_82 = _conv_block(x, [{'filter': 1024, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 80},
-                              {'filter':  3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False,'train': headtrainable, 'layer_idx': 81}], skip=False, train=trainable)
-
-    # Layer 83 => 86
-    x = _conv_block(x, [{'filter': 256, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 84}], skip=False, train=trainable)
-    x = UpSampling2D(2)(x)
-    x = concatenate([x, skip_61])
-
-    # Layer 87 => 91
-    x = _conv_block(x, [{'filter': 256, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 87},
-                        {'filter': 512, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 88},
-                        {'filter': 256, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 89},
-                        {'filter': 512, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 90},
-                        {'filter': 256, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 91}], skip=False, train=trainable)
-
-    # Layer 92 => 94
-    if num_class!=80:
-        yolo_94 = _conv_block(x, [{'filter': 512, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 92},
-                    {'filter': 3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable, 'layer_idx': 993}], skip=False, train=trainable)
-    else:
-        yolo_94 = _conv_block(x, [{'filter': 512, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 92},
-                    {'filter': 3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable, 'layer_idx': 93}], skip=False, train=trainable)
-
-    # Layer 95 => 98
-    x = _conv_block(x, [{'filter': 128, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True,   'layer_idx': 96}], skip=False, train=trainable)
-    x = UpSampling2D(2)(x)
-    x = concatenate([x, skip_36])
-
-    # Layer 99 => 106
-    x = _conv_block(x, [{'filter': 128, 'kernel': 1, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 99},
-                               {'filter': 256, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 100},
-                               {'filter': 128, 'kernel': 1, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 101},
-                               {'filter': 256, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 102},
-                               {'filter': 128, 'kernel': 1, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 103},
-                               {'filter': 256, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 104},], skip=False, train=trainable)
-
-    if num_class!=80:
-        yolo_106 = _conv_block(x, [{'filter': 3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable,'layer_idx': 9105}], skip=False, train=trainable)
-    else:
-        yolo_106 = _conv_block(x, [{'filter': 3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable,'layer_idx': 105}], skip=False, train=trainable)
-
-
-    final_large = Reshape((in_h//32,in_w//32,3,out_size))(yolo_82)
-    final_med = Reshape((in_h//16, in_w//16,3,out_size))(yolo_94)
-    final_small = Reshape((in_h//8,in_w//8,3,out_size))(yolo_106)
-    #output = [final_large, final_med, final_small]
-    #model = Model(input_image,output)
-    #return model
-
-    s_offs =crop(0,2)(final_small)
-    s_offs = Activation('sigmoid')(s_offs)
-    s_offs = positions(in_h,in_w)(s_offs)
-    s_szs =crop(2,4)(final_small)
-    s_szs = anchors(2)(s_szs)
-    s_scores =crop(4,5)(final_small)
+    s_offs = crop(0, 2)(final_small)
+    s_szs = crop(2, 4)(final_small)
+    s_scores = crop(4, out_size - 3)(final_small)
     s_scores = Activation('sigmoid')(s_scores)
-    s_cls =crop(5,out_size)(final_small)
-    s_cls = Activation('softmax')(s_cls)
-    s_out = concatenate([s_offs, s_szs, s_scores, s_cls])
+    s_feats = crop(out_size - 3, out_size)(final_small)
+    s_feats = Activation('tanh')(s_feats)
+    s_szs = anchors(2)(s_szs)
+    s_offs = Activation('sigmoid')(s_offs)
+    s_offs = positions(in_h, in_w)(s_offs)
+    s_out = concatenate([s_offs, s_szs, s_scores, s_feats])
 
-    m_offs =crop(0,2)(final_med)
-    m_szs =crop(2,4)(final_med)
-    m_scores =crop(4,5)(final_med)
+    m_offs = crop(0, 2)(final_med)
+    m_szs = crop(2, 4)(final_med)
+    m_scores = crop(4, out_size - 3)(final_med)
     m_scores = Activation('sigmoid')(m_scores)
+    m_feats = crop(out_size - 3, out_size)(final_med)
+    m_feats = Activation('tanh')(m_feats)
     m_szs = anchors(1)(m_szs)
     m_offs = Activation('sigmoid')(m_offs)
-    m_offs = positions(in_h,in_w)(m_offs)
-    m_cls =crop(5,out_size)(final_med)
-    m_cls = Activation('softmax')(m_cls)
-    m_out = concatenate([m_offs, m_szs, m_scores, m_cls])
+    m_offs = positions(in_h, in_w)(m_offs)
+    m_out = concatenate([m_offs, m_szs, m_scores, m_feats])
 
-    l_offs =crop(0,2)(final_large)
-    l_szs =crop(2,4)(final_large)
-    l_scores =crop(4,5)(final_large)
+    l_offs = crop(0, 2)(final_large)
+    l_szs = crop(2, 4)(final_large)
+    l_scores = crop(4, out_size - 3)(final_large)
     l_scores = Activation('sigmoid')(l_scores)
+    l_feats = crop(out_size - 3, out_size)(final_large)
+    l_feats = Activation('tanh')(l_feats)
     l_szs = anchors(0)(l_szs)
     l_offs = Activation('sigmoid')(l_offs)
-    l_offs = positions(in_h,in_w)(l_offs)
-    l_cls =crop(5,out_size)(final_large)
-    l_cls = Activation('softmax')(l_cls)
-    l_out = concatenate([l_offs, l_szs, l_scores, l_cls])
+    l_offs = positions(in_h, in_w)(l_offs)
+    l_out = concatenate([l_offs, l_szs, l_scores, l_feats])
 
-    output = [l_out, m_out, s_out]
+    return [l_out, m_out, s_out]
 
-    model = Model(input_image,output)
-    return model
+def get_yolo_model(in_w=416,in_h=416, num_class=80, trainable=False, headtrainable=False, raw_features = False):
 
-def get_yolo_model_feats(in_w=416,in_h=416, num_class=80, trainable=False, headtrainable=False):
-
-    # for each box we have num_class outputs, 4 bbox coordinates, and 1 object confidence value
-    out_size = num_class+5
+    # for each box we have num_class outputs, 4 bbox coordinates, and 1 object confidence value + 3 linker features if raw_features enabled
+    space_for_raw_features = 3 if raw_features else 0
+    out_size = num_class + 5 + space_for_raw_features
     input_image = Input(shape=( in_h,in_w, 3))
     if in_w % 32 != 0 or in_h %32 !=0:
         print('######ERROR######')
         print('ERROR: This model needs an image which size is a multiplyer of 32')
         return []
 
+    all_layers = get_layers(
+        input_image, in_w, in_h, num_class, out_size, trainable, headtrainable, raw_features)
+
+    final_large, final_med, final_small = all_layers[0:3]
+    l_out, m_out, s_out = convert_output(final_large, final_med,
+                                         final_small, in_w, in_h, out_size)
+
+    if raw_features:
+        large_raw, med_raw, small_raw = all_layers[3:6]
+    output = [l_out, m_out, s_out, large_raw, med_raw, small_raw] if raw_features else [l_out, m_out, s_out]
+
+    model = Model(input_image,output)
+    return model
+
+def get_layers(input_image,
+               in_w=416,
+               in_h=416,
+               num_class=80,
+               out_size=85,
+               trainable=False,
+               headtrainable=False,
+               raw_features=False):
+
     # Layer  0 => 4
-    x = _conv_block(input_image, [{'filter': 32, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 0},
-                                  {'filter': 64, 'kernel': 3, 'stride': 2, 'bnorm': True, 'leaky': True, 'layer_idx': 1},
-                                  {'filter': 32, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 2},
-                                  {'filter': 64, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 3}], train=trainable)
+    x = _conv_block(input_image, [{
+        'filter': 32,
+        'kernel': 3,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 0
+    }, {
+        'filter': 64,
+        'kernel': 3,
+        'stride': 2,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 1
+    }, {
+        'filter': 32,
+        'kernel': 1,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 2
+    }, {
+        'filter': 64,
+        'kernel': 3,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 3
+    }],
+                    train=trainable)
 
     # Layer  5 => 8
-    x = _conv_block(x, [{'filter': 128, 'kernel': 3, 'stride': 2, 'bnorm': True, 'leaky': True, 'layer_idx': 5},
-                        {'filter':  64, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 6},
-                        {'filter': 128, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 7}], train=trainable)
+    x = _conv_block(x, [{
+        'filter': 128,
+        'kernel': 3,
+        'stride': 2,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 5
+    }, {
+        'filter': 64,
+        'kernel': 1,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 6
+    }, {
+        'filter': 128,
+        'kernel': 3,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 7
+    }],
+                    train=trainable)
 
     # Layer  9 => 11
-    x = _conv_block(x, [{'filter':  64, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 9},
-                        {'filter': 128, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 10}], train=trainable)
+    x = _conv_block(x, [{
+        'filter': 64,
+        'kernel': 1,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 9
+    }, {
+        'filter': 128,
+        'kernel': 3,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 10
+    }],
+                    train=trainable)
 
     # Layer 12 => 15
-    x = _conv_block(x, [{'filter': 256, 'kernel': 3, 'stride': 2, 'bnorm': True, 'leaky': True, 'layer_idx': 12},
-                        {'filter': 128, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 13},
-                        {'filter': 256, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 14}], train=trainable)
+    x = _conv_block(x, [{
+        'filter': 256,
+        'kernel': 3,
+        'stride': 2,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 12
+    }, {
+        'filter': 128,
+        'kernel': 1,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 13
+    }, {
+        'filter': 256,
+        'kernel': 3,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 14
+    }],
+                    train=trainable)
 
     # Layer 16 => 36
     for i in range(7):
-        x = _conv_block(x, [{'filter': 128, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 16+i*3},
-                            {'filter': 256, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 17+i*3}], train=trainable)
+        x = _conv_block(x, [{
+            'filter': 128,
+            'kernel': 1,
+            'stride': 1,
+            'bnorm': True,
+            'leaky': True,
+            'layer_idx': 16 + i * 3
+        }, {
+            'filter': 256,
+            'kernel': 3,
+            'stride': 1,
+            'bnorm': True,
+            'leaky': True,
+            'layer_idx': 17 + i * 3
+        }],
+                        train=trainable)
 
     skip_36 = x
 
     # Layer 37 => 40
-    x = _conv_block(x, [{'filter': 512, 'kernel': 3, 'stride': 2, 'bnorm': True, 'leaky': True, 'layer_idx': 37},
-                        {'filter': 256, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 38},
-                        {'filter': 512, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 39}], train=trainable)
+    x = _conv_block(x, [{
+        'filter': 512,
+        'kernel': 3,
+        'stride': 2,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 37
+    }, {
+        'filter': 256,
+        'kernel': 1,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 38
+    }, {
+        'filter': 512,
+        'kernel': 3,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 39
+    }],
+                    train=trainable)
 
     # Layer 41 => 61
     for i in range(7):
-        x = _conv_block(x, [{'filter': 256, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 41+i*3},
-                            {'filter': 512, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 42+i*3}], train=trainable)
+        x = _conv_block(x, [{
+            'filter': 256,
+            'kernel': 1,
+            'stride': 1,
+            'bnorm': True,
+            'leaky': True,
+            'layer_idx': 41 + i * 3
+        }, {
+            'filter': 512,
+            'kernel': 3,
+            'stride': 1,
+            'bnorm': True,
+            'leaky': True,
+            'layer_idx': 42 + i * 3
+        }],
+                        train=trainable)
 
     skip_61 = x
 
     # Layer 62 => 65
-    x = _conv_block(x, [{'filter': 1024, 'kernel': 3, 'stride': 2, 'bnorm': True, 'leaky': True, 'layer_idx': 62},
-                        {'filter':  512, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 63},
-                        {'filter': 1024, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 64}], train=trainable)
+    x = _conv_block(x, [{
+        'filter': 1024,
+        'kernel': 3,
+        'stride': 2,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 62
+    }, {
+        'filter': 512,
+        'kernel': 1,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 63
+    }, {
+        'filter': 1024,
+        'kernel': 3,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 64
+    }],
+                    train=trainable)
 
     # Layer 66 => 74
     for i in range(3):
-        x = _conv_block(x, [{'filter':  512, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 66+i*3},
-                            {'filter': 1024, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 67+i*3}], train=trainable)
+        x = _conv_block(x, [{
+            'filter': 512,
+            'kernel': 1,
+            'stride': 1,
+            'bnorm': True,
+            'leaky': True,
+            'layer_idx': 66 + i * 3
+        }, {
+            'filter': 1024,
+            'kernel': 3,
+            'stride': 1,
+            'bnorm': True,
+            'leaky': True,
+            'layer_idx': 67 + i * 3
+        }],
+                        train=trainable)
 
     # Layer 75 => 79
-    x = _conv_block(x, [{'filter':  512, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 75},
-                        {'filter': 1024, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 76},
-                        {'filter':  512, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 77},
-                        {'filter': 1024, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 78},
-                        {'filter':  512, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 79}], skip=False, train=trainable)
+    x = _conv_block(x, [{
+        'filter': 512,
+        'kernel': 1,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 75
+    }, {
+        'filter': 1024,
+        'kernel': 3,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 76
+    }, {
+        'filter': 512,
+        'kernel': 1,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 77
+    }, {
+        'filter': 1024,
+        'kernel': 3,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 78
+    }, {
+        'filter': 512,
+        'kernel': 1,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 79
+    }],
+                    skip=False,
+                    train=trainable)
 
+    large_raw = _conv_block(x, [{
+        'filter': 1024,
+        'kernel': 3,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 80
+    }],
+                            skip=False,
+                            train=trainable)
     # Layer 80 => 82
-    if num_class!=80:
-        yolo_82 = _conv_block(x, [{'filter': 1024, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 80},
-                              {'filter':  3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False,'train': headtrainable, 'layer_idx': 981}], skip=False, train=trainable)
-    else:
-        yolo_82 = _conv_block(x, [{'filter': 1024, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 80},
-                              {'filter':  3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False,'train': headtrainable, 'layer_idx': 81}], skip=False, train=trainable)
+    yolo_82 = _conv_block(large_raw, [{
+        'filter': 3 * out_size,
+        'kernel': 1,
+        'stride': 1,
+        'bnorm': False,
+        'leaky': False,
+        'train': headtrainable,
+        'layer_idx': 981
+    }],
+                          skip=False,
+                          train=trainable)
+    final_large = Reshape((in_h // 32, in_w // 32, 3, out_size))(yolo_82)
 
     # Layer 83 => 86
-    x = _conv_block(x, [{'filter': 256, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 84}], skip=False, train=trainable)
+    x = _conv_block(x, [{
+        'filter': 256,
+        'kernel': 1,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 84
+    }],
+                    skip=False,
+                    train=trainable)
     x = UpSampling2D(2)(x)
     x = concatenate([x, skip_61])
 
     # Layer 87 => 91
-    x = _conv_block(x, [{'filter': 256, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 87},
-                        {'filter': 512, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 88},
-                        {'filter': 256, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 89},
-                        {'filter': 512, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 90},
-                        {'filter': 256, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 91}], skip=False, train=trainable)
+    x = _conv_block(x, [{
+        'filter': 256,
+        'kernel': 1,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 87
+    }, {
+        'filter': 512,
+        'kernel': 3,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 88
+    }, {
+        'filter': 256,
+        'kernel': 1,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 89
+    }, {
+        'filter': 512,
+        'kernel': 3,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 90
+    }, {
+        'filter': 256,
+        'kernel': 1,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 91
+    }],
+                    skip=False,
+                    train=trainable)
 
+    med_raw = _conv_block(x, [{
+        'filter': 512,
+        'kernel': 3,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 92
+    }],
+                          skip=False,
+                          train=trainable)
     # Layer 92 => 94
-    if num_class!=80:
-        yolo_94 = _conv_block(x, [{'filter': 512, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 92},
-                    {'filter': 3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable, 'layer_idx': 993}], skip=False, train=trainable)
-    else:
-        yolo_94 = _conv_block(x, [{'filter': 512, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 92},
-                    {'filter': 3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable, 'layer_idx': 93}], skip=False, train=trainable)
+    yolo_94 = _conv_block(med_raw, [{
+        'filter': 3 * out_size,
+        'kernel': 1,
+        'stride': 1,
+        'bnorm': False,
+        'leaky': False,
+        'train': headtrainable,
+        'layer_idx': 993
+    }],
+                          skip=False,
+                          train=trainable)
+    final_med = Reshape((in_h // 16, in_w // 16, 3, out_size))(yolo_94)
 
     # Layer 95 => 98
-    x = _conv_block(x, [{'filter': 128, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True,   'layer_idx': 96}], skip=False, train=trainable)
+    x = _conv_block(x, [{
+        'filter': 128,
+        'kernel': 1,
+        'stride': 1,
+        'bnorm': True,
+        'leaky': True,
+        'layer_idx': 96
+    }],
+                    skip=False,
+                    train=trainable)
     x = UpSampling2D(2)(x)
     x = concatenate([x, skip_36])
 
     # Layer 99 => 106
-    x = _conv_block(x, [{'filter': 128, 'kernel': 1, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 99},
-                               {'filter': 256, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 100},
-                               {'filter': 128, 'kernel': 1, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 101},
-                               {'filter': 256, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 102},
-                               {'filter': 128, 'kernel': 1, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 103},
-                               {'filter': 256, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 104},], skip=False, train=trainable)
+    x = _conv_block(x, [
+        {
+            'filter': 128,
+            'kernel': 1,
+            'stride': 1,
+            'bnorm': True,
+            'leaky': True,
+            'layer_idx': 99
+        },
+        {
+            'filter': 256,
+            'kernel': 3,
+            'stride': 1,
+            'bnorm': True,
+            'leaky': True,
+            'layer_idx': 100
+        },
+        {
+            'filter': 128,
+            'kernel': 1,
+            'stride': 1,
+            'bnorm': True,
+            'leaky': True,
+            'layer_idx': 101
+        },
+        {
+            'filter': 256,
+            'kernel': 3,
+            'stride': 1,
+            'bnorm': True,
+            'leaky': True,
+            'layer_idx': 102
+        },
+        {
+            'filter': 128,
+            'kernel': 1,
+            'stride': 1,
+            'bnorm': True,
+            'leaky': True,
+            'layer_idx': 103
+        },
+        {
+            'filter': 256,
+            'kernel': 3,
+            'stride': 1,
+            'bnorm': True,
+            'leaky': True,
+            'layer_idx': 104
+        },
+    ],
+                    skip=False,
+                    train=trainable)
 
-    if num_class!=80:
-        yolo_106 = _conv_block(x, [{'filter': 3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable,'layer_idx': 9105}], skip=False, train=trainable)
+    small_raw = x
+    yolo_106 = _conv_block(x, [{
+        'filter': 3 * out_size,
+        'kernel': 1,
+        'stride': 1,
+        'bnorm': False,
+        'leaky': False,
+        'train': headtrainable,
+        'layer_idx': 9105
+    }],
+                           skip=False,
+                           train=trainable)
+    final_small = Reshape((in_h // 8, in_w // 8, 3, out_size))(yolo_106)
+
+    if raw_features:
+        output = [
+            final_large, final_med, final_small, large_raw, med_raw, small_raw
+        ]
     else:
-        yolo_106 = _conv_block(x, [{'filter': 3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable,'layer_idx': 105}], skip=False, train=trainable)
+        output = [final_large, final_med, final_small]
 
-    print("Work in progress to return heatmap of detections")
-    # print(in_h/32)
-    final_large = Reshape((in_h//32,in_w//32,3,out_size))(yolo_82)
-    final_med = Reshape((in_h//16, in_w//16,3,out_size))(yolo_94)
-    final_small = Reshape((in_h//8,in_w//8,3,out_size))(yolo_106)
-
-    #Returning heatmap of detections
-    output = [final_large, final_med, final_small]
-    model = Model(input_image,output)
-    return model
+    return output

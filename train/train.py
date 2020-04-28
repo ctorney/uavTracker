@@ -66,7 +66,7 @@ def main(args):
         pretrained_weights = weights_dir + config[training_setup]['weights']
         md5check(config[training_setup]['weights_md5'], pretrained_weights)
         model = get_yolo_model(
-            IMAGE_W, IMAGE_H, num_class=len(LABELS), headtrainable=True)
+            IMAGE_W, IMAGE_H, num_class=len(LABELS), headtrainable=True, raw_features=False)
         print("Loading weights %s", pretrained_weights)
         model.load_weights(pretrained_weights, by_name=True)
     else:
@@ -75,7 +75,7 @@ def main(args):
         )
         pretrained_weights = weights_dir + config['phase_one']['trained_weights']
         model = get_yolo_model(
-            IMAGE_W, IMAGE_H, num_class=len(LABELS), headtrainable=True, trainable=False)
+            IMAGE_W, IMAGE_H, num_class=len(LABELS), headtrainable=True, trainable=False, raw_features=False)
         print("Loading weights %s", pretrained_weights)
         model.load_weights(pretrained_weights)
 
@@ -163,7 +163,7 @@ def main(args):
     print('Prepared batches now we will compile')
     optimizer = Adam(lr=LR, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
     model.compile(loss=yolo_loss, optimizer=optimizer, metrics=['accuracy'])
-
+    print("COMPILED")
     early_stop = EarlyStopping(
         monitor='loss', min_delta=0.001, patience=5, mode='min', verbose=1)
     checkpoint = ModelCheckpoint(
