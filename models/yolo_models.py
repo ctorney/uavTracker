@@ -103,7 +103,8 @@ def convert_output(final_large, final_med, final_small, in_w, in_h, out_size):
 def get_yolo_model(in_w=416,in_h=416, num_class=80, trainable=False, headtrainable=False, raw_features = False):
 
     # for each box we have num_class outputs, 4 bbox coordinates, and 1 object confidence value + 3 linker features if raw_features enabled
-    space_for_raw_features = 3 if raw_features else 0
+    # space_for_raw_features = 3 if raw_features else 0
+    space_for_raw_features = 3 #if raw_features else 0
     out_size = num_class + 5 + space_for_raw_features
     input_image = Input(shape=( in_h,in_w, 3))
     if in_w % 32 != 0 or in_h %32 !=0:
