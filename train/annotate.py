@@ -23,12 +23,9 @@ drawing = False  #this have to be False for drawing to work properly!!!
 def check_boxes(img_clean, bbox_list, im_width, im_height):
     def draw_all_boxes():
         img = img_clean.copy()
-
         for b in bbox_list:
-            cv2.rectangle(
-                img, (b[0], b[1]), (b[2], b[3]),
-                color=(0, 255, 0),
-                thickness=2)
+            #we have to make sure the the b are int. otherwise opencv thinks there is a problem with number of arguments
+            cv2.rectangle(img, (int(b[0]), int(b[1])), (int(b[2]), int(b[3])),(0, 255, 0),2)
         cv2.imshow('image', img)
 
     # mouse callback function
@@ -160,8 +157,9 @@ def main(args):
         img_data['filename'] = fname
         img_data['width'] = all_imgs[i]['width']
         img_data['height'] = all_imgs[i]['height']
+        fullfile = preped_images_dir + fname
         sys.stdout.write('\r')
-        sys.stdout.write(fname + ", " + str(i) + ' of ' + str(
+        sys.stdout.write(fullfile + ", " + str(i) + ' of ' + str(
             len(all_imgs)) + " \n=====================================\n")
         sys.stdout.flush()
 
@@ -172,7 +170,7 @@ def main(args):
                     [obj['xmin'], obj['ymin'], obj['xmax'], obj['ymax']])
 
         #do box processing
-        img = cv2.imread(data_dir + fname)
+        img = cv2.imread(fullfile)
         if check_boxes(img, boxes, im_width, im_height):
             break
         for b in boxes:
