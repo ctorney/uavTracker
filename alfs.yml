@@ -14,7 +14,7 @@ tracks_dir: 'tracks/'
 predictions_dir: 'predictions/'
 annotations_dir: 'annotations/'
 
-pretrained_annotations_fname: 'train_data.yml'
+pretrained_annotations_fname: 'train_data.yml' #can also be artificially prepared if we work with simulated data
 trained_annotations_fname: 'annotations-trained.yml'
 testing_annotations_fname: 'annotations-testing.yml'
 test_videos_name_regex: "*.mp4"
@@ -26,7 +26,7 @@ checked_annotations_fname: 'annotations-checked.yml'
 # TRAINING
 ##########
 #You can specify multiple training setups:
-training_setup: 'alf_train' 
+training_setup: 'alf_new_train' 
 
 alf_train:
   annotations_fname: 'annotations-checked.yml' #annotations to be used for training
@@ -36,6 +36,17 @@ alf_train:
   num_class: 1
   obj_thresh: 0.7
   nms_thresh: 0.5
+
+alf_new_train:
+  annotations_fname: 'annotations-checked.yml' #annotations to be used for training
+  train_files_regex: "images/*.jpg"
+  weights: 'trained-tight-alfs.h5'
+  weights_md5: "2cdd68feb27f120334a50afecf5d6145" #leave empty if you are retraining
+  num_class: 1
+  obj_thresh: 0.7
+  nms_thresh: 0.5
+
+
 
 
 # Training parameters:
@@ -66,9 +77,9 @@ mk1:
   videos_fps: 30
   link_iou: 0.1
   step_frames: 5 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
-  videos_list: "horse_videos.yml" #after transforms.py was run this is where video list live
-  weights: 'trained-rockinghorse_p2.h5'
-  weights_md5: ""
+  videos_list: "alfs_videos.yml" #after transforms.py was run this is where video list live
+  weights: 'trained-tight-alfs.h5'
+  weights_md5: "2cdd68feb27f120334a50afecf5d6145" #leave empty if you are retraining
   num_class: 1
   obj_thresh: 0.8
   nms_thresh: 0.5
