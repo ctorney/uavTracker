@@ -79,7 +79,7 @@ def main(args):
                 head, tail = os.path.split(imagename)
                 noext, ext = os.path.splitext(tail)
                 save_name = preped_images_dir + '/TR_' + noext + '-' + str(n_count) + '.png'
-                save_name_short = preped_images_dir_short + '/TR_' + noext + '-' + str(n_count) + '.png'
+                save_name_short = 'TR_' + noext + '-' + str(n_count) + '.png'
                 box_name = bbox_images_dir + '/ ' + noext + '-' + str(
                     n_count) + '.png'
                 img = im[y:y + im_height, x:x + im_width, :]
