@@ -50,14 +50,14 @@ alf_new_train:
 # phase_one top layers, normal learning rate
 # phase_two all layers, small learning rate
 phase_one:
-  BATCH_SIZE: 32
+  BATCH_SIZE: 16
   EPOCHS: 500
   LR: 0.5e-4
   trained_weights: 'trained-new-alfs.h5'
 phase_two:
   BATCH_SIZE: 4
-  EPOCHS: 100
-  LR: 0.5e-4
+  EPOCHS: 400
+  LR: 0.5e-2
   trained_weights: 'trained-new-alfs-p2.h5'
 
 LABELS: ['alf']
