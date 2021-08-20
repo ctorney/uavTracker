@@ -167,7 +167,7 @@ def main(args):
     early_stop = EarlyStopping(
         monitor='loss', min_delta=0.001, patience=5, mode='min', verbose=1)
     checkpoint = ModelCheckpoint(
-        trained_weights + '_checkpoint',
+        filepath = weights_dir + '/checkpoints',
         monitor='loss',
         verbose=1,
         save_best_only=True,

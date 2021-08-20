@@ -38,7 +38,7 @@ alf_train:
   nms_thresh: 0.5
 
 alf_new_train:
-  annotations_fname: 'train-data.yml' #annotations to be used for training
+  annotations_fname: 'train_data.yml' #annotations to be used for training
   train_files_regex: "images/*.jpg"
   weights: 'trained-tight-alfs.h5'
   weights_md5: "2cdd68feb27f120334a50afecf5d6145" #leave empty if you are retraining

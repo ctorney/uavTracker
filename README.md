@@ -7,8 +7,9 @@ export WHICH_PYTHON=python3 && ./test.sh
 ```
 
 ## Steps to create the tracker are 
-### 1. Training
-   Step 1 is to generate training samples. Code to generate samples is in the directory train.
+### 0. pre-training
+   This pre-training is usually necessary as a way to clear/check or create from scratch annotations for your target animal. We leverage often decent performance of a generic object detector to generate imperfect annotated data (prepTrain) and then allow corrections (annotate.py). It is also known as transfer learning because we are not training (train.py) from scratch but take an existing model.
+   Step 0 is to generate training samples. Code to generate samples is in the directory train.
   * To prepare samples we use the YOLOv3 pretrained weights on the images. This is done with  `prepTrain.py` code:
 ```
 usage: prepTrain.py [-h] --config CONFIG --ddir DDIR
@@ -46,7 +47,9 @@ optional arguments:
 
 ```
 
-   The final step is to train the model with the created training samples. This is done with train.py. We use freeze lower levels and use pretrained weights, then fine tune the whole network. In the config file you specify parameters for both _Phase 1_ and _Phase 2_ of the training with the defined files:
+### 1. Training
+   This is where everything gets exciting once you have annotated images.
+   The key step is to train the model with the created training samples. This is done with train.py. We use freeze lower levels and use pretrained weights, then fine tune the whole network. In the config file you specify parameters for both _Phase 1_ and _Phase 2_ of the training with the defined files:
 
 ```
  usage: train.py [-h] --config CONFIG --ddir DDIR [--debug] [--test-run]
