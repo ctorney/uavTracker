@@ -73,7 +73,7 @@ def main(args):
     print(annotations_file)
 
     with open(annotations_file, 'r') as fp:
-        all_imgs = yaml.load(fp)
+        all_imgs = yaml.safe_load(fp)
 
     if args.annotated:
         print('Opening the already predicted files in file ' + args.annotated[0])
@@ -207,7 +207,7 @@ def main(args):
 
             #display scores for this image
             print(mmFname + ', ' + mmFrame + ', ' + str(mmGT) + ', ' + str(mmTP) + ', ' + str(mmFP))
- 
+
         else:
             # preprocess the image
             image_h, image_w, _ = img.shape
