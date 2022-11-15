@@ -1,4 +1,3 @@
-
 import numpy as np
 import pandas as pd
 import os,sys
@@ -17,18 +16,18 @@ def _interval_overlap(interval_a, interval_b):
         if x2 < x3:
              return 0
         else:
-            return min(x2,x4) - x3          
+            return min(x2,x4) - x3
 
 def bbox_iou(box1, box2):
-    
+
     intersect_w = _interval_overlap([box1[0], box1[2]], [box2[0], box2[2]])
     intersect_h = _interval_overlap([box1[1], box1[3]], [box2[1], box2[3]])
-    
+
     intersect = intersect_w * intersect_h
 
     w1, h1 = box1[2]-box1[0], box1[3]-box1[1]
     w2, h2 = box2[2]-box2[0], box2[3]-box2[1]
-    
+
     union = w1*h1 + w2*h2 - intersect
     return float(intersect) / union
 
@@ -85,7 +84,7 @@ def decode(yolos, obj_thresh=0.9, nms_thresh=0.5):
     return_boxes = []
 
     for b in boxes:
-        if b[4]>0:
+        if b[4]>0 and (not np.isnan(b).any()):
             return_boxes.append([b[0],b[1],b[2],b[3],b[4]])
 
     return return_boxes
