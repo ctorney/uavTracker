@@ -12,15 +12,15 @@ if [ ! -f rockinghorse.zip ]; then
 	unzip rockinghorse.zip
 fi
 cd train
-python prepTrain.py --config ../rockinghorse_fromyolo.yml --ddir ../rockinghorse
-python annotate.py --config ../rockinghorse_fromyolo.yml --ddir ../rockinghorse
+python prepTrain.py --config ../rockinghorse_fromyolo.yml --ddir ../data/rockinghorse
+python annotate.py --config ../rockinghorse_fromyolo.yml --ddir ../data/rockinghorse
 #--test-run flag runs training for a test run
-python train.py --test-run --config ../rockinghorse_fromyolo.yml --ddir ../rockinghorse --phase='phase_one'
-python train.py --test-run --config ../rockinghorse_fromyolo.yml --ddir ../rockinghorse --phase='phase_two'
-python postTrainTest.py --config ../rockinghorse_fromyolo.yml --ddir ../rockinghorse
+python train.py --test-run --config ../rockinghorse_fromyolo.yml --ddir ../data/rockinghorse --phase='phase_one'
+python train.py --test-run --config ../rockinghorse_fromyolo.yml --ddir ../data/rockinghorse --phase='phase_two'
+python postTrainTest.py --config ../rockinghorse_fromyolo.yml --ddir ../data/rockinghorse
 cd ../tracking
-python transforms.py --config ../rockinghorse_fromyolo.yml --ddir ../rockinghorse
-python runTracker.py --config ../rockinghorse_fromyolo.yml --ddir ../rockinghorse
+python transforms.py --config ../rockinghorse_fromyolo.yml --ddir ../data/rockinghorse
+python runTracker.py --config ../rockinghorse_fromyolo.yml --ddir ../data/rockinghorse
 echo "::>- O O -<::>- O O -<::>- O O -<::>- O O -<::>- O O -<::>- O O -<::"
 echo "It all seem to be working... Testing script completed. Ufff!"
 echo "::>- O O -<::>- O O -<::>- O O -<::>- O O -<::>- O O -<::>- O O -<::"

@@ -9,53 +9,26 @@ import yaml
 import pickle
 sys.path.append('..')
 from models.yolo_models import get_yolo_model
-from utils.decoder import decode
+from utils.decoder import decode, _interval_overlap, bbox_iou
 from utils.utils import md5check
 
-
-def _interval_overlap(interval_a, interval_b):
-    x1, x2 = interval_a
-    x3, x4 = interval_b
-
-    if x3 < x1:
-        if x4 < x1:
-            return 0
-        else:
-            return min(x2, x4) - x1
-    else:
-        if x2 < x3:
-            return 0
-        else:
-            return min(x2, x4) - x3
-
-
-def bbox_iou(box1, box2):
-
-    intersect_w = _interval_overlap([box1[0], box1[2]], [box2[0], box2[2]])
-    intersect_h = _interval_overlap([box1[1], box1[3]], [box2[1], box2[3]])
-
-    intersect = intersect_w * intersect_h
-
-    w1, h1 = box1[2] - box1[0], box1[3] - box1[1]
-    w2, h2 = box2[2] - box2[0], box2[3] - box2[1]
-
-    union = w1 * h1 + w2 * h2 - intersect
-
-    return float(intersect) / union
-
-
 def main(args):
+    args_visual = args.visual
+    args_annotated = args.annotated[0] if args.annotated else False
     #Load data
     data_dir = args.ddir[0] + '/'  #in case we forgot '/'
     print('Opening file' + args.config[0])
     with open(args.config[0], 'r') as configfile:
         config = yaml.safe_load(configfile)
 
+    #loading args ends here, so it is easier to run section by section in interpreter shell
+
     image_dir = data_dir + config['preped_images_dir']
     train_dir = data_dir
     weights_dir = data_dir + config['weights_dir']
     groundtruths_dir = data_dir + config['groundtruths_dir']
     predictions_dir = data_dir + config['predictions_dir']
+    os.makedirs(predictions_dir, exist_ok=True)
 
     #Training type dependent
     tracking_setup = config["tracking_setup"]
@@ -75,14 +48,14 @@ def main(args):
     with open(annotations_file, 'r') as fp:
         all_imgs = yaml.safe_load(fp)
 
-    if args.annotated:
-        print('Opening the already predicted files in file ' + args.annotated[0])
-        with open(args.annotated[0], 'r') as fp:
+    if args_annotated:
+        print('Opening the already predicted files in file ' + args_annotated)
+        with open(args_annotated, 'r') as fp:
             pred_imgs = yaml.load(fp)
 
 
 
-    if args.visual:
+    if args_visual:
         cv2.namedWindow('tracker', cv2.WINDOW_GUI_EXPANDED)
         cv2.moveWindow('tracker', 20,20)
 
@@ -126,9 +99,15 @@ def main(args):
         #do box processing
         img = cv2.imread(image_dir + basename)
 
+        # TODO create a tempalte for filenames. Currently it is from some balckbucks videos we had I think
         # print("File, {}".format(image_dir + basename))
         mmFname = basename.split('_f')[-1].split('_')[0]
-        mmFrame = basename.split('_f')[-1].split('_')[1].split('f')[0]
+
+        try:
+            mmFrame = basename.split('_f')[-1].split('_')[1].split('f')[0]
+        except:
+            mmFrame = 'N/A'
+
         mmGT = str(len(boxes_gt))
 
         frame = img.copy()
@@ -151,12 +130,12 @@ def main(args):
                 file_gt.write(str(obj['ymax']))
                 file_gt.write('\n')
 
-                if args.visual:
+                if args_visual:
                     cv2.rectangle(
                         frame, (int(obj['xmin']) - 2, int(obj['ymin']) - 2),
                         (int(obj['xmax']) + 2, int(obj['ymax']) + 2), (200, 0, 0), 1)
 
-        if args.annotated:
+        if args_annotated:
             boxes_pred = []
             for obj in pred_imgs[i]['object']:
                 boxes_pred.append(
@@ -180,7 +159,7 @@ def main(args):
                     file_pred.write(str(obj['ymax']))
                     file_pred.write('\n')
 
-                    if args.visual:
+                    if args-visual:
                         cv2.rectangle(
                             frame, (int(obj['xmin']) - 2, int(obj['ymin']) - 2),
                             (int(obj['xmax']) + 2, int(obj['ymax']) + 2), (200, 0, 0), 1)
@@ -259,14 +238,14 @@ def main(args):
                     file_pred.write(str(objpred['ymax']))
                     file_pred.write('\n')
 
-                    if args.visual:
+                    if args_visual:
                         cv2.rectangle(
                             frame, (int(objpred['xmin']) - 2, int(objpred['ymin']) - 2),
                             (int(objpred['xmax']) + 2, int(objpred['ymax']) + 2), (0, 0, 198), 1)
                         str_conf = "{:.1f}".format(objpred['confidence'])
                         cv2.putText(frame, str_conf,  (int(objpred['xmax']),int(objpred['ymax'])), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.8, (200,200,250), 1);
 
-        if args.visual:
+        if args_visual:
             cv2.imshow('tracker', frame)
             key = cv2.waitKey(1)  #& 0xFF
         #precision = tp / (tp + fp)
