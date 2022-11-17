@@ -35,6 +35,7 @@ mkShell {
     tensorflowWithCuda
     tensorflow-tensorboard
     Keras
+    tqdm
     filterpy
     seaborn
     folium

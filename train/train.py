@@ -1,5 +1,6 @@
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint, TensorBoard
 from tensorflow.keras.optimizers import SGD, Adam, RMSprop
+from tqdm.keras import TqdmCallback
 import tensorflow as tf
 import numpy as np
 import yaml
@@ -178,12 +179,12 @@ def main(args):
     start = time.time()
     tensorboard = TensorBoard(log_dir="logs/{}".format(time.time()))
 
-    model.fit_generator(
-        generator=train_batch,
+    model.fit(
+        train_batch,
         steps_per_epoch=len(train_batch),
         epochs=EPOCHS,
-        verbose=1,
-        callbacks=[checkpoint, early_stop, tensorboard],
+        verbose=0,
+        callbacks=[checkpoint, early_stop, tensorboard, TqdmCallback(verbose=1)],
         max_queue_size=3)
 
     model.save_weights(trained_weights)
