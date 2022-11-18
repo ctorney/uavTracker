@@ -1,6 +1,6 @@
+#Directories that must be provided inside your data directory:
 weights_dir: 'weights/'
-movie_dir: ''
-tracks_dir: "tracks/"
+movie_dir: 'videos/'
 
 #output directories, will be created if don't exist:
 preped_images_dir: 'input_imgs/'
@@ -8,32 +8,34 @@ bbox_images_dir: 'extracted_bboxes/'
 groundtruths_dir: 'groundtruths/'
 predictions_dir: 'predictions/'
 annotations_dir: 'annotations/'
+tracks_dir: "tracks/"
 
-pretrained_annotations_fname: 'annotations-checked.yml'
+pretrained_annotations_fname: 'pre-annotations.yml'
 trained_annotations_fname: 'annotations-trained.yml'
 test_videos_name_regex: "videos/*.mp4"
 
 #checked annotations are used for training:
-checked_annotations_fname: 'annotations-checked.yml'
+checked_annotations_fname: 'annotations-train-spring19.yml' 
 
 
-training_setup: 'salmon' # generic|specific
+training_setup: 'autumn19' # generic|specific
 
 yolo:
-  train_files_regex: "stills/*.png"
+  train_files_regex: "stills_small/*.png"
   weights: 'yolo-v3-coco.h5'
-  weights_md5: "" #leave empty if you are retraining
+  weights_md5: "26cf8e8b5ba9d9d4a3778f9747e3407a" #leave empty if you are retraining
   num_class: 80
   obj_thresh: 0.2
   nms_thresh: 0.3
 
-salmon:
-  annotations_fname: 'annotations-checked.yml'
+autumn19:
+  #train_files_regex: "stills/*.png"
+  annotations_fname: 'annotations-train-spring19.yml' 
   weights: 'yolo-v3-coco.h5'
   weights_md5: "26cf8e8b5ba9d9d4a3778f9747e3407a" #leave empty if you are retraining
-  num_class: 1
-  obj_thresh: 0.2
-  nms_thresh: 0.3
+  #num_class: 1
+  #obj_thresh: 0.2
+  #nms_thresh: 0.3
   # obj_thresh: 0.005
   # nms_thresh: 0.5
 
@@ -44,12 +46,12 @@ phase_one:
   BATCH_SIZE: 16
   EPOCHS: 500
   LR: 0.5e-3
-  trained_weights: 'trained-salmon_p1_nov22_b.h5'
+  trained_weights: 'trained-autumn19-salmon_p1.h5'
 phase_two:
   BATCH_SIZE: 4
   EPOCHS: 100
-  LR: 0.1e-3
-  trained_weights: 'trained-salmon_p2_nov22_b.h5'
+  LR: 0.5e-4
+  trained_weights: 'trained-autumn19-salmon_p2.h5'
 
 LABELS: ['aoi']
 IMAGE_W: 1280 # or must be a multiplier of 32 in current version
@@ -71,13 +73,13 @@ showDetections: 1 # flag to show all detections in image
 tracking_setup: "mk1"
 
 mk1:
-  videos_name_regex: "videos/*.mp4" #for use by transform.py which also preps the following yml file
+  videos_name_regex: "*.mp4" #for use by transform.py which also preps the following yml file
   videos_fps: 8
   link_iou: 0.1
   step_frames: 1 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
   videos_list: "salmo_videos.yml" #after transforms.py was run this is where video list live
   # weights: 'trained-salmon-yoloMk4.h5'
-  weights: 'trained-salmon_p2_nov22.h5'
+  weights: 'trained-salmon-yoloMk4p2.h5'
   weights_md5: ""
   num_class: 1
   obj_thresh: 0.2
@@ -85,7 +87,7 @@ mk1:
   max_age: 30
   track_thresh: 0.2
   init_thresh: 0.2
-  init_nms: 0.0
+  init_nms: 0.3
 
 #Running tracker
 save_output: 1

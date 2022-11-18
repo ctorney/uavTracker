@@ -162,18 +162,18 @@ def main(args):
         return loss
 
     print('Prepared batches now we will compile')
-    optimizer = Adam(lr=LR, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+    optimizer = Adam(learning_rate=LR, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
     model.compile(loss=yolo_loss, optimizer=optimizer, metrics=['accuracy'])
     print("COMPILED")
     early_stop = EarlyStopping(
-        monitor='loss', min_delta=0.001, patience=5, mode='min', verbose=1)
+        monitor='loss', min_delta=0.001, patience=10, mode='min', verbose=1)
     checkpoint = ModelCheckpoint(
         filepath = weights_dir + '/checkpoints',
         monitor='loss',
         verbose=1,
         save_best_only=True,
         mode='min',
-        period=1)
+        save_freq='epoch')
 
     print('Training starts.')
     start = time.time()
