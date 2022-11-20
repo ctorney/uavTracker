@@ -15,14 +15,6 @@ import datetime as dt
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' ##TODO what does that do?
 
-LABELS = ''
-IMAGE_H = ''
-IMAGE_W = ''
-NO_OBJECT_SCALE = ''
-OBJECT_SCALE = ''
-COORD_SCALE = ''
-CLASS_SCALE = ''
-
 from models.yolo_models import get_yolo_model
 
 def read_tsets(config, model_name, c_date, list_of_subsets):
@@ -265,7 +257,7 @@ def main(args):
     DEBUG = args.debug
     TEST_RUN = args.test_run
     n_models_to_train = len(config['models'].keys())
-    print('Will train {n_models_to_train} different models for this experiment now')
+    print(f'Will train {n_models_to_train} different models for this experiment now')
 
     for model in config['models'].keys():
         run_full_training(model, config, data_dir, c_date, DEBUG, TEST_RUN)
