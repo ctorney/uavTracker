@@ -1,12 +1,29 @@
 # uavTracker
 Animal tracking from overhead using YOLO
 
-To check if it works run the following script which downloads some pretrained model and data and makes a test-run at re-training and tracking. It is interactive so at some point expect to annotate files - if you don't have X-server then you might need to remove this step and manually create a checked annotations file as per `rockinghorse.yml` config
+Try the following example
 ```
-export WHICH_PYTHON=python3 && ./test.sh 
+python train.py --config ../experiments/easy_fish.yml --test-run
 ```
 
-## Steps to create the tracker are 
+### Training/testing sets
+You can specify any number of training and testing sets that will be used as described in the experiment config file. Just take a look at the provided example.
+There are two ways of engagin with datasets:
+a) You already have an annotations file with **unique** filenames for every image in different subset directories. We are scanning directories of subsets as prescribed and pulling the correct annotations from that file, creating a temporary annotations file that contains specificed subset for either training or testing.
+
+b) You will annotate the data using our system, in which case, the filenames can be repeating across different subsets because we will include the subset directory as their names. I still think the names of images should be unique, but I won't be adding a checksum for every image to make sure it is the same :D
+
+
+
+
+# Old instructions to be removed or updated
+
+To check if it works run the following script which downloads some pretrained model and data and makes a test-run at re-training and tracking. It is interactive so at some point expect to annotate files - if you don't have X-server then you might need to remove this step and manually create a checked annotations file as per `rockinghorse.yml` config
+```
+export WHICH_PYTHON=python3 && ./test.sh
+```
+
+## Steps to create the tracker are
 ### 0. pre-training
    This pre-training is usually necessary as a way to clear/check or create from scratch annotations for your target animal. We leverage often decent performance of a generic object detector to generate imperfect annotated data (prepTrain) and then allow corrections (annotate.py). It is also known as transfer learning because we are not training (train.py) from scratch but take an existing model.
    Step 0 is to generate training samples. Code to generate samples is in the directory train.
@@ -26,9 +43,9 @@ optional arguments:
   --ddir DDIR, -d DDIR  Root of your data directory
 
 ```
-  
+
   * Once candidate detections are created the annotate.py can be used to filter out errors or objects that aren't of interest.
-  
+
 ```
 usage: annotate.py [-h] --config CONFIG --ddir DDIR [--resume]
                    [--from-scratch]
@@ -88,11 +105,11 @@ optional arguments:
   --ddir DDIR, -d DDIR  Root of your data directory
 ```
 
-  
-  
+
+
 
 ### Running tracker
-To prepare transformations and a config file containing information parts of the clips which needs to be tracker run 
+To prepare transformations and a config file containing information parts of the clips which needs to be tracker run
 ```
 python3 transforms.py --d ../data/blackbucks -c ../blackbucks.yml
 ```

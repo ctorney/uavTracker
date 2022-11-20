@@ -139,8 +139,7 @@ class BatchGenerator(Sequence):
         return x_batch, [yolo_1, yolo_2, yolo_3]  #  [dummy_yolo_1]
 
     def _aug_image(self, instance, net_h, net_w):
-        _, image_name = os.path.split(instance['filename'])
-        full_image_name = self.im_dir + image_name
+        full_image_name = instance['filename']
         image = cv2.imread(full_image_name)  # RGB image
 
         if image is None: print('Cannot find ', full_image_name)
