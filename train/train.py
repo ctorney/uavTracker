@@ -10,66 +10,12 @@ from generator import BatchGenerator
 from operator import itemgetter
 import random
 sys.path.append('..')
-from utils.utils import md5check
+from utils.utils import md5check, read_tsets
 import datetime as dt
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' ##TODO what does that do?
 
 from models.yolo_models import get_yolo_model
-
-def read_tsets(config, model_name, c_date, list_of_subsets):
-    subsets = config['subsets']
-
-    all_annotations = config['project_directory'] + config['annotations_dir'] + '/' + config['checked_annotations_fname']
-    md5check(config['checked_annotations_md5'], all_annotations)
-
-    print(f"Loading all images annotations from {all_annotations}")
-    with open(all_annotations, 'r') as fp:
-        all_imgs = yaml.safe_load(fp)
-
-    ss_imgs_all = dict()
-    for tset in list_of_subsets:
-        tdir = config['project_directory'] + subsets[tset]['directory'] + '/'
-        tnimg = subsets[tset]['number_of_images']
-        if subsets[tset]['filelist']:
-            with open(tdir + subsets[tset]['filelist'], 'r') as fl:
-                ss_imgs = fl.read().splitlines()
-            for fname in ss_imgs:
-                if not os.exists(tdir + fname):
-                    raise Exception(f'ERROR: In {tset} file {fname} is missing but according to the filelist it should be ther')
-        elif subsets[tset]['regex']:
-            ss_imgs_full = glob.glob(tdir + subsets[tset]['regex'])
-            ss_imgs = [os.path.basename(x) for x in ss_imgs_full]
-        else:
-            raise Exception(f'ER R R R O RRRR: the subset {tset} has no filelist or regex defined. The simples regex would be \'*\' to include all files in the directory')
-
-        if len(ss_imgs) != tnimg:
-            raise Exception(f'Error: for the subset {tset} number of images defined is not matching the provided filename or regex')
-        ss_imgs_all[tdir] = ss_imgs
-
-
-    #Re-write existing annotations but with a subset path in a filename into a new file that will be used for this training
-    annotations_subset = []
-    for annotation_data in all_imgs:
-        fname = annotation_data['filename']
-        #if fname is in our set of filenames. But what if filenames are repeating?
-        addit = False
-        for ssdir, ssi in ss_imgs_all.items():
-            if fname in ssi:
-                annotation_data['filename'] = ssdir + fname
-                addit = True
-                break
-        if addit:
-            annotations_subset += [annotation_data]
-
-
-    current_annotations = config['project_directory'] + config['annotations_dir'] + 'annotations_' + model_name + '_' + c_date + '.yml'
-    with open(current_annotations, 'w') as handle:
-        yaml.dump(annotations_subset, handle)
-
-    return current_annotations
-
-
 
 def run_full_training(model_name, config, data_dir, c_date, DEBUG, TEST_RUN):
 
@@ -246,6 +192,8 @@ def run_full_training(model_name, config, data_dir, c_date, DEBUG, TEST_RUN):
 
 def main(args):
     c_date = dt.datetime.now().strftime('%Y%b%d') #we want all models in this run to have the same date
+    train_start_date = dt.datetime.now().strftime('%Y%b%d_%H%M')
+
     #Load data
     print('Opening file' + args.config[0])
     with open(args.config[0], 'r') as configfile:
@@ -261,6 +209,18 @@ def main(args):
 
     for model in config['models'].keys():
         run_full_training(model, config, data_dir, c_date, DEBUG, TEST_RUN)
+    print(f'Finished training of all models. Writing to a results file c_date of the current run {c_date}')
+
+    train_stop_date = dt.datetime.now().strftime('%Y%b%d_%H%M')
+    resulting_config = {'c_date':c_date,
+                        'test_run':TEST_RUN,
+                        'project_name': 'easy_fish',
+                        'train_start_date': train_start_date,
+                        'train_stop_date': train_stop_date,
+                        'predictions_performed': False,
+                        }
+    with open(data_dir + config['results_dir'] + config['results_config_name'], 'w') as handle:
+        yaml.dump(resulting_config, handle)
 
 
 if __name__ == '__main__':

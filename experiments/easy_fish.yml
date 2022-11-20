@@ -6,9 +6,12 @@ weights_dir: 'weights/'
 annotations_dir: 'annotations/'
 groundtruths_dir: 'results/groundtruths/'
 predictions_dir: 'results/predictions/'
+results_dir: 'results/'
 
 checked_annotations_fname: 'manual_annotated.yml'
 checked_annotations_md5 : 'b29f19e92297af168b23ba56246eefb4'
+
+results_config_name: 'resulting_config.yml'
 
 models:
   model_1:

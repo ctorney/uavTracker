@@ -4,6 +4,7 @@ Animal tracking from overhead using YOLO
 Try the following example
 ```
 python train.py --config ../experiments/easy_fish.yml --test-run
+python postTrainTest.py --config ../experiments/easy_fish.yml --test-run
 ```
 
 ### Training/testing sets
