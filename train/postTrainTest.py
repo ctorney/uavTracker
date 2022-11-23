@@ -9,7 +9,7 @@ import yaml
 import pickle
 sys.path.append('..')
 from models.yolo_models import get_yolo_model
-from utils.decoder import decode, _interval_overlap, bbox_iou
+from utils.decoder import decode, _interval_overlap, bbox_iou, get_prediction_results
 from utils.utils import md5check, read_tsets
 
 def main(args):
@@ -45,11 +45,12 @@ def main(args):
         cv2.namedWindow('tracker', cv2.WINDOW_GUI_EXPANDED)
         cv2.moveWindow('tracker', 20,20)
 
-        # # # # # # # #
-        # WIP WIP WIP WIP
-        # HACK TODO HACK
-        ###############
-
+    pr_list = {
+        0.25 : [],
+        0.5 : [],
+        0.75 : [],
+        0.90 : [],
+        }
     for model_name in config['models'].keys():
 
         c_model = config['models'][model_name]
@@ -163,29 +164,8 @@ def main(args):
                                     frame, (int(obj['xmin']) - 2, int(obj['ymin']) - 2),
                                     (int(obj['xmax']) + 2, int(obj['ymax']) + 2), (200, 0, 0), 1)
 
-                    #caluclate scores for this image
-                    mmTP = 0
-                    for bgt in boxes_gt:
-                        for bpred in boxes_pred:
-                            if bbox_iou(bgt,bpred) > 0.5:
-                                mmTP = mmTP + 1 #find one matching prediction
-                                break
 
-                    mmFP = 0
-                    has_match = False
-                    for bpred in boxes_pred:
-                        for bgt in boxes_gt:
-                            if bbox_iou(bgt,bpred) > 0.5:
-                                has_match = True
-                                break # found a match for predicion
-                        if has_match == True:
-                            has_match = False
-                        else:
-                            mmFP = mmFP + 1
-
-                    #display scores for this image
-                    print(mmFname + ', ' + mmFrame + ', ' + str(mmGT) + ', ' + str(mmTP) + ', ' + str(mmFP))
-
+                #this is the actual prediction!
                 else:
                     # preprocess the image
                     image_h, image_w, _ = img.shape
@@ -198,11 +178,44 @@ def main(args):
                     yolos = yolov3.predict(new_image)
                     sys.stdout.write('decoding...')
                     sys.stdout.flush()
-                    boxes_predict = decode(yolos, obj_thresh, nms_thresh)
+                    boxes_predict = decode(yolos, 0.1, nms_thresh)#we are using a low object threshold to get all candidates
                     sys.stdout.write('done!#of boxes_predict:')
                     sys.stdout.write(str(len(boxes_predict)))
                     sys.stdout.write('\n')
                     sys.stdout.flush()
+
+                    ### ###
+                    #caluclate scores for this image
+
+                    #add confidence, T/FP for each prediction to the list for iou_thresh
+
+                    for iou_thresh in pr_list.keys():
+                        mmTP = 0
+                        for bgt in boxes_gt:
+                            for bpred in boxes_predict:
+                                if bbox_iou(bgt,bpred) > iou_thresh:
+                                    mmTP = mmTP + 1 #find one matching prediction
+                                    break
+
+                        mmFP = 0
+                        has_match = False
+                        for bpred in boxes_predict:
+                            for bgt in boxes_gt:
+                                if bbox_iou(bgt,bpred) > iou_thresh:
+                                    has_match = True
+                                    break # found a match for predicion
+                            if has_match == True:
+                                has_match = False
+                            else:
+                                mmFP = mmFP + 1
+
+                        precision = mmTP / (mmTP + mmFP)
+                        recall = mmTP / len(boxes_gt)
+                        pr_list[iou_thresh].append((precision, recall))
+
+                    #display scores for this image
+                    print( + str(mmGT) + ', ' + str(mmTP) + ', ' + str(mmFP))
+
 
                     with open(fname_pred, 'w') as file_pred:  #left top righ bottom
                         for b in boxes_predict:

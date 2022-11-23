@@ -88,3 +88,15 @@ def decode(yolos, obj_thresh=0.9, nms_thresh=0.5):
             return_boxes.append([b[0],b[1],b[2],b[3],b[4]])
 
     return return_boxes
+"""
+for each prediction decide if it is a TP or FP,
+if there are multiple pred for the same gt
+take one with the highest IoU.
+"""
+def get_prediction_results(boxes_pred,boxes_gt, iou_thresh):
+    prediction_list = []
+    predictions_array = np.[]ndarray
+    for bgt in boxes_gt:
+        for bpred in boxes_predict:
+            if bbox_iou(bgt,bpred) > iou_thresh:
+                bpred.append(bbox_iou(bgt,bpred))
