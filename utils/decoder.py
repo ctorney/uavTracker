@@ -95,8 +95,33 @@ take one with the highest IoU.
 """
 def get_prediction_results(boxes_pred,boxes_gt, iou_thresh):
     prediction_list = []
-    predictions_array = np.[]ndarray
-    for bgt in boxes_gt:
-        for bpred in boxes_predict:
+    predictions_array = np.zeros((len(boxes_gt),len(boxes_pred)))
+    for iii in range(len(boxes_gt)):
+        bgt = boxes_gt[iii]
+        for jjj in range(len(boxes_pred)):
+            bpred = boxes_pred[jjj]
             if bbox_iou(bgt,bpred) > iou_thresh:
-                bpred.append(bbox_iou(bgt,bpred))
+                predictions_array[iii,jjj] = bbox_iou(bgt,bpred)
+
+    best_preds = np.argmax(predictions_array,axis=1)
+    #here we will perform the simplest matching, as we are not going to use this code for reporting final results, only for internal validation
+
+    for jjj in range(len(boxes_pred)):
+        v = 'tp' if jjj in best_preds else 'fp'
+        prediction_list.append((v,boxes_pred[jjj][4]))
+
+    prediction_list.sort(key= lambda x: x[1],reverse=True)
+
+    roc_curve = []
+    nall = len(boxes_gt)
+    acc_tp = 0
+    acc_fp = 0
+    for npred in prediction_list:
+        if npred[0] =='tp':
+            acc_tp += 1
+        else:
+            acc_fp += 1
+
+        nrecall = acc_tp / nall
+        nprec = acc_tp / (acc_tp + acc_fp)
+        roc_curve.append((nrecall,nprec))
