@@ -88,6 +88,9 @@ def decode(yolos, obj_thresh=0.9, nms_thresh=0.5):
             return_boxes.append([b[0],b[1],b[2],b[3],b[4]])
 
     return return_boxes
+
+
+
 """
 for each prediction decide if it is a TP or FP,
 if there are multiple pred for the same gt
@@ -110,10 +113,16 @@ def get_prediction_results(boxes_pred,boxes_gt, iou_thresh):
         v = 'tp' if jjj in best_preds else 'fp'
         prediction_list.append((v,boxes_pred[jjj][4]))
 
+
+    nall = len(boxes_gt) #we'll need to know sum of TP and TNs
+    return prediction_list, nall
+
+#prediction list can be unsorted
+def get_AP(prediction_list, nall):
+
     prediction_list.sort(key= lambda x: x[1],reverse=True)
 
     roc_curve = []
-    nall = len(boxes_gt)
     acc_tp = 0
     acc_fp = 0
     for npred in prediction_list:
@@ -125,3 +134,12 @@ def get_prediction_results(boxes_pred,boxes_gt, iou_thresh):
         nrecall = acc_tp / nall
         nprec = acc_tp / (acc_tp + acc_fp)
         roc_curve.append((nrecall,nprec))
+
+    #it will be a list fold
+    recalls = [x[0] for x in roc_curve]
+    precisions = [x[1] for x in roc_curve]
+
+    AP = 0
+    for rrr in range(1,len(recalls)):
+        AP += (recalls[rrr]-recalls[rrr-1]) * max(precisions[rrr:])
+    return AP
