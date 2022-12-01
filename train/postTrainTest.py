@@ -14,6 +14,9 @@ from utils.utils import md5check, read_tsets
 
 def main(args):
     args_visual = args.visual
+    step_by_step = args.step_by_step
+    if step_by_step:
+        args_visual = True
     #Load data
     print('Opening file' + args.config[0])
     with open(args.config[0], 'r') as configfile:
@@ -53,10 +56,10 @@ def main(args):
             cv2.namedWindow('tracker', cv2.WINDOW_GUI_EXPANDED)
             cv2.moveWindow('tracker', 20,20)
 
-        results_config['AP'] = dict()
+        results_config['AP'][setname] = dict()
         for model_name in config['models'].keys():
 
-            results_config['AP'][model_name] = dict()
+            results_config['AP'][setname][model_name] = dict()
 
             c_model = config['models'][model_name]
             num_class = c_model['num_class']
@@ -68,7 +71,7 @@ def main(args):
 
             for iii in range(c_model['phases']):
                 training_phase = 'phase_one' if iii == 0 else 'phase_two'
-                results_config['AP'][model_name][training_phase] = dict()
+                results_config['AP'][setname][model_name][training_phase] = dict()
                 pr_list = {
                     0.25 : ([], -1),
                     0.5 : ([], -1),
@@ -188,16 +191,17 @@ def main(args):
                         new_image = np.expand_dims(new_image, 0)
 
                         # run the prediction
-                        sys.stdout.write('Yolo predicting...')
-                        sys.stdout.flush()
                         yolos = yolov3.predict(new_image)
-                        sys.stdout.write('decoding...')
-                        sys.stdout.flush()
                         boxes_predict = decode(yolos, 0.4, nms_thresh)#we are using a low object threshold to get all candidates
-                        sys.stdout.write('done!#of boxes_predict:')
-                        sys.stdout.write(str(len(boxes_predict)))
-                        sys.stdout.write('\n')
-                        sys.stdout.flush()
+                        if step_by_step:
+                            sys.stdout.write('Yolo predicting...')
+                            sys.stdout.flush()
+                            sys.stdout.write('decoding...')
+                            sys.stdout.flush()
+                            sys.stdout.write('done!#of boxes_predict:')
+                            sys.stdout.write(str(len(boxes_predict)))
+                            sys.stdout.write('\n')
+                            sys.stdout.flush()
 
                         ### ###
                         #caluclate scores for this image
@@ -256,7 +260,10 @@ def main(args):
 
                     if args_visual:
                         cv2.imshow('tracker', frame)
-                        key = cv2.waitKey(1)  #& 0xFF
+                        if step_by_step:
+                            key = cv2.waitKey(0)  #& 0xFF
+                        else:
+                            key = cv2.waitKey(20)  #& 0xFF
                     #precision = tp / (tp + fp)
                     # for box_gt in boxes_gt:
                     #     for box_predict in boxes_predict:
@@ -265,12 +272,12 @@ def main(args):
 
                 #count prediction which reache a threshold of let's say 0.5
                 # if we cahnge the dection threshold I think we'll get ROC curve - that'd be cute.
-                results_config['AP'][model_name][training_phase][setname] = dict()
+                results_config['AP'][setname][model_name][training_phase] = dict()
                 for iou_thresh in pr_list.keys():
                     prediction_list = pr_list[iou_thresh][0]
                     nall = pr_list[iou_thresh][1]
-                    results_config['AP'][model_name][training_phase][setname][iou_thresh] = get_AP(prediction_list,nall)
-                AP75 = results_config['AP'][model_name][training_phase][setname][0.75]
+                    results_config['AP'][setname][model_name][training_phase][iou_thresh] = get_AP(prediction_list,nall)
+                AP75 = results_config['AP'][setname][model_name][training_phase][0.75]
                 print(f'Finished {model_name} phase {training_phase} on setname {setname} with 0.75 AP of {AP75}! :o)')
 
     with open(results_config_file, 'w') as handle:
@@ -287,6 +294,8 @@ if __name__ == '__main__':
         '--config', '-c', required=True, nargs=1, help='Your yml config file')
     parser.add_argument('--visual', '-v', default=False, action='store_true',
                         help='Display tracking progress')
+    parser.add_argument('--step-by-step', '-s', default=False, action='store_true',
+                        help='step by step!')
 
     args = parser.parse_args()
     main(args)
