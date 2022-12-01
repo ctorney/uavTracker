@@ -44,7 +44,7 @@ models:
       LR: 0.5e-3
 
 
-testing_sets: ['test_A', 'test_B','training_A','training_B']
+testing_sets: ['test_A' , 'test_B','training_A','training_B']
 
 
 subsets:

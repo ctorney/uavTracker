@@ -98,6 +98,10 @@ take one with the highest IoU.
 """
 def get_prediction_results(boxes_pred,boxes_gt, iou_thresh):
     prediction_list = []
+    if len(boxes_pred) == 0:
+        nall = len(boxes_gt) #we'll need to know sum of TP and TNs
+        return prediction_list, nall
+
     predictions_array = np.zeros((len(boxes_gt),len(boxes_pred)))
     for iii in range(len(boxes_gt)):
         bgt = boxes_gt[iii]
@@ -119,6 +123,8 @@ def get_prediction_results(boxes_pred,boxes_gt, iou_thresh):
 
 #prediction list can be unsorted
 def get_AP(prediction_list, nall):
+    if len(prediction_list) == 0:
+        return 0
 
     prediction_list.sort(key= lambda x: x[1],reverse=True)
 
