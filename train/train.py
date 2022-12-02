@@ -219,6 +219,7 @@ def main(args):
                         'train_stop_date': train_stop_date,
                         'predictions_performed': False,
                         }
+    os.makedirs(data_dir + config['results_dir'], exists_ok=True)
     with open(data_dir + config['results_dir'] + config['results_config_name'], 'w') as handle:
         yaml.dump(resulting_config, handle)
 

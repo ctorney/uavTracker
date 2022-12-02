@@ -48,7 +48,7 @@ testing_sets: ['testing2019','training2019']
 
 
 subsets:
-  training2019:
+  testing2019:
     directory: 'subsets/testing2019/'
     number_of_images: 248
     description: 'original testing set from 2019'
