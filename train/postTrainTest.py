@@ -39,6 +39,7 @@ def main(args):
         results_config = yaml.safe_load(handle)
     c_date = results_config['c_date']
 
+    results_config['AP'] = dict()
     for tset_it in range(len(config['testing_sets'])+1):
         #all sets
         setname = ''
