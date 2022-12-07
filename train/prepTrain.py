@@ -10,53 +10,80 @@ from models.yolo_models import get_yolo_model
 from utils.decoder import decode
 from utils.utils import md5check, makeYoloCompatible, pleaseCheckMyDirectories
 
+def read_for_annotation(config):
+    subsets = config['subsets']
+
+    checked_annotations = config['project_directory'] + config['annotations_dir'] + '/' + config['checked_annotations_fname']
+    auto_annotations = config['project_directory'] + config['annotations_dir'] + '/' + config['auto_annotations_fname']
+    some_checked = md5check(config['checked_annotations_md5'], checked_annotations)
+    some_autogen = md5check(config['auto_annotations_md5'], auto_annotations)
+
+    list_of_subsets = [x for x in subsets]
+    ss_imgs_all = read_subsets(list_of_subsets,config)
 
 def main(args):
     #Load data
-    data_dir = args.ddir[0] + '/'  #in case we forgot '/'
     print('Opening file' + args.config[0])
     with open(args.config[0], 'r') as configfile:
         config = yaml.safe_load(configfile)
 
+    data_dir = config['project_directory'] + '/'
+
+    #logging and debugging setup
+    DEBUG = args.debug
+    TEST_RUN = args.test_run
+
     pleaseCheckMyDirectories(config, data_dir)
+
+    n_models_to_train = len(config['models'].keys())
+
+    print(f'For every of {n_models_to_train} different models for this experiment we will review if provided training and testing files have annotations. ')
+
+    for model in config['models'].keys():
+        pre_annotate(model, config, data_dir, DEBUG, TEST_RUN)
+    print(f'Finished pre-annotating for all models. Run annotate.py to correct annotations.')
+
+def pre_annotate(model_name, config, data_dir, DEBUG, TEST_RUN):
+
+    c_model = config['models'][model_name]
+    project_name = config['project_name']
 
     train_dir = data_dir
     weights_dir = data_dir + config['weights_dir']
     annotations_dir = data_dir + config['annotations_dir']
-    preped_images_dir = data_dir + config['preped_images_dir']
-    preped_images_dir_short = config['preped_images_dir']
-    bbox_images_dir = data_dir + config['bbox_images_dir']
 
-    ###### TRAINING DETAILS:
-    #Training type dependent
-    training_setup = config['training_setup']
-    print("Training setup type is " + training_setup)
-    print(yaml.dump(config[training_setup]))
+    #The following are *I KID YOU NOT* sort of global variables. tf function yolo_loss has only two arguemts that are explicit x and y. the rest must be global...
+    LABELS = config['common']['LABELS']
+    IMAGE_H = config['common']['IMAGE_H']
+    IMAGE_W = config['common']['IMAGE_W']
+    max_l = config['common']['MAX_L']  #max/min object size in pixels
+    min_l = config['common']['MIN_L']
+    im_width = IMAGE_W
+    im_height = IMAGE_H
+    NO_OBJECT_SCALE = config['common']['NO_OBJECT_SCALE']
+    OBJECT_SCALE = config['common']['OBJECT_SCALE']
+    COORD_SCALE = config['common']['COORD_SCALE']
+    CLASS_SCALE = config['common']['CLASS_SCALE']
 
-    pretrained_weights = weights_dir + config[training_setup]['weights']
-    #check md5 of a weights file if available
-    md5check(config[training_setup]['weights_md5'], pretrained_weights)
 
-    num_class = config[training_setup]['num_class']
-    obj_thresh = config[training_setup]['obj_thresh']
-    nms_thresh = config[training_setup]['nms_thresh']
+    pretrained_weights = weights_dir + c_model['pretrained_weights']
+    md5check(c_model['pretrained_weights_md5'], pretrained_weights)
+    model = get_yolo_model(
+        IMAGE_W, IMAGE_H, num_class=len(LABELS), headtrainable=True, raw_features=False)
+    print("Loading weights %s", pretrained_weights)
+    model.load_weights(pretrained_weights, by_name=True)
 
+    # get a list of files that are not in checked, or pre-annotated
+    todo_imgs = read_for_annotation(config)
+    #for each subset
+    #
+
+    list_of_train_files = read_tsets(config,model_name,c_date,c_model['training_sets'])
+    ##### OOOOOLD #####
     train_files_regex = config[training_setup]['train_files_regex']
     train_images = glob.glob(data_dir + train_files_regex)
     annotations_file = annotations_dir + config['pretrained_annotations_fname']
 
-    max_l = config['MAX_L']  #max/min object size in pixels
-    min_l = config['MIN_L']
-    im_width = config['IMAGE_W']  #size of training images for yolo
-    im_height = config['IMAGE_H']
-
-    ##################################################
-    print("Loading YOLO model: " + pretrained_weights )
-    yolov3 = get_yolo_model(im_width, im_height, num_class, trainable=False)
-    yolov3.load_weights(
-        pretrained_weights, by_name=True)  #TODO is by_name necessary here?
-    print("YOLO model loaded, my dear.")
-    ########################################
 
     im_num = 1
     all_imgs = []
@@ -147,7 +174,6 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Detect objects in images using a pre-trained model, and prepare images for the further processing. \n \n  This program is used to pre-annotate images with a pre-trained network (for instance yolo weights). It creates necessary output directories and cuts your images to a given size and writes them to disk.',epilog='Any issues and clarifications: github.com/ctorney/uavtracker/issues')
     parser.add_argument('--config', '-c', required=True, nargs=1, help='Your yml config file')
-    parser.add_argument('--ddir', '-d', required=True, nargs=1, help='Root of your data directory' )
 
     args = parser.parse_args()
     main(args)

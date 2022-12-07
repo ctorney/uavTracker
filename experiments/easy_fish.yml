@@ -8,6 +8,9 @@ groundtruths_dir: 'results/groundtruths/'
 predictions_dir: 'results/predictions/'
 results_dir: 'results/'
 
+auto_annotations_fname: 'auto_annotated.yml'
+auto_annotations_md5 : ''
+
 checked_annotations_fname: 'manual_annotated.yml'
 checked_annotations_md5 : 'b29f19e92297af168b23ba56246eefb4'
 

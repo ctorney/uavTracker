@@ -6,16 +6,7 @@ from .bbox import BoundBox, bbox_iou
 from scipy.special import expit
 import hashlib, math, yaml, glob
 
-def read_tsets(config, model_name, c_date, list_of_subsets):
-    subsets = config['subsets']
-
-    all_annotations = config['project_directory'] + config['annotations_dir'] + '/' + config['checked_annotations_fname']
-    md5check(config['checked_annotations_md5'], all_annotations)
-
-    print(f"Loading all images annotations from {all_annotations}")
-    with open(all_annotations, 'r') as fp:
-        all_imgs = yaml.safe_load(fp)
-
+def read_subsets(list_of_subsets,config):
     ss_imgs_all = dict()
     for tset in list_of_subsets:
         tdir = config['project_directory'] + subsets[tset]['directory'] + '/'
@@ -36,6 +27,20 @@ def read_tsets(config, model_name, c_date, list_of_subsets):
             raise Exception(f'Error: for the subset {tset} number of images defined is not matching the provided filename or regex')
         ss_imgs_all[tdir] = ss_imgs
 
+    return ss_imgs_all
+
+def read_tsets(config, model_name, c_date, list_of_subsets):
+    subsets = config['subsets']
+
+    all_annotations = config['project_directory'] + config['annotations_dir'] + '/' + config['checked_annotations_fname']
+    md5check(config['checked_annotations_md5'], all_annotations)
+
+    print(f"Loading all images annotations from {all_annotations}")
+    with open(all_annotations, 'r') as fp:
+        all_imgs = yaml.safe_load(fp)
+
+
+    ss_imgs_all = read_subsets(list_of_subsets)
 
     #Re-write existing annotations but with a subset path in a filename into a new file that will be used for this training
     annotations_subset = []
@@ -57,16 +62,23 @@ def read_tsets(config, model_name, c_date, list_of_subsets):
         yaml.dump(annotations_subset, handle)
 
     return current_annotations
-
+"""
+Return True if file exists, False if it isn't. Prints helpful information and throws and exception if the md5 checksum do not check out.
+"""
 def md5check(md5sum,my_file):
-    if md5sum != "":
-        read_file_hex = hashlib.md5(open(my_file,'rb').read()).hexdigest()
-        if read_file_hex != md5sum:
-            raise Exception(f"ERROR: md5 checksum of the provided {my_file} file doesn't match!")
+    if os.path.exists(my_file):
+        if md5sum != "":
+            read_file_hex = hashlib.md5(open(my_file,'rb').read()).hexdigest()
+            if read_file_hex != md5sum:
+                raise Exception(f"ERROR: md5 checksum of the provided {my_file} file doesn't match!")
+            else:
+                print(f"MD5 check on your file {my_file}: correct! :D ")
         else:
-            print(f"MD5 check on your file {my_file}: correct! :D ")
+            print(":: Kind notice :: No md5 sum provided. Consider adding it once you have some trained weights / annotated files whatever it is that you are doing to avoid great confusion in the future")
+        return True
     else:
-        print(":: Kind notice :: No md5 sum provided. Consider adding it once you have some trained weights / annotated files whatever it is that you are doing to avoid great confusion in the future")
+        return False
+
 
 def _sigmoid(x):
     return expit(x)
