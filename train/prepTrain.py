@@ -10,16 +10,57 @@ from models.yolo_models import get_yolo_model
 from utils.decoder import decode
 from utils.utils import md5check, makeYoloCompatible, pleaseCheckMyDirectories
 
+"""
+Run through the existing annotations and create a list of files without any annotations.
+checked(manual) and pre(auto)
+
+Returns a dictionary where keys are directory paths and values are lists of filenames from those directories that need to be annotated
+"""
+def filter_out_annotations(ss_imgs_all,some_exists,annotations_file):
+    all_annot_imgs = []
+    to_annot_dict = dict()
+
+    if some_exists:
+        print(f"Loading autogen images annotations from {annotations_file}")
+        with open(annotations_file, 'r') as fp:
+            all_annot_imgs = all_annot_imgs + yaml.safe_load(fp)
+
+        annot_filenames = []
+        for annotation_data in all_annot_imgs:
+            annot_filenames.append(annotation_data['filename'])
+
+        for ssdir, ssi in ss_imgs_all.items():
+            to_annot_dict[ssdir]=[]
+            if not ssi in annot_filenames:
+                to_annot_dict[ssdir].append(ssi)
+    else:
+        to_annot_dict = ss_imgs_all
+
+    return to_annot_dict
+
+"""
+Get a list of files that are not in checked (manual), or pre-annotated (auto) annotations file.
+Returns a list of images.
+"""
 def read_for_annotation(config):
     subsets = config['subsets']
 
     checked_annotations = config['project_directory'] + config['annotations_dir'] + '/' + config['checked_annotations_fname']
-    auto_annotations = config['project_directory'] + config['annotations_dir'] + '/' + config['auto_annotations_fname']
+    autogen_annotations = config['project_directory'] + config['annotations_dir'] + '/' + config['auto_annotations_fname']
     some_checked = md5check(config['checked_annotations_md5'], checked_annotations)
     some_autogen = md5check(config['auto_annotations_md5'], auto_annotations)
 
+    #Get a list of all the files that we need annotations for to do all those trainings and testings in the config.
     list_of_subsets = [x for x in subsets]
     ss_imgs_all = read_subsets(list_of_subsets,config)
+
+    #run through the existing annotations and create a list of files without any annotations
+    to_annot_imgs0 = filter_out_annotations(ss_imgs_all,some_checked,checked_annotations)
+    to_annot_imgs1 = filter_out_annotations(ss_imgs_all,some_autogen,autogen_annotations)
+
+    #TODO merge those two dictionaries.
+
+    return to_annot_imgs
 
 def main(args):
     #Load data

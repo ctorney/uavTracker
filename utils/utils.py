@@ -6,6 +6,10 @@ from .bbox import BoundBox, bbox_iou
 from scipy.special import expit
 import hashlib, math, yaml, glob
 
+"""
+Reads all subsets (defined as directories with file lists or regex) provided in a config providing a list of paths to the files.
+Returns a list of strings
+"""
 def read_subsets(list_of_subsets,config):
     ss_imgs_all = dict()
     for tset in list_of_subsets:
@@ -29,6 +33,12 @@ def read_subsets(list_of_subsets,config):
 
     return ss_imgs_all
 
+"""
+Read a subset of the training/testing set for the given model to train from the config. Following that prepare a temporary annotations file that contains those specified image files with their annotations only.
+
+Returns:
+Filename of temporary annotations file
+"""
 def read_tsets(config, model_name, c_date, list_of_subsets):
     subsets = config['subsets']
 
