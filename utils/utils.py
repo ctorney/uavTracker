@@ -85,7 +85,7 @@ def read_tsets(config, model_name, c_date, list_of_subsets):
         all_imgs = yaml.safe_load(fp)
 
 
-    ss_imgs_all = read_subsets(list_of_subsets)
+    ss_imgs_all = read_subsets(list_of_subsets, config)
 
     #Re-write existing annotations but with a subset path in a filename into a new file that will be used for this training
     annotations_subset = []
