@@ -1,42 +1,18 @@
 '''
+prepTrain.py: Pre-annotate (autogen) training and testing files that do not have annotations provided.
+
+WARNING!!!!
+Currently a massive flaw of my new end-to-end setup is that this script will edit the images provided a little bit (adjust them to the size of the yolo detector. I know it is bad and has to be fixed in the future when we want to work with different sized images.
 '''
 import numpy as np
 import pandas as pd
-import os, sys, glob, yaml, argparse
+import os, sys, shutil, glob, yaml, argparse
 import cv2
 sys.path.append('../..')
 sys.path.append('..')
 from models.yolo_models import get_yolo_model
 from utils.decoder import decode
-from utils.utils import md5check, makeYoloCompatible, pleaseCheckMyDirectories
-
-"""
-Run through the existing annotations and create a list of files without any annotations.
-checked(manual) and pre(auto)
-
-Returns a dictionary where keys are directory paths and values are lists of filenames from those directories that need to be annotated
-"""
-def filter_out_annotations(ss_imgs_all,some_exists,annotations_file):
-    all_annot_imgs = []
-    to_annot_dict = dict()
-
-    if some_exists:
-        print(f"Loading autogen images annotations from {annotations_file}")
-        with open(annotations_file, 'r') as fp:
-            all_annot_imgs = all_annot_imgs + yaml.safe_load(fp)
-
-        annot_filenames = []
-        for annotation_data in all_annot_imgs:
-            annot_filenames.append(annotation_data['filename'])
-
-        for ssdir, ssi in ss_imgs_all.items():
-            to_annot_dict[ssdir]=[]
-            if not ssi in annot_filenames:
-                to_annot_dict[ssdir].append(ssi)
-    else:
-        to_annot_dict = ss_imgs_all
-
-    return to_annot_dict
+from utils.utils import md5check, makeYoloCompatible, pleaseCheckMyDirectories, read_subsets, filter_out_annotations, getmd5
 
 """
 Get a list of files that are not in checked (manual), or pre-annotated (auto) annotations file.
@@ -46,9 +22,9 @@ def read_for_annotation(config):
     subsets = config['subsets']
 
     checked_annotations = config['project_directory'] + config['annotations_dir'] + '/' + config['checked_annotations_fname']
-    autogen_annotations = config['project_directory'] + config['annotations_dir'] + '/' + config['auto_annotations_fname']
+    autogen_annotations = config['project_directory'] + config['annotations_dir'] + '/' + config['autogen_annotations_fname']
     some_checked = md5check(config['checked_annotations_md5'], checked_annotations)
-    some_autogen = md5check(config['auto_annotations_md5'], auto_annotations)
+    some_autogen = md5check(config['autogen_annotations_md5'], autogen_annotations)
 
     #Get a list of all the files that we need annotations for to do all those trainings and testings in the config.
     list_of_subsets = [x for x in subsets]
@@ -58,7 +34,11 @@ def read_for_annotation(config):
     to_annot_imgs0 = filter_out_annotations(ss_imgs_all,some_checked,checked_annotations)
     to_annot_imgs1 = filter_out_annotations(ss_imgs_all,some_autogen,autogen_annotations)
 
-    #TODO merge those two dictionaries.
+    #for this part we want the ones that are neither auto nor checked
+    to_annot_imgs = dict()
+    for k_dir in ss_imgs_all.keys():
+        to_annot_imgs[k_dir] = list(set(to_annot_imgs0[k_dir]) & set(to_annot_imgs1[k_dir]))
+
 
     return to_annot_imgs
 
@@ -80,8 +60,10 @@ def main(args):
 
     print(f'For every of {n_models_to_train} different models for this experiment we will review if provided training and testing files have annotations. ')
 
-    for model in config['models'].keys():
-        pre_annotate(model, config, data_dir, DEBUG, TEST_RUN)
+    print('We only need to run preannotation for the first model as all the subset will be processed')
+    model = list(config['models'].keys())[0]
+    pre_annotate(model, config, data_dir, DEBUG, TEST_RUN)
+
     print(f'Finished pre-annotating for all models. Run annotate.py to correct annotations.')
 
 def pre_annotate(model_name, config, data_dir, DEBUG, TEST_RUN):
@@ -105,6 +87,8 @@ def pre_annotate(model_name, config, data_dir, DEBUG, TEST_RUN):
     OBJECT_SCALE = config['common']['OBJECT_SCALE']
     COORD_SCALE = config['common']['COORD_SCALE']
     CLASS_SCALE = config['common']['CLASS_SCALE']
+    obj_thresh = c_model['obj_thresh']
+    nms_thresh = c_model['nms_thresh']
 
 
     pretrained_weights = weights_dir + c_model['pretrained_weights']
@@ -116,98 +100,110 @@ def pre_annotate(model_name, config, data_dir, DEBUG, TEST_RUN):
 
     # get a list of files that are not in checked, or pre-annotated
     todo_imgs = read_for_annotation(config)
-    #for each subset
-    #
+    #Those files will most likely be altered by the process of making them yolo compatible
+    for ssdir, sslist in todo_imgs.items():
+        if sslist == []:
+            continue #skip if there are no files to be edited
+        originals = ssdir + '/originals/'
+        try:
+            os.makedirs(originals,exist_ok=False)
+        except:
+            raise Exception(f'The {originals} directory exists and most likely contains the originals already. If you are sure you have not edited those files before, remove this directory first. This is all a bit unclear bit of framework.')
 
-    list_of_train_files = read_tsets(config,model_name,c_date,c_model['training_sets'])
-    ##### OOOOOLD #####
-    train_files_regex = config[training_setup]['train_files_regex']
-    train_images = glob.glob(data_dir + train_files_regex)
-    annotations_file = annotations_dir + config['pretrained_annotations_fname']
+        for imagename in sslist:
+            shutil.copyfile(ssdir + imagename, originals + imagename)
+
 
 
     im_num = 1
     all_imgs = []
-    for imagename in train_images:
-        im = cv2.imread(imagename)
-        print('processing image ' + imagename + ', ' + str(im_num) + ' of ' +
-              str(len(train_images)) + '...')
-        im_yolo = makeYoloCompatible(im)
-        height, width = im_yolo.shape[:2]
-        im_num += 1
-        n_count = 0
+    for ssdir, sslist in todo_imgs.items():
+        for imagename in sslist:
+            fullname = ssdir + imagename
+            im = cv2.imread(fullname)
+            print('processing image ' + imagename + ', ' + str(im_num) + ' of ' +
+                str(len(sslist)) + '...')
+            im_yolo = makeYoloCompatible(im)
+            height, width = im_yolo.shape[:2]
+            im_num += 1
+            n_count = 0
 
-        for x in np.arange(
-                0, 1 + width - im_width, im_width
-        ):  #'1+' added to allow case when image has exactly size of one window
-            for y in np.arange(0, 1 + height - im_height, im_height):
-                img_data = {
-                    'object': []
-                }  #dictionary? key-value pair to store image data
-                head, tail = os.path.split(imagename)
-                noext, ext = os.path.splitext(tail)
-                save_name = preped_images_dir + '/TR_' + noext + '-' + str(n_count) + '.png'
-                save_name_short = 'TR_' + noext + '-' + str(n_count) + '.png'
-                box_name = bbox_images_dir + '/ ' + noext + '-' + str(
-                    n_count) + '.png'
-                img = im[y:y + im_height, x:x + im_width, :]
-                cv2.imwrite(save_name, img)
-                img_data['filename'] = save_name_short
-                img_data['width'] = im_width
-                img_data['height'] = im_height
+            for x in np.arange(
+                    0, 1 + width - im_width, im_width
+            ):  #'1+' added to allow case when image has exactly size of one window
+                for y in np.arange(0, 1 + height - im_height, im_height):
+                    img_data = {
+                        'object': []
+                    }  #dictionary? key-value pair to store image data
+                    head, tail = os.path.split(imagename)
+                    noext, ext = os.path.splitext(tail)
+                    save_name = fullname
+                    save_name_short = imagename
+                    img = im[y:y + im_height, x:x + im_width, :]
+                    cv2.imwrite(save_name, img)
+                    img_data['filename'] = save_name_short
+                    img_data['width'] = im_width
+                    img_data['height'] = im_height
 
-                n_count += 1
-                # use the yolov3 model to predict 80 classes on COCO
+                    n_count += 1
+                    # use the yolov3 model to predict 80 classes on COCO
 
-                # preprocess the image
-                image_h, image_w, _ = img.shape
-                new_image = img[:, :, ::-1] / 255.
-                new_image = np.expand_dims(new_image, 0)
+                    # preprocess the image
+                    image_h, image_w, _ = img.shape
+                    new_image = img[:, :, ::-1] / 255.
+                    new_image = np.expand_dims(new_image, 0)
 
-                # run the prediction
-                sys.stdout.write('Yolo predicting...')
-                sys.stdout.flush()
-                yolos = yolov3.predict(new_image)
+                    # run the prediction
+                    sys.stdout.write('Yolo predicting...')
+                    sys.stdout.flush()
+                    yolos = model.predict(new_image)
 
-                sys.stdout.write('Decoding...')
-                sys.stdout.flush()
-                boxes = decode(yolos, obj_thresh, nms_thresh)
-                sys.stdout.write('Done!#of boxes:')
-                sys.stdout.write(str(len(boxes)))
-                sys.stdout.flush()
-                for b in boxes:
-                    xmin = int(b[0])
-                    xmax = int(b[2])
-                    ymin = int(b[1])
-                    ymax = int(b[3])
-                    obj = {}
+                    sys.stdout.write('Decoding...')
+                    sys.stdout.flush()
+                    boxes = decode(yolos, obj_thresh, nms_thresh)
+                    sys.stdout.write('Done!#of boxes:')
+                    sys.stdout.write(str(len(boxes)))
+                    sys.stdout.flush()
+                    for b in boxes:
+                        xmin = int(b[0])
+                        xmax = int(b[2])
+                        ymin = int(b[1])
+                        ymax = int(b[3])
+                        obj = {}
 
-                    obj['name'] = 'aoi'
+                        obj['name'] = 'aoi'
 
-                    if xmin < 0: continue
-                    if ymin < 0: continue
-                    if xmax > im_width: continue
-                    if ymax > im_height: continue
-                    if (xmax - xmin) < min_l: continue
-                    if (xmax - xmin) > max_l: continue
-                    if (ymax - ymin) < min_l: continue
-                    if (ymax - ymin) > max_l: continue
+                        if xmin < 0: continue
+                        if ymin < 0: continue
+                        if xmax > im_width: continue
+                        if ymax > im_height: continue
+                        if (xmax - xmin) < min_l: continue
+                        if (xmax - xmin) > max_l: continue
+                        if (ymax - ymin) < min_l: continue
+                        if (ymax - ymin) > max_l: continue
 
-                    obj['xmin'] = xmin
-                    obj['ymin'] = ymin
-                    obj['xmax'] = xmax
-                    obj['ymax'] = ymax
-                    img_data['object'] += [obj]
-                    cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 255, 0),
-                                  2)
+                        obj['xmin'] = xmin
+                        obj['ymin'] = ymin
+                        obj['xmax'] = xmax
+                        obj['ymax'] = ymax
+                        img_data['object'] += [obj]
+                        cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 255, 0),
+                                    2)
 
-                cv2.imwrite(box_name, img)
-                all_imgs += [img_data]
+                    all_imgs += [img_data]
 
+    autogen_annotations = config['project_directory'] + config['annotations_dir'] + '/' + config['autogen_annotations_fname']
+    print('Saving data to ' + autogen_annotations)
     #print(all_imgs)
-    print('Saving data to ' + annotations_file)
-    with open(annotations_file, 'w') as handle:
+    some_autogen = md5check(config['autogen_annotations_md5'], autogen_annotations)
+    if some_autogen:
+        with open(autogen_annotations, 'r') as fp:
+            all_imgs = all_imgs + yaml.safe_load(fp)
+
+    with open(autogen_annotations, 'w') as handle:
         yaml.dump(all_imgs, handle)
+
+    getmd5(autogen_annotations)
 
     print('Finished! :o)')
 
@@ -215,6 +211,10 @@ def pre_annotate(model_name, config, data_dir, DEBUG, TEST_RUN):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Detect objects in images using a pre-trained model, and prepare images for the further processing. \n \n  This program is used to pre-annotate images with a pre-trained network (for instance yolo weights). It creates necessary output directories and cuts your images to a given size and writes them to disk.',epilog='Any issues and clarifications: github.com/ctorney/uavtracker/issues')
     parser.add_argument('--config', '-c', required=True, nargs=1, help='Your yml config file')
+    parser.add_argument('--debug', default=False, action='store_true',
+                        help='Set this flag to see a bit more wordy output')
+    parser.add_argument('--test-run', default=False, action='store_true',
+                        help='Set this flag to see meaningless output quicker. For instance in training it runs only for 1 epoch')
 
     args = parser.parse_args()
     main(args)

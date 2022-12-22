@@ -4,12 +4,14 @@ project_directory: '../data/easy_fish/' #adding a '..' because the programs are 
 #The general project settings, will be the same if you keep the directory structure intact
 weights_dir: 'weights/'
 annotations_dir: 'annotations/'
+tracks_dir: 'extracted_tracks/'
+bbox_images_dir: 'extracted_tracks/'
 groundtruths_dir: 'results/groundtruths/'
 predictions_dir: 'results/predictions/'
 results_dir: 'results/'
 
-auto_annotations_fname: 'auto_annotated.yml'
-auto_annotations_md5 : ''
+autogen_annotations_fname: 'autogen_annotated.yml'
+autogen_annotations_md5 : '3e74e02a84df318e44f64e762bb46635'
 
 checked_annotations_fname: 'manual_annotated.yml'
 checked_annotations_md5 : 'b29f19e92297af168b23ba56246eefb4'
@@ -23,8 +25,8 @@ models:
     training_sets: ['training_A']
     phases: 2
     num_class: 1
-    obj_thresh: 0.5
-    nms_thresh: 0.3
+    obj_thresh: 0.9
+    nms_thresh: 0.05
     phase_one:
       BATCH_SIZE: 16
       EPOCHS: 500
@@ -47,7 +49,7 @@ models:
       LR: 0.5e-3
 
 
-testing_sets: ['test_A' , 'test_B','training_A','training_B']
+testing_sets: ['test_A' , 'test_B','training_A','training_B', 'nightly_2019']
 
 
 subsets:
@@ -75,6 +77,12 @@ subsets:
     description: 'different set'
     filelist: 'test_b_filelist.txt'
     regex: ''
+  nightly_2019:
+    directory: 'subsets/nightly_2019/'
+    number_of_images: 41
+    description: 'Set of challenging nighttime images'
+    filelist: ''
+    regex: '*.png'
 
 common:
   LABELS: ['aoi']
