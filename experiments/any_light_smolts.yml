@@ -1,0 +1,102 @@
+project_name: 'any_light_smolts'
+project_directory: '../data/any_light_smolts/' #adding a '..' because the programs are run from subdirectories. feel free to specify an absolute path if that offends you
+
+#The general project settings, will be the same if you keep the directory structure intact
+weights_dir: 'weights/'
+annotations_dir: 'annotations/'
+tracks_dir: 'extracted_tracks/'
+bbox_images_dir: 'extracted_tracks/'
+groundtruths_dir: 'results/groundtruths/'
+predictions_dir: 'results/predictions/'
+results_dir: 'results/'
+
+autogen_annotations_fname: 'autogen_annotated.yml'
+autogen_annotations_md5 : ''
+
+checked_annotations_fname: 'manual_annotated.yml'
+checked_annotations_md5 : 'b29f19e92297af168b23ba56246eefb4'
+
+results_config_name: 'results.yml'
+
+models:
+  lightz:
+    pretrained_weights: 'best_smolts_standard_phase_two_2022Dec05.h5'
+    pretrained_weights_md5: "451122ca9cd7d25a2006d3959557e848" #leave empty if you are retraining
+    training_sets: ['training2019']
+    phases: 2
+    num_class: 1
+    obj_thresh: 0.5
+    nms_thresh: 0.3
+    phase_one:
+      BATCH_SIZE: 16
+      EPOCHS: 500
+      LR: 0.5e-3
+    phase_two:
+      BATCH_SIZE: 4
+      EPOCHS: 100
+      LR: 0.1e-3
+
+testing_sets: ['testing2019','training2019']
+
+
+subsets:
+  testing2019:
+    directory: 'subsets/testing2019/'
+    number_of_images: 248
+    description: 'original testing set from 2019'
+    filelist: '' #if filelist is empty, use regex
+    regex: '*.png'
+  training2019:
+    directory: 'subsets/training2019/'
+    number_of_images: 1162
+    description: 'original training set from 2019'
+    filelist: ''
+    regex: '*.png'
+  day_choice_2019:
+    directory: 'subsets/day_choice_2019/'
+    number_of_images: 387
+    description: 'additional training set from 2019 choice chamber recordings'
+    filelist: ''
+    regex: '*.png'
+  day_choice_difficult_2019:
+    directory: 'subsets/day_choice_difficult_2019/'
+    number_of_images: 475
+    description: 'additional particularly nasty images from 2019 choice chamber recordings'
+    filelist: ''
+    regex: '*.png'
+  nightly_2019:
+    directory: 'subsets/nightly_2019/'
+    number_of_images: 41
+    description: 'Night-time recordings from 2019'
+    filelist: ''
+    regex: '*.png'
+  nightly_2021:
+    directory: 'subsets/nightly_2021/'
+    number_of_images: 301
+    description: 'Night-time recordings from 2021'
+    filelist: ''
+    regex: '*.png'
+  test_2019:
+    directory: 'subsets/test_2019/'
+    number_of_images: 90
+    description: 'Additional testing images from 2019 for testing (mostly daytime)'
+    filelist: ''
+    regex: '*.png'
+  nightly_2021:
+    directory: 'subsets/test_nightly_2021/'
+    number_of_images: 58
+    description: 'Test set of night-time recordings from 2021'
+    filelist: ''
+    regex: '*.png'
+
+common:
+  LABELS: ['aoi']
+  IMAGE_W: 1280 # or must be a multiplier of 32 in current version
+  IMAGE_H: 704 #must match whatever yolo model was trained on
+  MAX_L: 400
+  MIN_L: 4
+
+  NO_OBJECT_SCALE: 1.0
+  OBJECT_SCALE: 5.0
+  COORD_SCALE: 2.0
+  CLASS_SCALE: 1.0

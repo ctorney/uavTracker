@@ -474,4 +474,4 @@ def pleaseCheckMyDirectories(config, data_dir):
     for dir in dirs:
         if not os.path.isdir(dir):
             print('Creating ' + dir)
-            os.mkdir(dir)
+            os.makedirs(dir, exist_ok=True)
