@@ -15,7 +15,9 @@ a) You already have an annotations file with **unique** filenames for every imag
 b) You will annotate the data using our system, in which case, the filenames can be repeating across different subsets because we will include the subset directory as their names. I still think the names of images should be unique, but I won't be adding a checksum for every image to make sure it is the same :D
 
 
-
+### TODO
+- there should be a way to specify in config the unprocessed files. this way we provide files that *create* the subsets used. Changes to config and prepTrain.py.
+Create another directory called `unprocessed` on the same level as `subsets` and prepTrain will be reading with priority of `subsets` from those directories, coping over to the processed images dir. For now we can assume that one unprocessed image produces one processed.
 
 # Old instructions to be removed or updated
 
