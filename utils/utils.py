@@ -48,6 +48,12 @@ def read_subsets(list_of_subsets,config):
 
     for tset in list_of_subsets:
         tdir = config['project_directory'] + subsets[tset]['directory'] + '/'
+        #this is risky....
+        #If the directory for the subset doesn't exist, use the unprocessed/raw directory
+        if not os.path.exists(tdir):
+            print('Using raw directory. This should only really happen in prepTrain.py function, otherwise it means that there are still images unadapted to yolo and rather unannotated')
+            tdir = config['project_directory'] + config['raw_imgs_dir'] + subsets[tset]['directory'] + '/'
+
         tnimg = subsets[tset]['number_of_images']
         if subsets[tset]['filelist']:
             with open(tdir + subsets[tset]['filelist'], 'r') as fl:

@@ -6,7 +6,7 @@ Currently a massive flaw of my new end-to-end setup is that this script will edi
 '''
 import numpy as np
 import pandas as pd
-import os, sys, shutil, glob, yaml, argparse
+import os, sys, shutil, glob, yaml, argparse, re
 import cv2
 sys.path.append('../..')
 sys.path.append('..')
@@ -74,6 +74,7 @@ def pre_annotate(model_name, config, data_dir, DEBUG, TEST_RUN):
     train_dir = data_dir
     weights_dir = data_dir + config['weights_dir']
     annotations_dir = data_dir + config['annotations_dir']
+    raw_imgs_dir_name = config['raw_imgs_dir']
 
     #The following are *I KID YOU NOT* sort of global variables. tf function yolo_loss has only two arguemts that are explicit x and y. the rest must be global...
     LABELS = config['common']['LABELS']
@@ -101,28 +102,22 @@ def pre_annotate(model_name, config, data_dir, DEBUG, TEST_RUN):
     # get a list of files that are not in checked, or pre-annotated
     todo_imgs = read_for_annotation(config)
     #Those files will most likely be altered by the process of making them yolo compatible
-    for ssdir, sslist in todo_imgs.items():
-        if sslist == []:
-            continue #skip if there are no files to be edited
-        originals = ssdir + '/originals/'
-        try:
-            os.makedirs(originals,exist_ok=False)
-        except:
-            raise Exception(f'The {originals} directory exists and most likely contains the originals already. If you are sure you have not edited those files before, remove this directory first. This is all a bit unclear bit of framework.')
-
-        for imagename in sslist:
-            shutil.copyfile(ssdir + imagename, originals + imagename)
-
-
 
     im_num = 1
     all_imgs = []
     for ssdir, sslist in todo_imgs.items():
+        if raw_imgs_dir_name in ssdir:
+                newdir = re.sub(raw_imgs_dir_name,'',ssdir)
+                os.makedirs(newdir)
         for imagename in sslist:
             fullname = ssdir + imagename
             im = cv2.imread(fullname)
             print('processing image ' + imagename + ', ' + str(im_num) + ' of ' +
                 str(len(sslist)) + '...')
+            #that's gonna be a hack........
+            if raw_imgs_dir_name in ssdir:
+                fullname = re.sub(raw_imgs_dir_name,'',fullname)
+
             im_yolo = makeYoloCompatible(im)
             height, width = im_yolo.shape[:2]
             im_num += 1

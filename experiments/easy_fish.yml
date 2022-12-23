@@ -4,6 +4,7 @@ project_directory: '../data/easy_fish/' #adding a '..' because the programs are 
 #The general project settings, will be the same if you keep the directory structure intact
 weights_dir: 'weights/'
 annotations_dir: 'annotations/'
+raw_imgs_dir: 'raw_imgs/'
 tracks_dir: 'extracted_tracks/'
 bbox_images_dir: 'extracted_tracks/'
 groundtruths_dir: 'results/groundtruths/'
@@ -11,10 +12,10 @@ predictions_dir: 'results/predictions/'
 results_dir: 'results/'
 
 autogen_annotations_fname: 'autogen_annotated.yml'
-autogen_annotations_md5 : '3e74e02a84df318e44f64e762bb46635'
+autogen_annotations_md5 : '97a454b60c2c1586d3a9d717199f9f97'
 
 checked_annotations_fname: 'manual_annotated.yml'
-checked_annotations_md5 : 'b29f19e92297af168b23ba56246eefb4'
+checked_annotations_md5 : ''
 
 results_config_name: 'resulting_config.yml'
 

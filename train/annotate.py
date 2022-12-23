@@ -73,7 +73,7 @@ def check_boxes(img_clean, bbox_list, im_width, im_height):
         # if mouse is drawing set tmp rectangle endpoint to (x,y)
         elif event == cv2.EVENT_MOUSEMOVE and drawing:
             rect_endpoint_tmp = [(x, y)]
-        elif event == cv2.EVENT_LBUTTONDBLCLK:
+        elif event == cv2.EVENT_RBUTTONDOWN:
             npbx = np.asarray(bbox_list)
             selected_box = ((x > npbx[:, 0]) & (y > npbx[:, 1]) &
                             (x < npbx[:, 2]) & (y < npbx[:, 3]))
