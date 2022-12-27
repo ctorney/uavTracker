@@ -159,7 +159,7 @@ def run_full_training(model_name, config, data_dir, c_date, DEBUG, TEST_RUN):
 
 
         print('Prepared batches now we will compile')
-        optimizer = Adam(learning_rate=LR, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+        optimizer = Adam(learning_rate=LR, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
         model.compile(loss=yolo_loss, optimizer=optimizer, metrics=['accuracy'])
         print("COMPILED")
         early_stop = EarlyStopping(

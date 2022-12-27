@@ -38,7 +38,7 @@ models:
       LR: 0.1e-3
 
 
-testing_sets: ['100alfs']
+testing_sets: ['100alfs', 'alfs22_test']
 
 
 subsets:
@@ -48,9 +48,15 @@ subsets:
     description: 'easy subset to train on'
     filelist: '' #if filelist is empty, use regex
     regex: '*.jpg'
+  alfs22_test:
+    directory: 'subsets/alfs22_test/'
+    number_of_images: 100
+    description: 'easy subset to test on'
+    filelist: '' #if filelist is empty, use regex
+    regex: '*.jpg'
 
 common:
-  LABELS: ['alf']
+  LABELS: ['aoi'] #this label is sort of hardcoded
   IMAGE_W: 416 # or must be a multiplier of 32 in current version
   IMAGE_H: 416 #must match whatever yolo model was trained on
   # IMAGE_W: 640 # or must be a multiplier of 32 in current version
