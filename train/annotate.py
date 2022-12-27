@@ -139,14 +139,19 @@ def main(args):
     im_height = config['common']['IMAGE_H']
 
 
-    if from_scratch:
-        print('Not showing any bounding boxes. You are annotating from scratch. Remove relevant flag to use ourput of your previous training (or generic model)')
 
     if resume:
         print('Restoring previous session!')
 
-    with open(autogen_annotations, 'r') as fp:
-        all_imgs = yaml.safe_load(fp)
+    if some_autogen:
+        with open(autogen_annotations, 'r') as fp:
+            all_imgs = yaml.safe_load(fp)
+    else:
+        print('no automatically generate annotations provided, will have to annotate from scratch')
+        from_scratch = True
+
+    if from_scratch:
+        print('Not showing any bounding boxes. You are annotating from scratch. Remove relevant flag to use ourput of your previous training (or generic model)')
 
     #Get a list of all the files that we need annotations for to do all those trainings and testings in the config.
     subsets = config['subsets']
@@ -156,8 +161,11 @@ def main(args):
     #run through the existing annotations and create a list of files without any annotations
     to_annot_imgs = filter_out_annotations(ss_imgs_all,some_checked,checked_annotations)
 
-    with open(checked_annotations, 'r') as fp:
-        new_imgs = yaml.safe_load(fp)
+    if some_checked:
+        with open(checked_annotations, 'r') as fp:
+            new_imgs = yaml.safe_load(fp)
+    else:
+        new_imgs = []
 
     annot_filenames = []
     for annotation_data in all_imgs:

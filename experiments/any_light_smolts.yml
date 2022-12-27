@@ -14,8 +14,8 @@ results_dir: 'results/'
 autogen_annotations_fname: 'autogen_annotated.yml'
 autogen_annotations_md5 : ''
 
-checked_annotations_fname: 'manual_annotated.yml'
-checked_annotations_md5 : 'b29f19e92297af168b23ba56246eefb4'
+checked_annotations_fname: 'manual_annotated_christmas22.yml'
+checked_annotations_md5 : 'f8567ce694f795deae20ccad39b9823f'
 
 results_config_name: 'results.yml'
 
