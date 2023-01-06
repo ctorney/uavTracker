@@ -98,11 +98,19 @@ def run_full_training(model_name, config, data_dir, c_date, DEBUG, TEST_RUN):
     for iii in range(c_model['phases']):
         training_phase = 'phase_one' if iii == 0 else 'phase_two'
 
+        if os.path.exists(trained_weights[training_phase]):
+            print(f'Skipping training of {trained_weights[training_phase]} because the weights are already existing.')
+            continue
+
         #output trained weights:
         #TODO create a md5 of parameters? write down parameters used into results as well, as a whole run will result in writing to results
         BATCH_SIZE = c_model[training_phase]['BATCH_SIZE']
         EPOCHS = c_model[training_phase]['EPOCHS']
         LR = c_model[training_phase]['LR']
+        B1 = c_model[training_phase]['B1']
+        B2 = c_model[training_phase]['B2']
+        EPS = c_model[training_phase]['EPS']
+
         if TEST_RUN:
             EPOCHS = 1
             BATCH_SIZE = 4
@@ -159,11 +167,11 @@ def run_full_training(model_name, config, data_dir, c_date, DEBUG, TEST_RUN):
 
 
         print('Prepared batches now we will compile')
-        optimizer = Adam(learning_rate=LR, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
+        optimizer = Adam(learning_rate=LR, beta_1=B1, beta_2=B2, epsilon=EPS)
         model.compile(loss=yolo_loss, optimizer=optimizer, metrics=['accuracy'])
         print("COMPILED")
         early_stop = EarlyStopping(
-            monitor='loss', min_delta=0.001, patience=10, mode='min', verbose=1)
+            monitor='loss', min_delta=0, patience=10, mode='min', verbose=0)
         checkpoint = ModelCheckpoint(
             filepath = weights_dir + '/checkpoints',
             monitor='loss',
