@@ -102,19 +102,28 @@ def get_prediction_results(boxes_pred,boxes_gt, iou_thresh):
         nall = len(boxes_gt) #we'll need to know sum of TP and TNs
         return prediction_list, nall
 
-    predictions_array = np.zeros((len(boxes_gt),len(boxes_pred)))
+
+    #we are adding a dummy prediction to distinguis the first prediction matching GT, from first prediction being a default when all predicions are null
+    boxes_pred0 = [[0,0,0,0,0]] + boxes_pred
+
+    predictions_array = np.zeros((len(boxes_gt),len(boxes_pred0)))
+    #For each ground truth we are providing the IoU to choose the best one
     for iii in range(len(boxes_gt)):
         bgt = boxes_gt[iii]
-        for jjj in range(len(boxes_pred)):
-            bpred = boxes_pred[jjj]
+        for jjj in range(len(boxes_pred0)):
+            bpred = boxes_pred0[jjj]
             if bbox_iou(bgt,bpred) > iou_thresh:
                 predictions_array[iii,jjj] = bbox_iou(bgt,bpred)
 
-    best_preds = np.argmax(predictions_array,axis=1)
-    #here we will perform the simplest matching, as we are not going to use this code for reporting final results, only for internal validation
+    # print(predictions_array)
 
+    #here we will perform the simplest matching, as we are not going to use this code for reporting final results, only for internal validation
+    best_preds = np.argmax(predictions_array,axis=1)
+    # print(best_preds)
+
+    #the indexing of boxes_pred0 is one higher because it contains a null hypothesis
     for jjj in range(len(boxes_pred)):
-        v = 'tp' if jjj in best_preds else 'fp'
+        v = 'tp' if (jjj+1) in best_preds else 'fp'
         prediction_list.append((v,boxes_pred[jjj][4]))
 
 
@@ -127,7 +136,8 @@ def get_AP(prediction_list, nall):
         return 0
 
     prediction_list.sort(key= lambda x: x[1],reverse=True)
-
+    # print('Predictions:')
+    # print(prediction_list)
     roc_curve = []
     acc_tp = 0
     acc_fp = 0
@@ -144,8 +154,15 @@ def get_AP(prediction_list, nall):
     #it will be a list fold
     recalls = [x[0] for x in roc_curve]
     precisions = [x[1] for x in roc_curve]
+    # print('recalls:')
+    # print(recalls)
+    # print('precisions:')
+    # print(precisions)
 
     AP = 0
-    for rrr in range(1,len(recalls)):
-        AP += (recalls[rrr]-recalls[rrr-1]) * max(precisions[rrr:])
+    for rrr in range(0,len(recalls)):
+        if rrr == 0:
+            AP += (recalls[rrr]) * max(precisions[rrr:])
+        else:
+            AP += (recalls[rrr]-recalls[rrr-1]) * max(precisions[rrr:])
     return AP
