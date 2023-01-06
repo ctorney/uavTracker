@@ -208,11 +208,11 @@ def main(args):
                         #caluclate scores for this image
 
                         #add confidence, T/FP for each prediction to the list for iou_thresh
-                        prediction_list = []
-                        nall = 0
 
                         for iou_thresh in pr_list.keys():
                             prediction_list, nall = get_prediction_results(boxes_predict,boxes_gt, iou_thresh)
+                            acc_prediction_list = pr_list[iou_thresh][0]
+                            acc_nall = pr_list[iou_thresh][1]
                             acc_prediction_list = acc_prediction_list + prediction_list
                             acc_nall += nall
                             pr_list[iou_thresh]=(acc_prediction_list,acc_nall)
@@ -278,7 +278,7 @@ def main(args):
                     prediction_list = pr_list[iou_thresh][0]
                     nall = pr_list[iou_thresh][1]
                     results_config['AP'][setname][model_name][training_phase][iou_thresh] = get_AP(prediction_list,nall)
-                AP75 = results_config['AP'][setname][model_name][training_phase][0.75]
+                AP75 = results_config['AP'][setname][model_name][training_phase][0.5]
                 print(f'Finished {model_name} phase {training_phase} on setname {setname} with 0.75 AP of {AP75}! :o)')
 
     with open(results_config_file, 'w') as handle:

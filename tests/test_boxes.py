@@ -8,8 +8,18 @@ from utils.decoder import get_prediction_results, get_AP
 #reminder:
 #Bounding boxes are x_top_left, y_tl, x_bpr, y_br
 
+real_pred = [[971,330,1100,412,69],
+             [784,378,921,501,99],
+             [168,428,315,489,41],
+             [20,457,202,525,98],
+             [1,529,44,639,95]]
+
+real_gt = [[783,380,926,511],
+           [12,436,190,518]]
+
+
+
 boxes_pred = [[0,0,20,120,89],
-              [25,22,30,98,100],
               [21,22,30,78,45],
               [55,50,160,130,80],
               [209,221,280,265,40],
@@ -23,7 +33,8 @@ boxes_gt = [[20,20,35,80],
               [500,20,570,50],
               ]
 
-paired_boxes = [(boxes_pred,boxes_gt), #a larger example, too complex to interpret
+paired_boxes = [(real_pred, real_gt),
+                (boxes_pred,boxes_gt), #a larger example, too complex to interpret
                 ([
                     [20,10,100,102,100],
                     [70,102,144,152,88]
@@ -58,7 +69,7 @@ paired_boxes = [(boxes_pred,boxes_gt), #a larger example, too complex to interpr
 for (boxes_pred,boxes_gt) in paired_boxes:
     print('=============== = = = =============')
     # Create a black image
-    img = np.zeros((512,512,3), np.uint8)
+    img = np.zeros((800,1200,3), np.uint8)
     # xmin, ymin, xmax, ymax, prob_det
 
 
