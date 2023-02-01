@@ -110,6 +110,8 @@ def run_full_training(model_name, config, data_dir, c_date, DEBUG, TEST_RUN):
         B1 = c_model[training_phase]['B1']
         B2 = c_model[training_phase]['B2']
         EPS = c_model[training_phase]['EPS']
+        MIN_DELTA = c_model[training_phase]['MIN_DELTA']
+        PATIENCE = c_model[training_phase]['PATIENCE']
 
         if TEST_RUN:
             EPOCHS = 1
@@ -171,7 +173,7 @@ def run_full_training(model_name, config, data_dir, c_date, DEBUG, TEST_RUN):
         model.compile(loss=yolo_loss, optimizer=optimizer, metrics=['accuracy'])
         print("COMPILED")
         early_stop = EarlyStopping(
-            monitor='loss', min_delta=0, patience=10, mode='min', verbose=0)
+            monitor='loss', min_delta=MIN_DELTA, patience=PATIENCE, mode='min', verbose=0)
         checkpoint = ModelCheckpoint(
             filepath = weights_dir + '/checkpoints',
             monitor='loss',
