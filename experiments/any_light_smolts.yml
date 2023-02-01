@@ -1,4 +1,6 @@
 project_name: 'any_light_smolts'
+c_date: '2023Feb01' #this is basically a part of project name if you wish.
+
 project_directory: '../data/any_light_smolts/' #adding a '..' because the programs are run from subdirectories. feel free to specify an absolute path if that offends you
 
 #The general project settings, will be the same if you keep the directory structure intact
