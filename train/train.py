@@ -201,7 +201,6 @@ def run_full_training(model_name, config, data_dir, c_date, DEBUG, TEST_RUN):
     print(f"Finished! with {model_name} :o)")
 
 def main(args):
-    c_date = dt.datetime.now().strftime('%Y%b%d') #we want all models in this run to have the same date
     train_start_date = dt.datetime.now().strftime('%Y%b%d_%H%M')
 
     #Load data
@@ -216,6 +215,8 @@ def main(args):
     TEST_RUN = args.test_run
     n_models_to_train = len(config['models'].keys())
     print(f'Will train {n_models_to_train} different models for this experiment now')
+
+    c_date = config['c_date']
 
     for model in config['models'].keys():
         run_full_training(model, config, data_dir, c_date, DEBUG, TEST_RUN)

@@ -39,7 +39,6 @@ def read_for_annotation(config):
     for k_dir in ss_imgs_all.keys():
         to_annot_imgs[k_dir] = list(set(to_annot_imgs0[k_dir]) & set(to_annot_imgs1[k_dir]))
 
-
     return to_annot_imgs
 
 def main(args):
@@ -60,20 +59,18 @@ def main(args):
 
     print(f'For every of {n_models_to_train} different models for this experiment we will review if provided training and testing files have annotations. ')
 
-    print('We only need to run preannotation for the first model as all the subset will be processed')
-    model = list(config['models'].keys())[0]
-    pre_annotate(model, config, data_dir, DEBUG, TEST_RUN)
+    pre_annotate(config, data_dir, DEBUG, TEST_RUN)
 
     print(f'Finished pre-annotating for all models. Run annotate.py to correct annotations.')
 
-def pre_annotate(model_name, config, data_dir, DEBUG, TEST_RUN):
+def pre_annotate(config, data_dir, DEBUG, TEST_RUN):
 
-    c_model = config['models'][model_name]
+    c_model = config['autogen_model']
     project_name = config['project_name']
 
     train_dir = data_dir
-    weights_dir = data_dir + config['weights_dir']
-    annotations_dir = data_dir + config['annotations_dir']
+    weights_dir = os.path.join(data_dir, config['weights_dir'])
+    annotations_dir = os.path.join(data_dir, config['annotations_dir'])
     raw_imgs_dir_name = config['raw_imgs_dir']
 
     #The following are *I KID YOU NOT* sort of global variables. tf function yolo_loss has only two arguemts that are explicit x and y. the rest must be global...
@@ -103,12 +100,22 @@ def pre_annotate(model_name, config, data_dir, DEBUG, TEST_RUN):
     todo_imgs = read_for_annotation(config)
     #Those files will most likely be altered by the process of making them yolo compatible
 
+
+    #We are also providing a dict with lists of files in the subset in order to get them to be copied from raw directory to the processed one if needed
+    flist_dict = dict()
+    for _, s in config['subsets'].items():
+        cdir = os.path.join(data_dir, s['directory'])
+        cflist = s['filelist']
+        flist_dict[cdir]=cflist
+
     im_num = 1
     all_imgs = []
     for ssdir, sslist in todo_imgs.items():
         if raw_imgs_dir_name in ssdir:
                 newdir = re.sub(raw_imgs_dir_name,'',ssdir)
                 os.makedirs(newdir)
+                if flist_dict[newdir]!='':
+                    shutil.copyfile(os.path.join(ssdir,flist_dict[newdir]),os.path.join(newdir,flist_dict[newdir]) )
         for imagename in sslist:
             fullname = ssdir + imagename
             im = cv2.imread(fullname)
@@ -187,7 +194,7 @@ def pre_annotate(model_name, config, data_dir, DEBUG, TEST_RUN):
 
                     all_imgs += [img_data]
 
-    autogen_annotations = config['project_directory'] + config['annotations_dir'] + '/' + config['autogen_annotations_fname']
+    autogen_annotations = os.path.join(config['project_directory'],config['annotations_dir'],config['autogen_annotations_fname'])
     print('Saving data to ' + autogen_annotations)
     #print(all_imgs)
     some_autogen = md5check(config['autogen_annotations_md5'], autogen_annotations)

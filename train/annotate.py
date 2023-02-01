@@ -125,13 +125,13 @@ def main(args):
     with open(args.config[0], 'r') as configfile:
         config = yaml.safe_load(configfile)
 
-    data_dir = config['project_directory'] + '/'
+    data_dir = config['project_directory']
 
     resume = args.resume
     from_scratch = args.from_scratch
 
-    checked_annotations = config['project_directory'] + config['annotations_dir'] + '/' + config['checked_annotations_fname']
-    autogen_annotations = config['project_directory'] + config['annotations_dir'] + '/' + config['autogen_annotations_fname']
+    checked_annotations = os.path.join(config['project_directory'],config['annotations_dir'],config['checked_annotations_fname'])
+    autogen_annotations = os.path.join(config['project_directory'],config['annotations_dir'],config['autogen_annotations_fname'])
     some_checked = md5check(config['checked_annotations_md5'], checked_annotations)
     some_autogen = md5check(config['autogen_annotations_md5'], autogen_annotations)
 
@@ -173,7 +173,7 @@ def main(args):
 
     for ssdir, sslist in to_annot_imgs.items():
         for fname in sslist:
-            fullname = ssdir + fname
+            fullname = os.path.join(ssdir, fname)
             if resume:
                 if any(doneimg['filename'] == fname for doneimg in new_imgs):
                     continue
