@@ -23,8 +23,8 @@ def run_full_training(model_name, config, data_dir, c_date, DEBUG, TEST_RUN):
     project_name = config['project_name']
 
     train_dir = data_dir
-    weights_dir = data_dir + config['weights_dir']
-    annotations_dir = data_dir + config['annotations_dir']
+    weights_dir = os.path.join(data_dir,config['weights_dir'])
+    annotations_dir = os.path.join(data_dir,config['annotations_dir'])
 
     #The following are *I KID YOU NOT* sort of global variables. tf function yolo_loss has only two arguemts that are explicit x and y. the rest must be global...
     LABELS = config['common']['LABELS']
@@ -208,7 +208,7 @@ def main(args):
     with open(args.config[0], 'r') as configfile:
         config = yaml.safe_load(configfile)
 
-    data_dir = config['project_directory'] + '/'
+    data_dir = config['project_directory']
 
     #logging and debugging setup
     DEBUG = args.debug
@@ -230,8 +230,8 @@ def main(args):
                         'train_stop_date': train_stop_date,
                         'predictions_performed': False,
                         }
-    os.makedirs(data_dir + config['results_dir'], exist_ok=True)
-    with open(data_dir + config['results_dir'] + config['results_config_name'], 'w') as handle:
+    os.makedirs(os.path.join(data_dir, config['results_dir']), exist_ok=True)
+    with open(os.path.join(data_dir, config['results_dir'], config['results_config_name']), 'w') as handle:
         yaml.dump(resulting_config, handle)
 
 

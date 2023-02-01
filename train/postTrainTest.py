@@ -26,15 +26,15 @@ def main(args):
     data_dir = config['project_directory']
     project_name = config['project_name']
 
-    groundtruths_dir = data_dir + config['groundtruths_dir']
-    predictions_dir_general = data_dir + config['predictions_dir']
+    groundtruths_dir = os.path.join(data_dir, config['groundtruths_dir'])
+    predictions_dir_general = os.path.join(data_dir, config['predictions_dir'])
     os.makedirs(predictions_dir_general, exist_ok=True)
     os.makedirs(groundtruths_dir, exist_ok=True)
 
-    annotations_dir = data_dir + config['annotations_dir']
-    weights_dir = data_dir + config['weights_dir']
+    annotations_dir = os.path.join(data_dir, config['annotations_dir'])
+    weights_dir = os.path.join(data_dir, config['weights_dir'])
 
-    results_config_file = data_dir + config['results_dir'] + config['results_config_name']
+    results_config_file = os.path.join(data_dir, config['results_dir'], config['results_config_name'])
     with open(results_config_file, 'r') as handle:
         results_config = yaml.safe_load(handle)
     c_date = results_config['c_date']
@@ -101,15 +101,15 @@ def main(args):
                     trained_weights[training_phase], by_name=True)  #TODO is by_name necessary here?
                 print("YOLO models loaded, my dear.")
                 ########################################
-                predictions_dir = predictions_dir_general + '/' + model_name + '_' + training_phase + '_' + c_date + '/'
+                predictions_dir = os.path.join(predictions_dir_general,model_name + '_' + training_phase + '_' + c_date)
                 os.makedirs(predictions_dir, exist_ok=True)
 
                 #read in all images from checked annotations (GROUND TRUTH)
                 for i in range(len(all_imgs)):
                     filename = all_imgs[i]['filename']
                     full_name = filename.replace('/','-').lstrip('.').lstrip('-')
-                    fname_gt = groundtruths_dir + full_name + ".txt"
-                    fname_pred = predictions_dir + full_name + ".txt"
+                    fname_gt = os.path.join(groundtruths_dir, full_name + ".txt")
+                    fname_pred = os.path.join(predictions_dir, full_name + ".txt")
 
                     img_data = {'object': []}
                     img_data['filename'] = filename
@@ -121,9 +121,7 @@ def main(args):
                     for obj in all_imgs[i]['object']:
                         boxes_gt.append(
                             [obj['xmin'], obj['ymin'], obj['xmax'], obj['ymax']])
-                    # sys.stdout.write('GT objects:')
-                    # sys.stdout.write(str(len(boxes_gt)))
-                    # sys.stdout.flush()
+
                     #do box processing
                     img = cv2.imread(filename)
 

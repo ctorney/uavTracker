@@ -34,7 +34,7 @@ models:
     training_sets: ['training2019']
     phases: 2
     num_class: 1
-    obj_thresh: 0.2
+    obj_thresh: 0.8
     nms_thresh: 0.3
     phase_one:
       BATCH_SIZE: 16

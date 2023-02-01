@@ -47,12 +47,12 @@ def read_subsets(list_of_subsets,config):
     subsets = config['subsets']
 
     for tset in list_of_subsets:
-        tdir = config['project_directory'] + subsets[tset]['directory'] + '/'
+        tdir = os.path.join(config['project_directory'],subsets[tset]['directory'])
         #this is risky....
         #If the directory for the subset doesn't exist, use the unprocessed/raw directory
         if not os.path.exists(tdir):
             print('Using raw directory. This should only really happen in prepTrain.py function, otherwise it means that there are still images unadapted to yolo and rather unannotated')
-            tdir = config['project_directory'] + config['raw_imgs_dir'] + subsets[tset]['directory'] + '/'
+            tdir = os.path.join(os.path.join(config['project_directory'],config['raw_imgs_dir']), subsets[tset]['directory'])
 
         tnimg = subsets[tset]['number_of_images']
         if subsets[tset]['filelist']:
@@ -69,7 +69,7 @@ def read_subsets(list_of_subsets,config):
 
         if len(ss_imgs) != tnimg:
             lss_imgs = len(ss_imgs)
-            raise Exception(f'Error: for the subset {tset} number of images defined {tnimg} is not matching the provided filename or regex {lss_imgs}')
+            raise Exception(f'Error: for the subset {tset} number of images defined {tnimg} is not matching the provided filename or regex {lss_imgs}. Maybe you have partially run prepTrain.py and only some of the files from unprocessed directory got moved into the main project directory?')
         ss_imgs_all[tdir] = ss_imgs
 
     return ss_imgs_all
@@ -83,13 +83,12 @@ Filename of temporary annotations file
 def read_tsets(config, model_name, c_date, list_of_subsets):
     subsets = config['subsets']
 
-    all_annotations = config['project_directory'] + config['annotations_dir'] + '/' + config['checked_annotations_fname']
+    all_annotations = os.path.join(config['project_directory'], config['annotations_dir'], config['checked_annotations_fname'])
     md5check(config['checked_annotations_md5'], all_annotations)
 
     print(f"Loading all images annotations from {all_annotations}")
     with open(all_annotations, 'r') as fp:
         all_imgs = yaml.safe_load(fp)
-
 
     ss_imgs_all = read_subsets(list_of_subsets, config)
 
@@ -101,14 +100,14 @@ def read_tsets(config, model_name, c_date, list_of_subsets):
         addit = False
         for ssdir, ssi in ss_imgs_all.items():
             if fname in ssi:
-                annotation_data['filename'] = ssdir + fname
+                annotation_data['filename'] = os.path.join(ssdir, fname)
                 addit = True
                 break
         if addit:
             annotations_subset += [annotation_data]
 
 
-    current_annotations = config['project_directory'] + config['annotations_dir'] + 'annotations_' + model_name + '_' + c_date + '.yml'
+    current_annotations = os.path.join(config['project_directory'], config['annotations_dir'], 'annotations_' + model_name + '_' + c_date + '.yml')
     with open(current_annotations, 'w') as handle:
         yaml.dump(annotations_subset, handle)
 

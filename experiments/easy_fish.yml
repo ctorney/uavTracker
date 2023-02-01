@@ -34,7 +34,7 @@ models:
     phases: 2
     num_class: 1
     obj_thresh: 0.9
-    nms_thresh: 0.05
+    nms_thresh: 0.1
     phase_one:
       BATCH_SIZE: 16
       EPOCHS: 1
@@ -59,7 +59,7 @@ models:
     training_sets: ['training_A','training_B']
     phases: 1
     num_class: 1
-    obj_thresh: 0.2
+    obj_thresh: 0.8
     nms_thresh: 0.3
     phase_one:
       BATCH_SIZE: 16
