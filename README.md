@@ -20,6 +20,7 @@ If your images are unprocessed, i.e. have some unknown size, you need to create 
 
 If your images are already right sizes, you can put them in the root directory of the project straight away.
 
+It makes sense to create a symbolic link to your directory with weights in the data folder of your project
 
 ### Preparing for training
    This pre-training is usually necessary as a way to clear/check or create from scratch annotations for your target animal. We leverage often decent performance of a generic object detector to generate imperfect annotated data (prepTrain) and then allow corrections (annotate.py). It is also known as transfer learning because we are not training (train.py) from scratch but take an existing model.
