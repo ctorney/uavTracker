@@ -4,6 +4,9 @@ import os, sys, argparse
 import cv2
 import yaml  #replacing pickle with yaml
 import datetime  #useful for debugging in notebooks
+sys.path.append('../..')
+sys.path.append('..')
+from utils.utils import md5check, filter_out_annotations, getmd5, read_subsets
 
 # Defining helper functions
 
@@ -23,12 +26,9 @@ drawing = False  #this have to be False for drawing to work properly!!!
 def check_boxes(img_clean, bbox_list, im_width, im_height):
     def draw_all_boxes():
         img = img_clean.copy()
-
         for b in bbox_list:
-            cv2.rectangle(
-                img, (b[0], b[1]), (b[2], b[3]),
-                color=(0, 255, 0),
-                thickness=2)
+            #we have to make sure the the b are int. otherwise opencv thinks there is a problem with number of arguments
+            cv2.rectangle(img, (int(b[0]), int(b[1])), (int(b[2]), int(b[3])),(0, 255, 0),2)
         cv2.imshow('image', img)
 
     # mouse callback function
@@ -73,7 +73,7 @@ def check_boxes(img_clean, bbox_list, im_width, im_height):
         # if mouse is drawing set tmp rectangle endpoint to (x,y)
         elif event == cv2.EVENT_MOUSEMOVE and drawing:
             rect_endpoint_tmp = [(x, y)]
-        elif event == cv2.EVENT_LBUTTONDBLCLK:
+        elif event == cv2.EVENT_RBUTTONDOWN:
             npbx = np.asarray(bbox_list)
             selected_box = ((x > npbx[:, 0]) & (y > npbx[:, 1]) &
                             (x < npbx[:, 2]) & (y < npbx[:, 3]))
@@ -121,76 +121,102 @@ def check_boxes(img_clean, bbox_list, im_width, im_height):
 
 def main(args):
     #Load data
-    data_dir = args.ddir[0] + '/'  #in case we forgot '/'
     print('Opening file' + args.config[0])
     with open(args.config[0], 'r') as configfile:
         config = yaml.safe_load(configfile)
 
-    trained_annotations_fname = data_dir + config['annotations_dir'] + config['pretrained_annotations_fname']
-    checked_annotations_fname = data_dir + config['annotations_dir'] +  config['checked_annotations_fname']
-    im_width = config['IMAGE_W']  #size of training images for yolo
-    im_height = config['IMAGE_H']
+    data_dir = config['project_directory']
 
     resume = args.resume
     from_scratch = args.from_scratch
 
-    if from_scratch:
-        print('Not showing any bounding boxes. You are annotating from scratch. Remove relevant flag to use ourput of your previous training (or generic model)')
+    checked_annotations = os.path.join(config['project_directory'],config['annotations_dir'],config['checked_annotations_fname'])
+    autogen_annotations = os.path.join(config['project_directory'],config['annotations_dir'],config['autogen_annotations_fname'])
+    some_checked = md5check(config['checked_annotations_md5'], checked_annotations)
+    some_autogen = md5check(config['autogen_annotations_md5'], autogen_annotations)
+
+    im_width = config['common']['IMAGE_W']  #size of training images for yolo
+    im_height = config['common']['IMAGE_H']
+
+
 
     if resume:
         print('Restoring previous session!')
 
-    preped_images_dir = data_dir + config['preped_images_dir']
-
-    with open(trained_annotations_fname, 'r') as fp:
-        all_imgs = yaml.safe_load(fp)
-
-    if not resume:
-        new_imgs = []
+    if some_autogen:
+        with open(autogen_annotations, 'r') as fp:
+            all_imgs = yaml.safe_load(fp)
     else:
-        with open(checked_annotations_fname, 'r') as fp:
+        print('no automatically generate annotations provided, will have to annotate from scratch')
+        from_scratch = True
+
+    if from_scratch:
+        print('Not showing any bounding boxes. You are annotating from scratch. Remove relevant flag to use ourput of your previous training (or generic model)')
+
+    #Get a list of all the files that we need annotations for to do all those trainings and testings in the config.
+    subsets = config['subsets']
+    list_of_subsets = [x for x in subsets]
+    ss_imgs_all = read_subsets(list_of_subsets,config)
+
+    #run through the existing annotations and create a list of files without any annotations
+    to_annot_imgs = filter_out_annotations(ss_imgs_all,some_checked,checked_annotations)
+
+    if some_checked:
+        with open(checked_annotations, 'r') as fp:
             new_imgs = yaml.safe_load(fp)
+    else:
+        new_imgs = []
 
-    for i in range(len(all_imgs)):
-        fname = all_imgs[i]['filename']
-        if resume:
-            if any(doneimg['filename'] == fname for doneimg in new_imgs):
-                continue
-        img_data = {'object': []}
-        img_data['filename'] = fname
-        img_data['width'] = all_imgs[i]['width']
-        img_data['height'] = all_imgs[i]['height']
-        sys.stdout.write('\r')
-        sys.stdout.write(fname + ", " + str(i) + ' of ' + str(
-            len(all_imgs)) + " \n=====================================\n")
-        sys.stdout.flush()
+    annot_filenames = []
+    for annotation_data in all_imgs:
+        annot_filenames.append(annotation_data['filename'])
 
-        boxes = []
-        if not from_scratch:
-            for obj in all_imgs[i]['object']:
-                boxes.append(
-                    [obj['xmin'], obj['ymin'], obj['xmax'], obj['ymax']])
+    for ssdir, sslist in to_annot_imgs.items():
+        for fname in sslist:
+            fullname = os.path.join(ssdir, fname)
+            if resume:
+                if any(doneimg['filename'] == fname for doneimg in new_imgs):
+                    continue
+            i = annot_filenames.index(fname)
 
-        #do box processing
-        img = cv2.imread(data_dir + fname)
-        if check_boxes(img, boxes, im_width, im_height):
-            break
-        for b in boxes:
-            obj = {}
-            if ((b[2] - b[0]) * (b[3] - b[1])) < 10:
-                continue
-            obj['name'] = 'aoi'
-            obj['xmin'] = int(b[0])
-            obj['ymin'] = int(b[1])
-            obj['xmax'] = int(b[2])
-            obj['ymax'] = int(b[3])
-            img_data['object'] += [obj]
+            img_data = {'object': []}
+            img_data['filename'] = fname
+            img_data['width'] = all_imgs[i]['width']
+            img_data['height'] = all_imgs[i]['height']
+            fullfile = fullname
+            sys.stdout.write('\r')
+            sys.stdout.write(fullfile + ", " + str(i) + ' of ' + str(
+                len(all_imgs)) + " \n=====================================\n")
+            sys.stdout.flush()
 
-        new_imgs += [img_data]
+            boxes = []
+            if not from_scratch:
+                for obj in all_imgs[i]['object']:
+                    boxes.append(
+                        [obj['xmin'], obj['ymin'], obj['xmax'], obj['ymax']])
+
+            #do box processing
+            img = cv2.imread(fullfile)
+            if check_boxes(img, boxes, im_width, im_height):
+                break
+            for b in boxes:
+                obj = {}
+                if ((b[2] - b[0]) * (b[3] - b[1])) < 10:
+                    continue
+                obj['name'] = 'aoi'
+                obj['xmin'] = int(b[0])
+                obj['ymin'] = int(b[1])
+                obj['xmax'] = int(b[2])
+                obj['ymax'] = int(b[3])
+                img_data['object'] += [obj]
+
+            new_imgs += [img_data]
 
     #print(all_imgs)
-    with open(checked_annotations_fname, 'w') as handle:
+    with open(checked_annotations, 'w') as handle:
         yaml.dump(new_imgs, handle)
+
+    getmd5(checked_annotations)
 
     print("Done!")
 
@@ -198,7 +224,6 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Annotate or correct annotations from non-domain specific model. To remove annotation double left click. To add one, Middle Click and move. \'c\' accepts changes and goes to the next image, \'q\' ends the session and saves files done so far (resume option is used to continue this work).',epilog='Any issues and clarifications: github.com/ctorney/uavtracker/issues')
     parser.add_argument('--config', '-c', required=True, nargs=1, help='Your yml config file')
-    parser.add_argument('--ddir', '-d', required=True, nargs=1, help='Root of your data directory' )
     parser.add_argument('--resume', '-r', default=False, action='store_true',
                         help='Continue a session of annotation (it will access output file and re-start when you left off)')
     parser.add_argument('--from-scratch', '-f', default=False, action='store_true',

@@ -1,0 +1,100 @@
+######
+##DiR
+#####
+#the following directories
+weights_dir: 'weights/'
+tracks_dir: "tracks/"
+movie_dir: 'videos/'
+tracks_dir: "tracks/"
+
+#output directories, will be created if don't exist:
+preped_images_dir: 'frames_1/'
+bbox_images_dir: 'extracted_bboxes/'
+groundtruths_dir: 'groundtruths/'
+tracks_dir: 'tracks/'
+predictions_dir: 'predictions/'
+annotations_dir: 'annotations/'
+
+pretrained_annotations_fname: 'annotations.yml'
+trained_annotations_fname: 'annotations-trained.yml'
+testing_annotations_fname: 'annotations-testing.yml'
+test_videos_name_regex: "*.mp4"
+checked_annotations_fname: 'annotations-checked.yml' #checked annotations are used for training
+
+##########
+# TRAINING
+##########
+#You can specify multiple training setups:
+training_setup: 'from_bb'
+
+from_yolo:
+  train_files_regex: "yoloTrainData/*.png"
+  weights: 'yolo-v3-coco.h5'
+  weights_md5: "" #leave empty if you are retraining
+  num_class: 80
+  obj_thresh: 0.2
+  nms_thresh: 0.3
+
+from_horses:
+  train_files_regex: "frames_1/*.png"
+  weights: 'horses-yolo.h5'
+  weights_md5: ""
+  num_class: 1
+  obj_thresh: 0.8
+  nms_thresh: 0.3
+
+from_bb:
+  train_files_regex: "frames_1/*.png"
+  weights: 'trained-blackbucks-yolo.h5'
+  weights_md5: ""
+  num_class: 1
+  obj_thresh: 0.8
+  nms_thresh: 0.3
+
+trained_weights: 'trained-blackbucks-yolo.h5'
+
+# Training parameters:
+# phase_one top layers, normal learning rate
+# phase_two all layers, small learning rate
+phase_one:
+  BATCH_SIZE: 32
+  EPOCHS: 500
+  LR: 5e-4
+phase_two:
+  BATCH_SIZE: 4
+  EPOCHS: 100
+  LR: 0.5e-4
+
+LABELS: ['aoi']
+IMAGE_W: 3840
+IMAGE_H: 2144
+MAX_L: 100
+MIN_L: 10
+
+#TRACKING:
+tracking_setup: "mk1"
+
+mk1:
+  videos_name_regex: "videos/*.mp4" #for use by transform.py which also preps the following yml file
+  videos_list: "videos.yml"
+  videos_fps: 30
+  weights: 'trained-blackbucks-yolo.h5'
+  weights_md5: "25a868c1961806fb5faf0f2a80a1454d"
+  obj_thresh: 0.8
+  nms_thresh: 0.3
+  max_age: 30
+  track_thresh: 0.3
+  init_thresh: 0.8
+  init_nms: 0.0
+  link_iou: 0.1
+  num_class: 1
+  step_frames: 5 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
+
+NO_OBJECT_SCALE: 1.0
+OBJECT_SCALE: 5.0
+COORD_SCALE: 2.0
+CLASS_SCALE: 1.0
+
+#Running tracker
+save_output: 1
+showDetections: 1 # flag to show all detections in image

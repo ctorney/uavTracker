@@ -1,8 +1,0 @@
-sklearn
-filterpy
-numpy
-pandas
-tensorflow==1.14
-pyaml
-opencv-contrib-python
-keras

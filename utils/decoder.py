@@ -1,4 +1,3 @@
-
 import numpy as np
 import pandas as pd
 import os,sys
@@ -17,18 +16,18 @@ def _interval_overlap(interval_a, interval_b):
         if x2 < x3:
              return 0
         else:
-            return min(x2,x4) - x3          
+            return min(x2,x4) - x3
 
 def bbox_iou(box1, box2):
-    
+
     intersect_w = _interval_overlap([box1[0], box1[2]], [box2[0], box2[2]])
     intersect_h = _interval_overlap([box1[1], box1[3]], [box2[1], box2[3]])
-    
+
     intersect = intersect_w * intersect_h
 
     w1, h1 = box1[2]-box1[0], box1[3]-box1[1]
     w2, h2 = box2[2]-box2[0], box2[3]-box2[1]
-    
+
     union = w1*h1 + w2*h2 - intersect
     return float(intersect) / union
 
@@ -85,7 +84,85 @@ def decode(yolos, obj_thresh=0.9, nms_thresh=0.5):
     return_boxes = []
 
     for b in boxes:
-        if b[4]>0:
+        if b[4]>0 and (not np.isnan(b).any()):
             return_boxes.append([b[0],b[1],b[2],b[3],b[4]])
 
     return return_boxes
+
+
+
+"""
+for each prediction decide if it is a TP or FP,
+if there are multiple pred for the same gt
+take one with the highest IoU.
+"""
+def get_prediction_results(boxes_pred,boxes_gt, iou_thresh):
+    prediction_list = []
+    if len(boxes_pred) == 0:
+        nall = len(boxes_gt) #we'll need to know sum of TP and TNs
+        return prediction_list, nall
+
+
+    #we are adding a dummy prediction to distinguis the first prediction matching GT, from first prediction being a default when all predicions are null
+    boxes_pred0 = [[0,0,0,0,0]] + boxes_pred
+
+    predictions_array = np.zeros((len(boxes_gt),len(boxes_pred0)))
+    #For each ground truth we are providing the IoU to choose the best one
+    for iii in range(len(boxes_gt)):
+        bgt = boxes_gt[iii]
+        for jjj in range(len(boxes_pred0)):
+            bpred = boxes_pred0[jjj]
+            if bbox_iou(bgt,bpred) > iou_thresh:
+                predictions_array[iii,jjj] = bbox_iou(bgt,bpred)
+
+    # print(predictions_array)
+
+    #here we will perform the simplest matching, as we are not going to use this code for reporting final results, only for internal validation
+    best_preds = np.argmax(predictions_array,axis=1)
+    # print(best_preds)
+
+    #the indexing of boxes_pred0 is one higher because it contains a null hypothesis
+    for jjj in range(len(boxes_pred)):
+        v = 'tp' if (jjj+1) in best_preds else 'fp'
+        prediction_list.append((v,boxes_pred[jjj][4]))
+
+
+    nall = len(boxes_gt) #we'll need to know sum of TP and TNs
+    return prediction_list, nall
+
+#prediction list can be unsorted
+def get_AP(prediction_list, nall):
+    if len(prediction_list) == 0:
+        return 0
+
+    prediction_list.sort(key= lambda x: x[1],reverse=True)
+    # print('Predictions:')
+    # print(prediction_list)
+    roc_curve = []
+    acc_tp = 0
+    acc_fp = 0
+    for npred in prediction_list:
+        if npred[0] =='tp':
+            acc_tp += 1
+        else:
+            acc_fp += 1
+
+        nrecall = acc_tp / nall
+        nprec = acc_tp / (acc_tp + acc_fp)
+        roc_curve.append((nrecall,nprec))
+
+    #it will be a list fold
+    recalls = [x[0] for x in roc_curve]
+    precisions = [x[1] for x in roc_curve]
+    # print('recalls:')
+    # print(recalls)
+    # print('precisions:')
+    # print(precisions)
+
+    AP = 0
+    for rrr in range(0,len(recalls)):
+        if rrr == 0:
+            AP += (recalls[rrr]) * max(precisions[rrr:])
+        else:
+            AP += (recalls[rrr]-recalls[rrr-1]) * max(precisions[rrr:])
+    return AP

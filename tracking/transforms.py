@@ -3,7 +3,7 @@ import csv
 import cv2
 import yaml
 import numpy as np
-
+from pathlib import Path
 import time
 
 
@@ -15,33 +15,35 @@ def main(args):
     shift_display = shift_display.reshape((3,3))
 
     #Load data
-    data_dir = args.ddir[0] + '/'  #in case we forgot '/'
     print('Opening file' + args.config[0])
     with open(args.config[0], 'r') as configfile:
         config = yaml.safe_load(configfile)
 
+    data_dir = config['project_directory']
+    tracks_dir = os.path.join(data_dir,config['tracks_dir'])
+    os.makedirs(tracks_dir, exist_ok=True)
     tracking_setup = config["tracking_setup"]
     np.set_printoptions(suppress=True)
 
     videos_name_regex_short = config[tracking_setup]['videos_name_regex']
-    videos_list = data_dir + config[tracking_setup]['videos_list']
+    videos_list = os.path.join(data_dir,config[tracking_setup]['videos_list'])
     videos_info = []  #this list will be saved into videos_list file
 
-    im_width = config['IMAGE_W']  #size of training imageas for yolo
-    im_height = config['IMAGE_H']
+    im_width = config['common']['IMAGE_W']  #size of training imageas for yolo
+    im_height = config['common']['IMAGE_H']
 
-    filelist = glob.glob(data_dir + videos_name_regex_short)
+    filelist = glob.glob(os.path.join(data_dir, videos_name_regex_short))
     print(filelist)
-    prefix_pos = len(data_dir)
     scalefact = 4.0
 
     for input_file in filelist:
 
-        input_file_short = input_file[prefix_pos:]
+        full_i_path = Path(input_file)
+        input_file_short = str(full_i_path.relative_to(data_dir))
         direct, ext = os.path.split(input_file_short)
         noext, _ = os.path.splitext(ext)
-        tr_file = data_dir + '/tracks/' + noext + '_MAT.npy'
-        tr_file_short = '/tracks/' + noext + '_MAT.npy'
+        tr_file = os.path.join(tracks_dir, noext + '_MAT.npy')
+        tr_file_short = os.path.join(config['tracks_dir'], noext + '_MAT.npy')
         if os.path.isfile(tr_file):
             print("transformation file already exists")
             continue
@@ -87,7 +89,7 @@ def main(args):
             cv2.namedWindow('image transformed', cv2.WINDOW_GUI_EXPANDED)
             cv2.moveWindow('image transformed', 20,20)
         for i in range(nframes):
-            if args.static: #non-moving camera. 
+            if args.static: #non-moving camera.
                 warp_matrix = np.eye(2, 3, dtype=np.float32)
                 full_warp = np.dot(full_warp, np.vstack((warp_matrix, [0, 0, 1])))
                 save_warp[i, :, :] = full_warp
@@ -163,12 +165,6 @@ if __name__ == '__main__':
         'Any issues and clarifications: github.com/ctorney/uavtracker/issues')
     parser.add_argument(
         '--config', '-c', required=True, nargs=1, help='Your yml config file')
-    parser.add_argument(
-        '--ddir',
-        '-d',
-        required=True,
-        nargs=1,
-        help='Root of your data directory')
     parser.add_argument('--static', '-s', default=False, action='store_true',
                         help='Static camera. The program will create videos file for you but will set all transformations to identity. It will be quick, I promise.')
     parser.add_argument('--visual', '-v', default=False, action='store_true',

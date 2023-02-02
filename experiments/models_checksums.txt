@@ -1,0 +1,14 @@
+MD5 (models/tiny_models.py) = 9da920c100a2a8fbc08f777c26237990
+MD5 (models/yolo.h5) = 665bf72ef472918d759f544a92a0ed0d
+MD5 (models/yolo_models.py) = c91330888b16d575fff983ed7c05e2d4
+MD5 (weights/horses-yolo.h5) = eea943779c713c89bab51cd94bf7ae71
+MD5 (weights/tiny_coco.h5) = e0a43e472ca9bfc0a6cda16f81ce9576
+MD5 (weights/trained-blackbucks-yolo.h5) = 25a868c1961806fb5faf0f2a80a1454d
+MD5 (weights/trained-blackbucks-yoloMk2.h5) = 157890552b17ec74bde910455674c461
+MD5 (weights/trained-blackbucks-yoloMk2.h5_checkpoint) = 192199a069305b4570fa7e5a56623bfc
+MD5 (weights/trained-salmon-yoloMk4.h5) = 5f8b4cf7df69da14f3dfd18fcd74f25a
+MD5 (weights/trained-salmon-yoloMk4p2.h5) = 8282a9d5d05264b806bcd7563cde7bbb
+MD5 (weights/trained-salmon-yoloMk5June13.h5) = ee9e5ef7c7af5eddd91aefa22eeb08e2
+MD5 (weights/yolo-v3-coco.h5) = 26cf8e8b5ba9d9d4a3778f9747e3407a
+MD5 (weights/trained-tight-alfs.h5) = 2cdd68feb27f120334a50afecf5d6145
+

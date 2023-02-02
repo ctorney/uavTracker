@@ -13,20 +13,22 @@ from utils.utils import md5check
 
 def main(args):
     #Load data
-    data_dir = args.ddir[0] + '/'  #in case we forgot '/'
     print('Opening file' + args.config[0])
     with open(args.config[0], 'r') as configfile:
         config = yaml.safe_load(configfile)
-
+    args_visual = args.visual
+    data_dir = config['project_directory']
     tracking_setup = config["tracking_setup"]
 
     np.set_printoptions(suppress=True)
 
-    videos_list = data_dir + config[tracking_setup]['videos_list']
+    videos_list = os.path.join(data_dir, config[tracking_setup]['videos_list'])
 
-    weights_dir = data_dir + config['weights_dir']
-    weights = weights_dir + config[tracking_setup]['weights']
+    weights_dir = os.path.join(data_dir, config['weights_dir'])
+    weights = os.path.join(weights_dir, config[tracking_setup]['weights'])
     md5check(config[tracking_setup]['weights_md5'], weights)
+
+    tracks_dir = os.path.join(data_dir,config['tracks_dir'])
 
     #frame rate calculus:
     step_frames = config[tracking_setup]['step_frames']
@@ -41,13 +43,13 @@ def main(args):
     init_nms_val = config[tracking_setup]['init_nms']
     link_iou_val = config[tracking_setup]['link_iou']
 
-    max_l = config['MAX_L']  #maximal object size in pixels
-    min_l = config['MIN_L']
-    im_width = config['IMAGE_W']  #size of training imageas for yolo
-    im_height = config['IMAGE_H']
+    max_l = config['common']['MAX_L']  #maximal object size in pixels
+    min_l = config['common']['MIN_L']
+    im_width = config['common']['IMAGE_W']  #size of training imageas for yolo
+    im_height = config['common']['IMAGE_H']
 
-    save_output = config['save_output']
-    showDetections = config['showDetections']
+    save_output = config['common']['save_output']
+    showDetections = config['common']['showDetections']
 
     with open(videos_list, 'r') as video_config_file_h:
         video_config = yaml.safe_load(video_config_file_h)
@@ -57,7 +59,7 @@ def main(args):
 
     for input_file_dict in filelist:
 
-        input_file = data_dir + input_file_dict["filename"]
+        input_file = os.path.join(data_dir, input_file_dict["filename"])
 
         direct, ext = os.path.split(input_file)
         noext, _ = os.path.splitext(ext)
@@ -68,8 +70,8 @@ def main(args):
             sys.stdout.write('\n')
             sys.stdout.flush()
             print(period["clipname"], period["start"], period["stop"])
-            data_file = data_dir + '/tracks/' + noext + "_" + period["clipname"] + '_POS.txt'
-            video_file = data_dir + '/tracks/' + noext + "_" + period["clipname"] + '_TR.avi'
+            data_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_POS.txt')
+            video_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_TR.avi')
             print(input_file, video_file)
             if os.path.isfile(data_file):
                 print(
@@ -138,7 +140,7 @@ def main(args):
                 print(":: oh dear! :: No transformations found.")
 
             nframes = round(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            if args.visual:
+            if args_visual:
                 cv2.namedWindow('tracker', cv2.WINDOW_GUI_EXPANDED)
                 cv2.moveWindow('tracker', 20,20)
             for i in range(nframes):
@@ -265,7 +267,7 @@ def main(args):
                     #   im_aligned = cv2.warpPerspective(frame, full_warp, (S[0],S[1]), borderMode=cv2.BORDER_TRANSPARENT, flags=cv2.WARP_INVERSE_MAP)
                     out.write(frame)
 
-                if args.visual:
+                if args_visual:
                     frame = cv2.resize(frame, S)
                     cv2.imshow('tracker', frame)
                     key = cv2.waitKey(1)  #& 0xFF
@@ -288,12 +290,6 @@ if __name__ == '__main__':
         'Any issues and clarifications: github.com/ctorney/uavtracker/issues')
     parser.add_argument(
         '--config', '-c', required=True, nargs=1, help='Your yml config file')
-    parser.add_argument(
-        '--ddir',
-        '-d',
-        required=True,
-        nargs=1,
-        help='Root of your data directory')
     parser.add_argument('--visual', '-v', default=False, action='store_true',
                         help='Display tracking progress')
 

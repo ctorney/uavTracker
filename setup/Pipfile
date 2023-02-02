@@ -1,0 +1,23 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+tensorflow-macos = "*"
+tensorflow-metal = "*"
+opencv-python = "*"
+ipython = "*"
+matplotlib = "*"
+seaborn = "*"
+pandas = "*"
+folium = "*"
+pyyaml = "*"
+scipy = "*"
+scikit-image = "*"
+filterpy = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.10"
