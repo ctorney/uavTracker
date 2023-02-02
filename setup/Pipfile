@@ -15,6 +15,7 @@ folium = "*"
 pyyaml = "*"
 scipy = "*"
 scikit-image = "*"
+filterpy = "*"
 
 [dev-packages]
 

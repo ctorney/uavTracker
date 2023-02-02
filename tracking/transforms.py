@@ -3,7 +3,7 @@ import csv
 import cv2
 import yaml
 import numpy as np
-
+from pathlib import Path
 import time
 
 
@@ -22,8 +22,7 @@ def main(args):
     data_dir = config['project_directory']
     tracks_dir = os.path.join(data_dir,config['tracks_dir'])
     os.makedirs(tracks_dir, exist_ok=True)
-    #tracking_setup = config["tracking_setup"]
-    tracking_setup = "tracking_setup"
+    tracking_setup = config["tracking_setup"]
     np.set_printoptions(suppress=True)
 
     videos_name_regex_short = config[tracking_setup]['videos_name_regex']
@@ -35,12 +34,12 @@ def main(args):
 
     filelist = glob.glob(os.path.join(data_dir, videos_name_regex_short))
     print(filelist)
-    prefix_pos = len(data_dir)
     scalefact = 4.0
 
     for input_file in filelist:
 
-        input_file_short = input_file[prefix_pos:]
+        full_i_path = Path(input_file)
+        input_file_short = str(full_i_path.relative_to(data_dir))
         direct, ext = os.path.split(input_file_short)
         noext, _ = os.path.splitext(ext)
         tr_file = os.path.join(tracks_dir, noext + '_MAT.npy')

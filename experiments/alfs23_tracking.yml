@@ -4,7 +4,9 @@ project_directory: '../data/alfs23'
 weights_dir: 'weights/'
 tracks_dir: 'extracted_tracks/'
 
-tracking_setup:
+tracking_setup: 'test_setup'
+
+test_setup:
   videos_name_regex: "videos/*.mp4" #for use by transform.py which also preps the following yml file
   videos_fps: 10
   link_iou: 0.1
@@ -33,3 +35,5 @@ common:
   OBJECT_SCALE: 5.0
   COORD_SCALE: 2.0
   CLASS_SCALE: 1.0
+  save_output: 1
+  showDetections: 1 # flag to show all detections in image
