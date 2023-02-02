@@ -269,4 +269,7 @@ optional arguments:
 
 ### Running tracker
 
-Work in progress
+Put your videos in a directory specified by regex. Preparing camera transformations also prepares lists of files to tracking. Refer to `experiments/alfs23_tracking.yml` to see example
+
+`python transform.py -c ../experiments/alfs23_tracking.yml`
+`python runTracker.py -c ../experiments/alfs23_tracking.yml --visual`
