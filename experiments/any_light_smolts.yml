@@ -55,7 +55,7 @@ models:
       MIN_DELTA: 0.001
       PATIENCE: 10
   lightz:
-    pretrained_weights: 'best_smolts_standard_phase_two_2022Dec05.h5'
+    pretrained_weights: 'best_smolts_standard_phase_two_2022Dec05.h5' #this is the same as nov22
     pretrained_weights_md5: "451122ca9cd7d25a2006d3959557e848" #leave empty if you are retraining
     training_sets: ['training2019', 'day_choice_2019','day_choice_difficult_2019','nightly_2019','nightly_2021']
     phases: 2
