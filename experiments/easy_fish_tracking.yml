@@ -1,3 +1,5 @@
+project_name: 'any_light_smolts'
+project_directory: '../data/any_light_smolts'
 
 tracking_setup:
   videos_name_regex: "videos/*.mp4" #for use by transform.py which also preps the following yml file

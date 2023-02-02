@@ -1,0 +1,35 @@
+project_name: 'alfs23'
+project_directory: '../data/alfs23'
+
+weights_dir: 'weights/'
+tracks_dir: 'extracted_tracks/'
+
+tracking_setup:
+  videos_name_regex: "videos/*.mp4" #for use by transform.py which also preps the following yml file
+  videos_fps: 10
+  link_iou: 0.1
+  step_frames: 1 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
+  videos_list: "alfs23_videos.yml" #after transforms.py was run this is where video list live
+  weights: 'trained-new-alfs-p2.h5'
+  weights_md5: "cc81ba4e3243a9b9e087eae931b0b6fd"
+  num_class: 1
+  obj_thresh: 0.8
+  nms_thresh: 0.3
+  max_age: 30
+  track_thresh: 0.2
+  init_thresh: 0.2
+  init_nms: 0.0
+
+common:
+  LABELS: ['alf'] #this label is sort of hardcoded
+  IMAGE_W: 416 # or must be a multiplier of 32 in current version
+  IMAGE_H: 416 #must match whatever yolo model was trained on
+  # IMAGE_W: 640 # or must be a multiplier of 32 in current version
+  # IMAGE_H: 352 #must match whatever yolo model was trained on
+  MAX_L: 100
+  MIN_L: 4
+
+  NO_OBJECT_SCALE: 1.0
+  OBJECT_SCALE: 5.0
+  COORD_SCALE: 2.0
+  CLASS_SCALE: 1.0
