@@ -1,7 +1,7 @@
-project_name: 'alfs22'
-project_directory: '../data/alfs22/' #adding a '..' because the programs are run from subdirectories. feel free to specify an absolute path if that offends you
+project_name: 'alfs23'
+project_directory: '../data/alfs23/'
+c_date: '2023Feb02'
 
-#The general project settings, will be the same if you keep the directory structure intact
 weights_dir: 'weights/'
 annotations_dir: 'annotations/'
 raw_imgs_dir: 'raw_imgs/'
@@ -11,19 +11,26 @@ groundtruths_dir: 'results/groundtruths/'
 predictions_dir: 'results/predictions/'
 results_dir: 'results/'
 
-autogen_annotations_fname: 'train_data.yml'
+autogen_annotations_fname: 'autogen_annotated.yml'
 autogen_annotations_md5 : ''
+autogen_model:
+  pretrained_weights: 'trained-new-alfs-p2.h5'
+  pretrained_weights_md5: "cc81ba4e3243a9b9e087eae931b0b6fd" #leave empty if you are retraining
+  num_class: 1
+  obj_thresh: 0.9
+  nms_thresh: 0.05
 
-checked_annotations_fname: 'manual_annotated.yml'
+checked_annotations_fname: 'train_data.yml'
 checked_annotations_md5 : ''
 
-results_config_name: 'resulting_config.yml'
+results_config_name: 'results.yml'
+
 
 models:
   alf22model:
-    pretrained_weights: 'yolo-v3-coco.h5'
-    pretrained_weights_md5: "26cf8e8b5ba9d9d4a3778f9747e3407a"
-    training_sets: ['100alfs']
+    pretrained_weights: 'trained-new-alfs-p2.h5'
+    pretrained_weights_md5: "cc81ba4e3243a9b9e087eae931b0b6fd"
+    training_sets: ['alfs23_train']
     phases: 2
     num_class: 1
     obj_thresh: 0.9
@@ -32,31 +39,41 @@ models:
       BATCH_SIZE: 16
       EPOCHS: 500
       LR: 0.5e-3
+      B1: 0.9
+      B2: 0.999
+      EPS: 0.1e-7
+      MIN_DELTA: 0.001
+      PATIENCE: 10
     phase_two:
       BATCH_SIZE: 4
       EPOCHS: 100
       LR: 0.1e-3
+      B1: 0.9
+      B2: 0.999
+      EPS: 0.1e-7
+      MIN_DELTA: 0.001
+      PATIENCE: 10
 
 
-testing_sets: ['100alfs', 'alfs22_test']
+testing_sets: ['alfs23_train', 'alfs23_test']
 
 
 subsets:
-  100alfs:
-    directory: 'subsets/100alfs/'
-    number_of_images: 100
+  alfs23_train:
+    directory: 'yolo_imgs/train/'
+    number_of_images: 1000
     description: 'easy subset to train on'
     filelist: '' #if filelist is empty, use regex
     regex: '*.jpg'
-  alfs22_test:
-    directory: 'subsets/alfs22_test/'
+  alfs23_test:
+    directory: 'yolo_imgs/test/'
     number_of_images: 100
     description: 'easy subset to test on'
     filelist: '' #if filelist is empty, use regex
     regex: '*.jpg'
 
 common:
-  LABELS: ['aoi'] #this label is sort of hardcoded
+  LABELS: ['alf'] #this label is sort of hardcoded
   IMAGE_W: 416 # or must be a multiplier of 32 in current version
   IMAGE_H: 416 #must match whatever yolo model was trained on
   # IMAGE_W: 640 # or must be a multiplier of 32 in current version
