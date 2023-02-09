@@ -22,6 +22,9 @@ If your images are unprocessed, i.e. have some unknown size, you need to create 
 
 If your images are already right sizes, you can put them in the root directory of the project straight away.
 
+Note:
+*prepTrain doesn't copy files that already have annotations from "raw" directory to the main one.*
+
 It makes sense to create a symbolic link to your directory with weights in the data folder of your project
 
 Here is an example of a directory tree for a config file `/experiments/easy_fish.yml`:

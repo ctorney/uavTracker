@@ -21,8 +21,8 @@ Returns a list of images.
 def read_for_annotation(config):
     subsets = config['subsets']
 
-    checked_annotations = config['project_directory'] + config['annotations_dir'] + '/' + config['checked_annotations_fname']
-    autogen_annotations = config['project_directory'] + config['annotations_dir'] + '/' + config['autogen_annotations_fname']
+    checked_annotations = os.path.join(config['project_directory'], config['annotations_dir'], config['checked_annotations_fname'])
+    autogen_annotations = os.path.join(config['project_directory'], config['annotations_dir'], config['autogen_annotations_fname'])
     some_checked = md5check(config['checked_annotations_md5'], checked_annotations)
     some_autogen = md5check(config['autogen_annotations_md5'], autogen_annotations)
 
@@ -47,7 +47,7 @@ def main(args):
     with open(args.config[0], 'r') as configfile:
         config = yaml.safe_load(configfile)
 
-    data_dir = config['project_directory'] + '/'
+    data_dir = config['project_directory']
 
     #logging and debugging setup
     DEBUG = args.debug
@@ -89,7 +89,7 @@ def pre_annotate(config, data_dir, DEBUG, TEST_RUN):
     nms_thresh = c_model['nms_thresh']
 
 
-    pretrained_weights = weights_dir + c_model['pretrained_weights']
+    pretrained_weights = os.path.join(weights_dir, c_model['pretrained_weights'])
     md5check(c_model['pretrained_weights_md5'], pretrained_weights)
     model = get_yolo_model(
         IMAGE_W, IMAGE_H, num_class=len(LABELS), headtrainable=True, raw_features=False)
@@ -98,6 +98,13 @@ def pre_annotate(config, data_dir, DEBUG, TEST_RUN):
 
     # get a list of files that are not in checked, or pre-annotated
     todo_imgs = read_for_annotation(config)
+    print('There is a following number of files that will be processed and if needed copied from raw directories')
+    nfdict = dict()
+    for key, val in todo_imgs.items():
+        nfdict[key]=len(val)
+
+    print(nfdict)
+
     #Those files will most likely be altered by the process of making them yolo compatible
 
 
@@ -112,10 +119,11 @@ def pre_annotate(config, data_dir, DEBUG, TEST_RUN):
     all_imgs = []
     for ssdir, sslist in todo_imgs.items():
         if raw_imgs_dir_name in ssdir:
-                newdir = re.sub(raw_imgs_dir_name,'',ssdir)
-                os.makedirs(newdir)
-                if flist_dict[newdir]!='':
-                    shutil.copyfile(os.path.join(ssdir,flist_dict[newdir]),os.path.join(newdir,flist_dict[newdir]) )
+            newdir = re.sub(raw_imgs_dir_name,'',ssdir)
+            os.makedirs(newdir)
+            if flist_dict[newdir]!='':
+                shutil.copyfile(os.path.join(ssdir,flist_dict[newdir]),os.path.join(newdir,flist_dict[newdir]) )
+
         for imagename in sslist:
             fullname = ssdir + imagename
             im = cv2.imread(fullname)
@@ -173,7 +181,7 @@ def pre_annotate(config, data_dir, DEBUG, TEST_RUN):
                         ymax = int(b[3])
                         obj = {}
 
-                        obj['name'] = 'aoi'
+                        obj['name'] = config['common']['LABELS']
 
                         if xmin < 0: continue
                         if ymin < 0: continue
