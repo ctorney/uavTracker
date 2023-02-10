@@ -72,6 +72,8 @@ def main(args):
             print(period["clipname"], period["start"], period["stop"])
             data_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_POS.txt')
             corrections_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_corrections.csv')
+            transitions_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_transitions.csv')
+
             video_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_TR.avi')
             print(input_file, video_file)
             if os.path.isfile(data_file):
@@ -285,6 +287,10 @@ def main(args):
             with open(corrections_file, "w") as output:
                 writer = csv.writer(output, lineterminator='\n')
                 writer.writerows(corrections_template)
+
+            with open(transitions_file, "w") as output:
+                writer = csv.writer(output, lineterminator='\n')
+                writer.writerows([])
 
 
 if __name__ == '__main__':

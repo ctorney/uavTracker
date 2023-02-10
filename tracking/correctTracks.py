@@ -153,6 +153,7 @@ def main(args):
             print(period["clipname"], period["start"], period["stop"])
             data_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_POS.txt')
             corrections_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_corrections.csv')
+            transitions_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_transitions.csv')
             video_file_corrected = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_corrected.avi')
             print(input_file, video_file_corrected)
             if not os.path.isfile(data_file):
@@ -217,6 +218,13 @@ def main(args):
             corrected_tracks0 = pd.read_csv(corrections_file,header=None)
             corrected_tracks0.columns = ['frame_number','track_id','corrected_track_id']
             corrected_tracks = pd.merge(corrected_tracks0,messy_tracks,on=['frame_number','track_id'],how='left')
+            with open(transitions_file) as f:
+                tracks_transitions = [line for line in f]
+
+            for tt in tracks_transitions:
+                for tt_id in tt.split(',')[1:]:
+                    corrected_tracks['corrected_track_id'] = corrected_tracks['corrected_track_id'].replace({int(tt_id):int(tt.split(',')[0])})
+
 
             while i < nframes:
 
