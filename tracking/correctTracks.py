@@ -9,6 +9,35 @@ import numpy as np
 import time
 import pandas as pd
 
+"""
+Simple video buffer to be able to go back a few frames when watching the track
+"""
+class Vidbu:
+    def __init__(self,_cap,_nframes):
+        self.filo_frames = []
+        self.first_frame = 0
+        self.bufnlen = 10
+        self.nframes = _nframes
+        self.cap = _cap
+
+    def get_i_frame(self,i):
+
+        if len(self.filo_frames)>self.bufnlen:
+            self.filo_frames.pop(0)
+            self.first_frame = self.first_frame+1
+
+        j = i - self.first_frame
+
+        if j < 0:
+            return self.filo_frames[0].copy()
+
+        while j >= len(self.filo_frames):
+            ret, frame = self.cap.read()
+            self.filo_frames.append(frame)
+
+        return self.filo_frames[j].copy()
+
+
 def main(args):
     #Load data
     print('Opening file' + args.config[0])
@@ -52,7 +81,6 @@ def main(args):
     filelist = video_config
     print(yaml.dump(filelist))
 
-    key = ord('m')
 
     for input_file_dict in filelist:
 
@@ -120,10 +148,30 @@ def main(args):
                 cv2.moveWindow('tracker', 20,20)
             #we are starting from the second frame as we want to see two frames at once
 
-            ret, frame0 = cap.read()
-            for i in range(1,nframes):
+            ret, frame1 = cap.read()
+            filo_frames = []
+            i = 0
+            key = ord('d')
 
-                ret, frame1 = cap.read() #we have to keep reading frames
+            filof = Vidbu(cap,nframes)
+
+            while i < nframes:
+
+                if key == ord('q'):
+                    break
+
+                #append previous frame into buffer and get a next frame
+                if key == ord('d'):
+                    i=i+1
+                    frame1 = filof.get_i_frame(i)
+                    frame0 = filof.get_i_frame(i-1)
+
+                if key == ord('a'):
+                    i=i-1
+                    frame1 = filof.get_i_frame(i)
+                    frame0 = filof.get_i_frame(i-1)
+
+                #####
                 sys.stdout.write('\r')
                 sys.stdout.write("[%-20s] %d%% %d/%d" %
                                  ('=' * int(20 * i / float(nframes)),
@@ -225,10 +273,7 @@ def main(args):
                     cv2.imshow('tracker', img_pair)
                     key = cv2.waitKey(0)  #& 0xFF
 
-                if key == ord('q'):
-                    break
 
-                frame0 = frame1.copy()
 
 
 
