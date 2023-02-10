@@ -8,6 +8,8 @@ args_annotated = False
 
 ### new
 conf_n = '../experiments/easy_fish.yml'
+conf_n = '../experiments/alfs_shapeshift.yml'
+conf_n = '../experiments/alfs_shapeshift_tracking.yml'
 with open(conf_n, 'r') as configfile:
     config = yaml.safe_load(configfile)
 DEBUG = False

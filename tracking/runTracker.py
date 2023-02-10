@@ -71,6 +71,7 @@ def main(args):
             sys.stdout.flush()
             print(period["clipname"], period["start"], period["stop"])
             data_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_POS.txt')
+            corrections_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_corrections.txt')
             video_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_TR.avi')
             print(input_file, video_file)
             if os.path.isfile(data_file):
@@ -119,6 +120,7 @@ def main(args):
                 link_iou=link_iou_val)
 
             results = []
+            corrections_template = []
 
             ##########################################################################
             ##          open the video file for inputs and outputs
@@ -130,13 +132,13 @@ def main(args):
             ##########################################################################
             ##          corrections for camera motion
             ##########################################################################
-            tr_file = data_dir + input_file_dict["transforms"]
+            tr_file = os.path.join(data_dir, input_file_dict["transforms"])
             print("Loading transformations from " + tr_file)
             if os.path.isfile(tr_file):
-                save_warp = np.load(tr_file)
+                saved_warp = np.load(tr_file)
                 print("done!")
             else:
-                save_warp = None
+                saved_warp = None
                 print(":: oh dear! :: No transformations found.")
 
             nframes = round(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -169,10 +171,10 @@ def main(args):
                 if ((i - period["start"]) % step_frames):
                     continue
 
-                if save_warp is None:
+                if saved_warp is None:
                     full_warp = np.eye(3, 3, dtype=np.float32)
                 else:
-                    full_warp = save_warp[i]
+                    full_warp = saved_warp[i]
 
 
                 #avoid crash when matrix is singular (det is 0 and cannot invert, crashes instead, joy!
@@ -210,7 +212,7 @@ def main(args):
 
                             cv2.rectangle(
                                 frame, (int(minx) - 2, int(miny) - 2),
-                                (int(maxx) + 2, int(maxy) + 2), (0, 0, 0), 1)
+                                (int(maxx) + 2, int(maxy) + 2), (0, 0, 220), 1)
                             cv2.putText(frame, str(int(class_prob*100)),  (int(maxx),int(maxy)), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.8, (200,200,250), 1);
 
 
@@ -257,7 +259,10 @@ def main(args):
                                     5e-3 * 200, (r, g, b), 2)
 
                     results.append([
-                        i, track[4], bbox[0], bbox[1], bbox[2], bbox[3]
+                        i, int(track[4]), bbox[0], bbox[1], bbox[2], bbox[3]
+                    ])
+                    corrections_template.append([
+                        i, int(track[4])
                     ])
 
                 if save_output:
@@ -272,14 +277,14 @@ def main(args):
                     cv2.imshow('tracker', frame)
                     key = cv2.waitKey(1)  #& 0xFF
                 #cv2.imwrite('pout' + str(i) + '.jpg',frame)
-        #   break
 
             with open(data_file, "w") as output:
                 writer = csv.writer(output, lineterminator='\n')
                 writer.writerows(results)
-        #   break
-        #   for val in results:
-        #      writer.writerow([val])
+
+            with open(corrections_file, "w") as output:
+                writer = csv.writer(output, lineterminator='\n')
+                writer.writerows(corrections_template)
 
 
 if __name__ == '__main__':
