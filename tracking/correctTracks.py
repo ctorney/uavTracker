@@ -29,13 +29,63 @@ class Vidbu:
         j = i - self.first_frame
 
         if j < 0:
-            return self.filo_frames[0].copy()
+            return False, self.filo_frames[0].copy()
 
         while j >= len(self.filo_frames):
             ret, frame = self.cap.read()
             self.filo_frames.append(frame)
 
-        return self.filo_frames[j].copy()
+        return True, self.filo_frames[j].copy()
+
+def putOnAShow(track,full_warp,frame1,i):
+    bbox = [track['c0'],
+            track['c1'],
+            track['c2'],
+            track['c3']]
+    t_id = int(track['track_id'])
+
+    iwarp = (full_warp)
+
+    corner1 = np.expand_dims([bbox[0], bbox[1]], axis=0)
+    corner1 = np.expand_dims(corner1, axis=0)
+    corner1 = cv2.perspectiveTransform(corner1,
+                                       iwarp)[0, 0, :]
+    corner2 = np.expand_dims([bbox[2], bbox[3]], axis=0)
+    corner2 = np.expand_dims(corner2, axis=0)
+    corner2 = cv2.perspectiveTransform(corner2,
+                                       iwarp)[0, 0, :]
+    corner3 = np.expand_dims([[bbox[0], bbox[3]]], axis=0)
+    #               corner3 = np.expand_dims(corner3,axis=0)
+    corner3 = cv2.perspectiveTransform(corner3,
+                                       iwarp)[0, 0, :]
+    corner4 = np.expand_dims([bbox[2], bbox[1]], axis=0)
+    corner4 = np.expand_dims(corner4, axis=0)
+    corner4 = cv2.perspectiveTransform(corner4,
+                                       iwarp)[0, 0, :]
+    maxx = max(corner1[0], corner2[0], corner3[0],
+               corner4[0])
+    minx = min(corner1[0], corner2[0], corner3[0],
+               corner4[0])
+    maxy = max(corner1[1], corner2[1], corner3[1],
+               corner4[1])
+    miny = min(corner1[1], corner2[1], corner3[1],
+               corner4[1])
+
+    np.random.seed(t_id)  # show each track as its own colour - note can't use np random number generator in this code
+
+    r = np.random.randint(256)
+    g = np.random.randint(256)
+    b = np.random.randint(256)
+
+    cv2.rectangle(frame1, (int(minx), int(miny)),
+                  (int(maxx), int(maxy)), (r, g, b), 4)
+
+    cv2.putText(frame1, str(t_id),
+                (int(minx) - 5, int(miny) - 5), 0,
+                5e-3 * 200, (r, g, b), 2)
+    cv2.putText(frame1, str(i),  (30,60), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2);
+
+    return frame1
 
 
 def main(args):
@@ -163,13 +213,13 @@ def main(args):
                 #append previous frame into buffer and get a next frame
                 if key == ord('d'):
                     i=i+1
-                    frame1 = filof.get_i_frame(i)
-                    frame0 = filof.get_i_frame(i-1)
+                    avaf1, frame1 = filof.get_i_frame(i)
+                    avaf0, frame0 = filof.get_i_frame(i-1)
 
                 if key == ord('a'):
                     i=i-1
-                    frame1 = filof.get_i_frame(i)
-                    frame0 = filof.get_i_frame(i-1)
+                    avaf1, frame1 = filof.get_i_frame(i)
+                    avaf0, frame0 = filof.get_i_frame(i-1)
 
                 #####
                 sys.stdout.write('\r')
@@ -210,54 +260,13 @@ def main(args):
                 messy_tracks = pd.read_csv(data_file,header=None)
                 messy_tracks.columns = ['frame_number','track_id','c0','c1','c2','c3']
 
-                for _, track in messy_tracks[messy_tracks['frame_number']==i].iterrows():
+                if avaf1: #only draw on available frames
+                    for _, track in messy_tracks[messy_tracks['frame_number']==i].iterrows():
+                        frame1 =putOnAShow(track,full_warp,frame1,i)
 
-                    bbox = [track['c0'],
-                            track['c1'],
-                            track['c2'],
-                            track['c3']]
-                    t_id = int(track['track_id'])
-
-                    if save_output:
-                        iwarp = (full_warp)
-
-                        corner1 = np.expand_dims([bbox[0], bbox[1]], axis=0)
-                        corner1 = np.expand_dims(corner1, axis=0)
-                        corner1 = cv2.perspectiveTransform(corner1,
-                                                           iwarp)[0, 0, :]
-                        corner2 = np.expand_dims([bbox[2], bbox[3]], axis=0)
-                        corner2 = np.expand_dims(corner2, axis=0)
-                        corner2 = cv2.perspectiveTransform(corner2,
-                                                           iwarp)[0, 0, :]
-                        corner3 = np.expand_dims([[bbox[0], bbox[3]]], axis=0)
-                        #               corner3 = np.expand_dims(corner3,axis=0)
-                        corner3 = cv2.perspectiveTransform(corner3,
-                                                           iwarp)[0, 0, :]
-                        corner4 = np.expand_dims([bbox[2], bbox[1]], axis=0)
-                        corner4 = np.expand_dims(corner4, axis=0)
-                        corner4 = cv2.perspectiveTransform(corner4,
-                                                           iwarp)[0, 0, :]
-                        maxx = max(corner1[0], corner2[0], corner3[0],
-                                   corner4[0])
-                        minx = min(corner1[0], corner2[0], corner3[0],
-                                   corner4[0])
-                        maxy = max(corner1[1], corner2[1], corner3[1],
-                                   corner4[1])
-                        miny = min(corner1[1], corner2[1], corner3[1],
-                                   corner4[1])
-
-                        np.random.seed(
-                            t_id
-                        )  # show each track as its own colour - note can't use np random number generator in this code
-                        r = np.random.randint(256)
-                        g = np.random.randint(256)
-                        b = np.random.randint(256)
-                        cv2.rectangle(frame1, (int(minx), int(miny)),
-                                      (int(maxx), int(maxy)), (r, g, b), 4)
-                        cv2.putText(frame1, str(t_id),
-                                    (int(minx) - 5, int(miny) - 5), 0,
-                                    5e-3 * 200, (r, g, b), 2)
-                        cv2.putText(frame1, str(i),  (30,60), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2);
+                if avaf0: #only draw on available frames
+                    for _, track in messy_tracks[messy_tracks['frame_number']==(i-1)].iterrows():
+                        frame0 = putOnAShow(track,full_warp,frame0,i-1)
 
                 if save_output:
                     #       cv2.imshow('', frame)
