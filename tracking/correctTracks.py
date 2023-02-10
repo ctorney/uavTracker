@@ -1,5 +1,8 @@
 """
-
+Display two frames of a tracker with the tracks to edit the corrections file manually. The correction file is read by this program and show your corrected tracks.
+A - previous frame
+D - next frame
+Q - next movie
 """
 import os, sys, glob, argparse
 import csv
@@ -37,12 +40,15 @@ class Vidbu:
 
         return True, self.filo_frames[j].copy()
 
-def putOnAShow(track,full_warp,frame1,i):
+def putOnAShow(track,full_warp,frame1,i,corrected=False):
     bbox = [track['c0'],
             track['c1'],
             track['c2'],
             track['c3']]
-    t_id = int(track['track_id'])
+    if corrected:
+        t_id = int(track['corrected_track_id'])
+    else:
+        t_id = int(track['track_id'])
 
     iwarp = (full_warp)
 
@@ -146,7 +152,7 @@ def main(args):
             sys.stdout.flush()
             print(period["clipname"], period["start"], period["stop"])
             data_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_POS.txt')
-            corrections_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_corrections.txt')
+            corrections_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_corrections.csv')
             video_file_corrected = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_corrected.avi')
             print(input_file, video_file_corrected)
             if not os.path.isfile(data_file):
@@ -205,6 +211,13 @@ def main(args):
 
             filof = Vidbu(cap,nframes)
 
+            messy_tracks = pd.read_csv(data_file,header=None)
+            messy_tracks.columns = ['frame_number','track_id','c0','c1','c2','c3']
+
+            corrected_tracks0 = pd.read_csv(corrections_file,header=None)
+            corrected_tracks0.columns = ['frame_number','track_id','corrected_track_id']
+            corrected_tracks = pd.merge(corrected_tracks0,messy_tracks,on=['frame_number','track_id'],how='left')
+
             while i < nframes:
 
                 if key == ord('q'):
@@ -220,6 +233,11 @@ def main(args):
                     i=i-1
                     avaf1, frame1 = filof.get_i_frame(i)
                     avaf0, frame0 = filof.get_i_frame(i-1)
+
+                if key == ord('l'):
+                    corrected_tracks0 = pd.read_csv(corrections_file,header=None)
+                    corrected_tracks0.columns = ['frame_number','track_id','corrected_track_id']
+                    corrected_tracks = pd.merge(corrected_tracks0,messy_tracks,on=['frame_number','track_id'],how='left')
 
                 #####
                 sys.stdout.write('\r')
@@ -257,16 +275,21 @@ def main(args):
                     print('Couldn\'t invert matrix, not transforming this frame')
                     inv_warp = np.linalg.inv(np.eye(3, 3, dtype=np.float32))
 
-                messy_tracks = pd.read_csv(data_file,header=None)
-                messy_tracks.columns = ['frame_number','track_id','c0','c1','c2','c3']
-
+                frame0c= frame0.copy()
+                frame1c= frame1.copy()
                 if avaf1: #only draw on available frames
                     for _, track in messy_tracks[messy_tracks['frame_number']==i].iterrows():
                         frame1 =putOnAShow(track,full_warp,frame1,i)
 
+                    for _, track in corrected_tracks[corrected_tracks['frame_number']==i].iterrows():
+                        frame1c =putOnAShow(track,full_warp,frame1c,i,corrected=True)
+
                 if avaf0: #only draw on available frames
                     for _, track in messy_tracks[messy_tracks['frame_number']==(i-1)].iterrows():
-                        frame0 = putOnAShow(track,full_warp,frame0,i-1)
+                        frame0 = putOnAShow(track,full_warp,frame0,i-1,corrected=False)
+
+                    for _, track in corrected_tracks[corrected_tracks['frame_number']==i].iterrows():
+                        frame0c =putOnAShow(track,full_warp,frame0c,i-1,corrected=True)
 
                 if save_output:
                     #       cv2.imshow('', frame)
@@ -278,8 +301,12 @@ def main(args):
                 if args_visual:
                     framex0 = cv2.resize(frame0, S)
                     framex1 = cv2.resize(frame1, S)
+                    framey0 = cv2.resize(frame0c, S)
+                    framey1 = cv2.resize(frame1c, S)
                     img_pair = np.concatenate((framex0, framex1), axis=1)
-                    cv2.imshow('tracker', img_pair)
+                    img_pair_corrected = np.concatenate((framey0, framey1), axis=1)
+                    img_quart = np.concatenate((img_pair, img_pair_corrected), axis=0)
+                    cv2.imshow('tracker', img_quart)
                     key = cv2.waitKey(0)  #& 0xFF
 
 

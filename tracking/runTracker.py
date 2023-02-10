@@ -71,7 +71,7 @@ def main(args):
             sys.stdout.flush()
             print(period["clipname"], period["start"], period["stop"])
             data_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_POS.txt')
-            corrections_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_corrections.txt')
+            corrections_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_corrections.csv')
             video_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_TR.avi')
             print(input_file, video_file)
             if os.path.isfile(data_file):
@@ -262,7 +262,7 @@ def main(args):
                         i, int(track[4]), bbox[0], bbox[1], bbox[2], bbox[3]
                     ])
                     corrections_template.append([
-                        i, int(track[4])
+                        i, int(track[4]), int(track[4])
                     ])
 
                 if save_output:
