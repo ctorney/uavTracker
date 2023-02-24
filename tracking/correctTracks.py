@@ -152,6 +152,7 @@ def main(args):
             sys.stdout.flush()
             print(period["clipname"], period["start"], period["stop"])
             data_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_POS.txt')
+            data_file_corrected = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_POS_corrected.txt')
             corrections_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_corrections.csv')
             transitions_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_transitions.csv')
             switches_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_switches.csv')
@@ -349,7 +350,7 @@ def main(args):
                     key = cv2.waitKey(0)  #& 0xFF
 
 
-
+                corrected_tracks[['frame_number','corrected_track_id', 'c0','c1','c2','c3']].to_csv(data_file_corrected,header=None,index=False)
 
 
 if __name__ == '__main__':
