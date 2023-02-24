@@ -276,3 +276,21 @@ Put your videos in a directory specified by regex. Preparing camera transformati
 
 `python transform.py -c ../experiments/alfs23_tracking.yml`
 `python runTracker.py -c ../experiments/alfs23_tracking.yml --visual`
+
+### Correcting tracks
+Run the following program that displays (on top) current output of tracking as produced in the previous section and (below) corrected tracks. You can scroll through a video (with a limited buffer) with letters `d` (forward) and `a` (back). Press `l` to reload the `transitions` and `switches` files and `q` to close. Transitions is a file generated in a previous step when in each line you provide a list of different IDs that one track assumes. For instance
+```
+1,4,8
+```
+means that track number 1, changes to 4 and 8 but is essentially the same track and we want it to be ID as 1.
+In the next step provide the switches, which means that two tracks are completely swapping from a given frame onwards (one switch per line):
+```
+10,1,12
+```
+means that from frame 10 onwards track 1 and 12 need to be switched around.
+
+The transitions file is applied first so "switches" are applied after that corrections
+
+After a full run the program produces a `_corrected` file with positions in the same format as the original output with your corrections incorporated
+
+`python correctTracks.py -c ../experiments/alfs23_tracking.yml`
