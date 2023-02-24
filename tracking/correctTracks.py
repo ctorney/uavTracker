@@ -154,6 +154,7 @@ def main(args):
             data_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_POS.txt')
             corrections_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_corrections.csv')
             transitions_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_transitions.csv')
+            switches_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_switches.csv')
             video_file_corrected = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_corrected.avi')
             print(input_file, video_file_corrected)
             if not os.path.isfile(data_file):
@@ -215,16 +216,29 @@ def main(args):
             messy_tracks = pd.read_csv(data_file,header=None)
             messy_tracks.columns = ['frame_number','track_id','c0','c1','c2','c3']
 
-            corrected_tracks0 = pd.read_csv(corrections_file,header=None)
-            corrected_tracks0.columns = ['frame_number','track_id','corrected_track_id']
-            corrected_tracks = pd.merge(corrected_tracks0,messy_tracks,on=['frame_number','track_id'],how='left')
+            #load in corrections
+            # corrected_tracks0 = pd.read_csv(corrections_file,header=None)
+            # corrected_tracks0.columns = ['frame_number','track_id','corrected_track_id']
+            # corrected_tracks = pd.merge(corrected_tracks0,messy_tracks,on=['frame_number','track_id'],how='left')
+            corrected_tracks = messy_tracks.copy()
+            corrected_tracks['corrected_track_id']=corrected_tracks['track_id']
+
+            #load in transitions
             with open(transitions_file) as f:
                 tracks_transitions = [line for line in f]
-
             for tt in tracks_transitions:
                 for tt_id in tt.split(',')[1:]:
                     corrected_tracks['corrected_track_id'] = corrected_tracks['corrected_track_id'].replace({int(tt_id):int(tt.split(',')[0])})
 
+            #load in switches
+            with open(switches_file) as f:
+                tracks_switches = [line for line in f]
+            for tt in tracks_switches:
+                tt = tt.split(',')
+                frame_start = int(tt[0])
+                track_wrong = int(tt[1])
+                track_right = int(tt[2])
+                corrected_tracks['corrected_track_id'][corrected_tracks['frame_number']>=frame_start] =  corrected_tracks['corrected_track_id'].replace({track_wrong:track_right, track_right:track_wrong})
 
             while i < nframes:
 
@@ -243,9 +257,26 @@ def main(args):
                     avaf0, frame0 = filof.get_i_frame(i-1)
 
                 if key == ord('l'):
-                    corrected_tracks0 = pd.read_csv(corrections_file,header=None)
-                    corrected_tracks0.columns = ['frame_number','track_id','corrected_track_id']
-                    corrected_tracks = pd.merge(corrected_tracks0,messy_tracks,on=['frame_number','track_id'],how='left')
+                    corrected_tracks = messy_tracks.copy()
+                    corrected_tracks['corrected_track_id']=corrected_tracks['track_id']
+
+                    #load in transitions
+                    with open(transitions_file) as f:
+                        tracks_transitions = [line for line in f]
+                    for tt in tracks_transitions:
+                        for tt_id in tt.split(',')[1:]:
+                            corrected_tracks['corrected_track_id'] = corrected_tracks['corrected_track_id'].replace({int(tt_id):int(tt.split(',')[0])})
+
+                    #load in switches
+                    with open(switches_file) as f:
+                        tracks_switches = [line for line in f]
+                    for tt in tracks_switches:
+                        tt = tt.split(',')
+                        frame_start = int(tt[0])
+                        track_wrong = int(tt[1])
+                        track_right = int(tt[2])
+                        corrected_tracks['corrected_track_id'][corrected_tracks['frame_number']>=frame_start] =  corrected_tracks['corrected_track_id'].replace({track_wrong:track_right, track_right:track_wrong})
+
 
                 #####
                 sys.stdout.write('\r')
