@@ -13,7 +13,7 @@ test_setup:
   link_iou: 0.1
   step_frames: 1 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
   videos_list: "my_videos.yml" #after transforms.py was run this is where video list live
-  weights: 'any_light_smolts_fulllongset_phase_two_2023Feb01.h5'
+  weights: 'any_light_smolts_lightz_phase_two_2023Feb01.h5'
   weights_md5: ""
   num_class: 1
   obj_thresh: 0.2
@@ -24,7 +24,7 @@ test_setup:
   init_nms: 0.3
 
 common:
-  LABELS: ['alf'] #this label is sort of hardcoded
+  LABELS: ['aoi'] #this label is sort of hardcoded
   IMAGE_W: 416 # or must be a multiplier of 32 in current version
   IMAGE_H: 416 #must match whatever yolo model was trained on
   # IMAGE_W: 640 # or must be a multiplier of 32 in current version
