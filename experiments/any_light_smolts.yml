@@ -23,7 +23,7 @@ autogen_model:
   nms_thresh: 0.05
 
 checked_annotations_fname: 'manual_annotated_christmas22.yml'
-checked_annotations_md5 : 'f8567ce694f795deae20ccad39b9823f'
+checked_annotations_md5 : '00b15527d22a52cdfacfbbd933308f38' #added additional_test set
 
 results_config_name: 'results.yml'
 
@@ -187,7 +187,8 @@ models:
 
 
 
-testing_sets: ['testing2019','test_2019', 'test_nightly_2021']
+#testing_sets: ['testing2019','test_2019', 'test_nightly_2021']
+testing_sets: ['additional_test']
 
 
 subsets:
@@ -237,6 +238,12 @@ subsets:
     directory: 'subsets/test_nightly_2021/'
     number_of_images: 58
     description: 'Test set of night-time recordings from 2021'
+    filelist: ''
+    regex: '*.png'
+  additional_test:
+    directory: 'subsets/additional_test/'
+    number_of_images: 13
+    description: 'I see the tracker being extremely bad, so I want to see performance on some frames from the videos'
     filelist: ''
     regex: '*.png'
 

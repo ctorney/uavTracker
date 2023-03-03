@@ -97,8 +97,13 @@ def main(args):
                 print("We will use the following model for testing: ")
                 print(trained_weights[training_phase])
                 yolov3 = get_yolo_model(im_size_w, im_size_h, num_class, trainable=False)
-                yolov3.load_weights(
-                    trained_weights[training_phase], by_name=True)  #TODO is by_name necessary here?
+                try:
+                    yolov3.load_weights(
+                        trained_weights[training_phase], by_name=True)  #TODO is by_name necessary here?
+                except:
+                    print("Missing this YOLO model, skipping")
+                    continue
+
                 print("YOLO models loaded, my dear.")
                 ########################################
                 predictions_dir = os.path.join(predictions_dir_general,model_name + '_' + training_phase + '_' + c_date)
