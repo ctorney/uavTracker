@@ -239,10 +239,6 @@ def main(args):
 
                 cv2.putText(frame, str(i),  (30,60), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2);
 
-                print('TTTT')
-                print(len(tracks))
-                print([t[4] for t in tracks])
-
                 for track in tracks:
                     bbox = track[0:4]
                     if save_output:
