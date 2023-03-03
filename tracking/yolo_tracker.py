@@ -47,24 +47,24 @@ def _interval_overlap(interval_a, interval_b):
         if x2 < x3:
              return 0
         else:
-            return min(x2,x4) - x3          
+            return min(x2,x4) - x3
 
 def bbox_iou(box1, box2):
-    
+
     intersect_w = _interval_overlap([box1[0], box1[2]], [box2[0], box2[2]])
     intersect_h = _interval_overlap([box1[1], box1[3]], [box2[1], box2[3]])
-    
+
     intersect = intersect_w * intersect_h
 
     w1, h1 = box1[2]-box1[0], box1[3]-box1[1]
     w2, h2 = box2[2]-box2[0], box2[3]-box2[1]
-    
+
     union = w1*h1 + w2*h2 - intersect
-    
+
     return float(intersect) / union
 
 def do_nms(new_boxes, nms_thresh):
-    # do nms 
+    # do nms
     sorted_indices = np.argsort(-new_boxes[:,4])
     boxes=new_boxes.tolist()
 
@@ -82,7 +82,7 @@ def do_nms(new_boxes, nms_thresh):
             if bbox_iou(boxes[index_i][0:4], boxes[index_j][0:4]) > nms_thresh:
                 new_boxes[index_j,4] = 0
 
-    return 
+    return
 
 def convert_bbox_to_kfx(bbox):
     """
@@ -117,12 +117,12 @@ class KalmanBoxTracker(object):
         """
         #define constant velocity model
         self.kf = KalmanFilter(dim_x=8, dim_z=4)
-        self.kf.F = np.array([[1,0,0,0,1,0,0.5,0],[0,1,0,0,0,1,0,0.5],[0,0,1,0,0,0,0,0],[0,0,0,1,0,0,0,0],[0,0,0,0,1,0,1,0],[0,0,0,0,0,1,0,1],[0,0,0,0,0,0,1,0],[0,0,0,0,0,0,0,1]]) 
+        self.kf.F = np.array([[1,0,0,0,1,0,0.5,0],[0,1,0,0,0,1,0,0.5],[0,0,1,0,0,0,0,0],[0,0,0,1,0,0,0,0],[0,0,0,0,1,0,1,0],[0,0,0,0,0,1,0,1],[0,0,0,0,0,0,1,0],[0,0,0,0,0,0,0,1]])
         self.kf.H = np.array([[1,0,0,0,0,0,0,0],[0,1,0,0,0,0,0,0],[0,0,1,0,0,0,0,0],[0,0,0,1,0,0,0,0]])
 
         self.kf.R[:,:] *= 25.0 # set measurement uncertainty for positions
         self.kf.Q[:2,:2] = 0.0 # process uncertainty for positions is zero - only moves due to velocity, leave process for width height as 1 to account for turning
-        self.kf.Q[2:4,2:4] *= 0.1 # process uncertainty for width/height for turning
+        self.kf.Q[2:4,2:4] *= 5 # process uncertainty for width/height for turning
         self.kf.Q[4:6,4:6] = 0.0 # process uncertainty for velocities is zeros - only accelerates due to accelerations
         self.kf.Q[6:,6:] *= 0.01 # process uncertainty for acceleration
         self.kf.P[4:,4:] *= 15.0 # maximum speed
@@ -162,7 +162,7 @@ class KalmanBoxTracker(object):
         """
         Returns the current bounding box estimate.
         """
-        return convert_kfx_to_bbox(self.kf.x) 
+        return convert_kfx_to_bbox(self.kf.x)
 
     def get_distance(self, y):
         """
@@ -220,10 +220,11 @@ def associate_detections_to_trackers(detections,trackers,iou_threshold = 0.3):
 
 
 class yoloTracker(object):
-    def __init__(self,max_age=1,track_threshold=0.5, init_threshold=0.9, init_nms=0.0,link_iou=0.3 ):
+    def __init__(self,max_age=1,track_threshold=0.5, init_threshold=0.9, init_nms=0.0,link_iou=0.3, hold_without=3 ):
         """
         Sets key parameters for YOLOtrack
         """
+        self.hold_without = hold_without
         self.max_age = max_age # time since last detection to delete track
         self.trackers = []
         self.frame_count = 0
@@ -259,14 +260,14 @@ class yoloTracker(object):
                 d = matched[np.where(matched[:,1]==t)[0],0]
                 trk.update(dets[d,:][0])
                 dets[d,4]=2.0 # once assigned we set it to full certainty
-            
-        #add tracks to detection list 
+
+        #add tracks to detection list
         for t,trk in enumerate(self.trackers):
             if(t in unmatched_trks):
 
                 d = convert_kfx_to_bbox(trk.kf.x)[0]
                 d = np.append(d,np.array([2]), axis=0)
-                d = np.expand_dims(d,0) 
+                d = np.expand_dims(d,0)
 
                 if len(dets)>0:
                     dets = np.append(dets,d, axis=0)
@@ -278,9 +279,9 @@ class yoloTracker(object):
             do_nms(dets,self.init_nms)
             dets= dets[dets[:,4]<1.1]
             dets= dets[dets[:,4]>0]
-       
+
         for det in dets:
-            trk = KalmanBoxTracker(det[:]) 
+            trk = KalmanBoxTracker(det[:])
             self.trackers.append(trk)
 
         i = len(self.trackers)
@@ -292,10 +293,9 @@ class yoloTracker(object):
 
         for trk in (self.trackers):
             d = convert_kfx_to_bbox(trk.kf.x)[0]
-            if ((trk.time_since_update < 1) and (trk.score>self.track_threshold)):
-                ret.append(np.concatenate((d,[trk.id])).reshape(1,-1)) 
+            if ((trk.time_since_update < self.hold_without) and (trk.score>self.track_threshold)):
+                ret.append(np.concatenate((d,[trk.id])).reshape(1,-1))
 
         if(len(ret)>0):
             return np.concatenate(ret)
         return np.empty((0,5))
-        

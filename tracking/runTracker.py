@@ -34,8 +34,9 @@ def showThoseDetections(detections, frame, full_warp, save_output):
 
             cv2.rectangle(
                 frame, (int(minx) - 2, int(miny) - 2),
-                (int(maxx) + 2, int(maxy) + 2), (0, 0, 220), 1)
-            cv2.putText(frame, str(int(class_prob*100)),  (int(maxx + 2),int(maxy + 2)), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.8, (200,200,250), 1);
+                (int(maxx) + 2, int(maxy) + 2), (0, 0, 220*class_prob**2), (1+round(class_prob)))
+
+            cv2.putText(frame, str(int(class_prob*100)),  (int(maxx + 5),int(maxy + 2)), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.8, (200,200,230), 1);
     return frame
 
 def main(args):
@@ -76,6 +77,7 @@ def main(args):
     init_thresh_val = config[tracking_setup]['init_thresh']
     init_nms_val = config[tracking_setup]['init_nms']
     link_iou_val = config[tracking_setup]['link_iou']
+    hold_without = config[tracking_setup]['hold_without']
 
     max_l = config['common']['MAX_L']  #maximal object size in pixels
     min_l = config['common']['MIN_L']
@@ -158,7 +160,8 @@ def main(args):
                 track_threshold=track_thresh_val,
                 init_threshold=init_thresh_val,
                 init_nms=init_nms_val,
-                link_iou=link_iou_val)
+                link_iou=link_iou_val,
+                hold_without = hold_without)
 
             results = []
             corrections_template = []
@@ -234,6 +237,11 @@ def main(args):
                 if showDetections:
                     frame = showThoseDetections(detections, frame, full_warp, save_output)
 
+                cv2.putText(frame, str(i),  (30,60), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2);
+
+                print('TTTT')
+                print(len(tracks))
+                print([t[4] for t in tracks])
 
                 for track in tracks:
                     bbox = track[0:4]
