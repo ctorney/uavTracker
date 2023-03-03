@@ -18,10 +18,10 @@ test_setup:
   num_class: 1
   obj_thresh: 0.5
   nms_thresh: 0.1
-  max_age: 30
-  track_thresh: 0.2
-  init_thresh: 0.1
-  init_nms: 0.1
+  max_age: 5
+  track_thresh: 0.4 #only return tracks with average confidence above this value
+  init_thresh: 0.5
+  init_nms: 0.3
 
 common:
   LABELS: ['aoi'] #this label is sort of hardcoded
