@@ -5,8 +5,9 @@ import cv2
 import yaml
 import numpy as np
 
+sys.path.append('..')
 import time
-from yolo_detector import yoloDetector
+from utils.yolo_detector import yoloDetector
 from yolo_tracker import yoloTracker
 from utils.utils import md5check
 
@@ -35,7 +36,7 @@ def showThoseDetections(detections, frame, full_warp, save_output):
                 frame, (int(minx) - 2, int(miny) - 2),
                 (int(maxx) + 2, int(maxy) + 2), (0, 0, 220), 1)
             cv2.putText(frame, str(int(class_prob*100)),  (int(maxx + 2),int(maxy + 2)), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.8, (200,200,250), 1);
-        return frame
+    return frame
 
 def main(args):
     #Load data

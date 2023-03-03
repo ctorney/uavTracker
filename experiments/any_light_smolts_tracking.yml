@@ -16,21 +16,21 @@ test_setup:
   weights: 'any_light_smolts_lightz_phase_two_2023Feb01.h5'
   weights_md5: ""
   num_class: 1
-  obj_thresh: 0.01
-  nms_thresh: 0.3
+  obj_thresh: 0.5
+  nms_thresh: 0.1
   max_age: 30
   track_thresh: 0.2
   init_thresh: 0.1
-  init_nms: 0.3
+  init_nms: 0.1
 
 common:
   LABELS: ['aoi'] #this label is sort of hardcoded
-  IMAGE_W: 416 # or must be a multiplier of 32 in current version
-  IMAGE_H: 416 #must match whatever yolo model was trained on
+  IMAGE_W: 1280 # or must be a multiplier of 32 in current version
+  IMAGE_H: 704 #must match whatever yolo model was trained on
   # IMAGE_W: 640 # or must be a multiplier of 32 in current version
   # IMAGE_H: 352 #must match whatever yolo model was trained on
-  MAX_L: 100
-  MIN_L: 4
+  MAX_L: 200
+  MIN_L: 20
 
   NO_OBJECT_SCALE: 1.0
   OBJECT_SCALE: 5.0

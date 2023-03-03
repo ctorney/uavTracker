@@ -3,6 +3,7 @@ import os, cv2, sys
 import time, math
 sys.path.append("..")
 from models.yolo_models import get_yolo_model
+from utils.utils import makeYoloCompatible
 
 
 def _sigmoid(x):
@@ -21,20 +22,20 @@ def _interval_overlap(interval_a, interval_b):
         if x2 < x3:
              return 0
         else:
-            return min(x2,x4) - x3          
+            return min(x2,x4) - x3
 
 def bbox_iou(box1, box2):
-    
+
     intersect_w = _interval_overlap([box1[0], box1[2]], [box2[0], box2[2]])
     intersect_h = _interval_overlap([box1[1], box1[3]], [box2[1], box2[3]])
-    
+
     intersect = intersect_w * intersect_h
 
     w1, h1 = box1[2]-box1[0], box1[3]-box1[1]
     w2, h2 = box2[2]-box2[0], box2[3]-box2[1]
-    
+
     union = w1*h1 + w2*h2 - intersect
-    
+
     return float(intersect) / union
 
 
@@ -53,19 +54,19 @@ class yoloDetector(object):
         self.width = int(round(width / self.base) * self.base)
         self.height = int(round(height / self.base) * self.base)
         self.weight_file = wt_file
-        
+
         self.obj_threshold = obj_threshold
         self.nms_threshold = nms_threshold
         self.max_length = max_length
-        
+
         self.model = get_yolo_model(self.width, self.height, num_class=1)
         self.model.load_weights(self.weight_file,by_name=True)
-        
+
 
     def create_detections(self, image, warp=None):
 
         # resize and normalize
-        image = cv2.resize(image, (self.width, self.height))
+        image = makeYoloCompatible(image)
         new_image = image[:,:,::-1]/255.
         new_image = np.expand_dims(new_image, 0)
 
@@ -81,7 +82,7 @@ class yoloDetector(object):
             ypos = netout[...,1]
             wpos = netout[...,2]
             hpos = netout[...,3]
-                    
+
             objectness = netout[...,4]
 
             # select only objects above threshold
@@ -115,7 +116,7 @@ class yoloDetector(object):
 
             new_boxes = np.append(new_boxes, np.column_stack((corner1, corner2, objectness[indexes])),axis=0)
 
-        # do nms 
+        # do nms
         sorted_indices = np.argsort(-new_boxes[:,4])
         boxes=new_boxes.tolist()
 
@@ -136,7 +137,5 @@ class yoloDetector(object):
             stacker = (row[0],row[1],row[2],row[3], row[4])
             detection_list.append(stacker)
 
- 
+
         return detection_list
-
-

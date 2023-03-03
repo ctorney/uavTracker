@@ -23,7 +23,7 @@ autogen_model:
   nms_thresh: 0.05
 
 checked_annotations_fname: 'manual_annotated_christmas22.yml'
-checked_annotations_md5 : '00b15527d22a52cdfacfbbd933308f38' #added additional_test set
+checked_annotations_md5 : '18a5fe3c3d4152dfd93c615f68cc4638' #added additional_test set
 
 results_config_name: 'results.yml'
 
@@ -242,7 +242,7 @@ subsets:
     regex: '*.png'
   additional_test:
     directory: 'subsets/additional_test/'
-    number_of_images: 13
+    number_of_images: 26
     description: 'I see the tracker being extremely bad, so I want to see performance on some frames from the videos'
     filelist: ''
     regex: '*.png'
