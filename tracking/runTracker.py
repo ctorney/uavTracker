@@ -10,6 +10,32 @@ from yolo_detector import yoloDetector
 from yolo_tracker import yoloTracker
 from utils.utils import md5check
 
+def showThoseDetections(detections, frame, full_warp, save_output):
+    for detect in detections:
+        bbox = detect[0:4]
+        class_prob = detect[4]
+        if save_output:
+            iwarp = (full_warp)
+            corner1 = np.expand_dims(
+                [bbox[0], bbox[1]], axis=0)
+            corner1 = np.expand_dims(corner1, axis=0)
+            corner1 = cv2.perspectiveTransform(corner1,
+                                               iwarp)[0, 0, :]
+            minx = corner1[0]
+            miny = corner1[1]
+            corner2 = np.expand_dims(
+                [bbox[2], bbox[3]], axis=0)
+            corner2 = np.expand_dims(corner2, axis=0)
+            corner2 = cv2.perspectiveTransform(corner2,
+                                               iwarp)[0, 0, :]
+            maxx = corner2[0]
+            maxy = corner2[1]
+
+            cv2.rectangle(
+                frame, (int(minx) - 2, int(miny) - 2),
+                (int(maxx) + 2, int(maxy) + 2), (0, 0, 220), 1)
+            cv2.putText(frame, str(int(class_prob*100)),  (int(maxx + 2),int(maxy + 2)), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.8, (200,200,250), 1);
+        return frame
 
 def main(args):
     #Load data
@@ -19,6 +45,13 @@ def main(args):
     args_visual = args.visual
     data_dir = config['project_directory']
     tracking_setup = config["tracking_setup"]
+    args_step = args.step
+
+    key = ord('c') #by default, continue
+    if args_step:
+        wk_length = 0
+    else:
+        wk_length = 20
 
     np.set_printoptions(suppress=True)
 
@@ -59,6 +92,8 @@ def main(args):
 
     for input_file_dict in filelist:
 
+        if key==ord('q'):
+            break
         input_file = os.path.join(data_dir, input_file_dict["filename"])
 
         direct, ext = os.path.split(input_file)
@@ -67,6 +102,8 @@ def main(args):
         print("Loading " + str(len(input_file_dict["periods"])) +
               " predefined periods for tracking...")
         for period in input_file_dict["periods"]:
+            if key==ord('q'):
+                break
             sys.stdout.write('\n')
             sys.stdout.flush()
             print(period["clipname"], period["start"], period["stop"])
@@ -170,6 +207,7 @@ def main(args):
                     cap.release()
                     break
                 if i < period["start"]:
+                    print('skipping frame!')
                     continue
                 if ((i - period["start"]) % step_frames):
                     continue
@@ -193,30 +231,7 @@ def main(args):
                 tracks = tracker.update(np.asarray(detections))
 
                 if showDetections:
-                    for detect in detections:
-                        bbox = detect[0:4]
-                        class_prob = detect[4]
-                        if save_output:
-                            iwarp = (full_warp)
-                            corner1 = np.expand_dims(
-                                [bbox[0], bbox[1]], axis=0)
-                            corner1 = np.expand_dims(corner1, axis=0)
-                            corner1 = cv2.perspectiveTransform(corner1,
-                                                               iwarp)[0, 0, :]
-                            minx = corner1[0]
-                            miny = corner1[1]
-                            corner2 = np.expand_dims(
-                                [bbox[2], bbox[3]], axis=0)
-                            corner2 = np.expand_dims(corner2, axis=0)
-                            corner2 = cv2.perspectiveTransform(corner2,
-                                                               iwarp)[0, 0, :]
-                            maxx = corner2[0]
-                            maxy = corner2[1]
-
-                            cv2.rectangle(
-                                frame, (int(minx) - 2, int(miny) - 2),
-                                (int(maxx) + 2, int(maxy) + 2), (0, 0, 220), 1)
-                            cv2.putText(frame, str(int(class_prob*100)),  (int(maxx),int(maxy)), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.8, (200,200,250), 1);
+                    frame = showThoseDetections(detections, frame, full_warp, save_output)
 
 
                 for track in tracks:
@@ -278,8 +293,11 @@ def main(args):
                 if args_visual:
                     frame = cv2.resize(frame, S)
                     cv2.imshow('tracker', frame)
-                    key = cv2.waitKey(1)  #& 0xFF
+                    key = cv2.waitKey(wk_length)  #& 0xFF
                 #cv2.imwrite('pout' + str(i) + '.jpg',frame)
+                if key in [ord('q'), ord('s')]:
+                    break
+
 
             with open(data_file, "w") as output:
                 writer = csv.writer(output, lineterminator='\n')
@@ -307,6 +325,8 @@ if __name__ == '__main__':
         '--config', '-c', required=True, nargs=1, help='Your yml config file')
     parser.add_argument('--visual', '-v', default=False, action='store_true',
                         help='Display tracking progress')
+    parser.add_argument('--step', '-s', default=False, action='store_true',
+                        help='Do it step by step')
 
 
     args = parser.parse_args()

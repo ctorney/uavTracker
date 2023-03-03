@@ -16,7 +16,7 @@ test_setup:
   weights: 'any_light_smolts_lightz_phase_two_2023Feb01.h5'
   weights_md5: ""
   num_class: 1
-  obj_thresh: 0.2
+  obj_thresh: 0.01
   nms_thresh: 0.3
   max_age: 30
   track_thresh: 0.2
