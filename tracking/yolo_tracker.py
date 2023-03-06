@@ -135,7 +135,8 @@ class KalmanBoxTracker(object):
         self.hits = 1
         self.hit_streak = 1
         self.age = 1
-        self.score = bbox[4]/2 #when creating track the score is halfed
+        self.score = bbox[4]
+        self.long_score = bbox[4]/2 #when creating track the long_score is halved to indicate our uncertainty over one high-confidence detection
 
     def update(self,bbox):
         """
@@ -145,6 +146,7 @@ class KalmanBoxTracker(object):
         self.hits += 1
         self.hit_streak += 1
         self.score = (self.score*(self.hits-1.0)/float(self.hits)) + (bbox[4]/float(self.hits)) #average of the entire track
+        self.long_score = (self.long_score*(self.age-1.0)/float(self.age)) + (bbox[4]/float(self.age)) #average of the entire track
         z = convert_bbox_to_kfx(bbox)
         self.kf.update(z)
 
@@ -156,6 +158,8 @@ class KalmanBoxTracker(object):
         self.age += 1
         if(self.time_since_update>0):
             self.hit_streak = 0
+            self.long_score = (self.long_score*(self.age-1.0)/float(self.age)) #We are back-filling the score for the missed detection from the previous update
+
         self.time_since_update += 1
 
     def get_state(self):
@@ -293,8 +297,8 @@ class yoloTracker(object):
 
         for trk in (self.trackers):
             d = convert_kfx_to_bbox(trk.kf.x)[0]
-            if ((trk.time_since_update < self.hold_without) and (trk.score>self.track_threshold)):
-                ret.append(np.concatenate((d,[trk.id,trk.score])).reshape(1,-1))
+            if ((trk.time_since_update < self.hold_without) and (trk.long_score>self.track_threshold)):
+                ret.append(np.concatenate((d,[trk.id,trk.long_score,trk.score])).reshape(1,-1))
 
         if(len(ret)>0):
             return np.concatenate(ret)
