@@ -85,7 +85,7 @@ def main(args):
     im_height = config['common']['IMAGE_H']
 
     save_output = config['common']['save_output']
-    showDetections = config['common']['showDetections']
+    show_detections = config['common']['show_detections']
 
     with open(videos_list, 'r') as video_config_file_h:
         video_config = yaml.safe_load(video_config_file_h)
@@ -234,12 +234,13 @@ def main(args):
                     frame, inv_warp )                 # Update tracker
                 tracks = tracker.update(np.asarray(detections))
 
-                if showDetections:
+                if show_detections:
                     frame = showThoseDetections(detections, frame, full_warp, save_output)
 
                 cv2.putText(frame, str(i),  (30,60), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2);
 
                 for track in tracks:
+                    print(track)
                     bbox = track[0:4]
                     if save_output:
                         iwarp = (full_warp)
@@ -280,6 +281,9 @@ def main(args):
                         cv2.putText(frame, str(int(track[4])),
                                     (int(minx) - 5, int(miny) - 5), 0,
                                     5e-3 * 200, (r, g, b), 2)
+
+                        cv2.putText(frame, str(int(100*track[5])),
+                                    (int(maxx) + 5, int(miny) - 5), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (r, g, b), 1)
 
                     results.append([
                         i, int(track[4]), bbox[0], bbox[1], bbox[2], bbox[3]

@@ -135,7 +135,7 @@ class KalmanBoxTracker(object):
         self.hits = 1
         self.hit_streak = 1
         self.age = 1
-        self.score = bbox[4]
+        self.score = bbox[4]/2 #when creating track the score is halfed
 
     def update(self,bbox):
         """
@@ -144,7 +144,7 @@ class KalmanBoxTracker(object):
         self.time_since_update = 0
         self.hits += 1
         self.hit_streak += 1
-        self.score = (self.score*(self.hits-1.0)/float(self.hits)) + (bbox[4]/float(self.hits))
+        self.score = (self.score*(self.hits-1.0)/float(self.hits)) + (bbox[4]/float(self.hits)) #average of the entire track
         z = convert_bbox_to_kfx(bbox)
         self.kf.update(z)
 
@@ -294,7 +294,7 @@ class yoloTracker(object):
         for trk in (self.trackers):
             d = convert_kfx_to_bbox(trk.kf.x)[0]
             if ((trk.time_since_update < self.hold_without) and (trk.score>self.track_threshold)):
-                ret.append(np.concatenate((d,[trk.id])).reshape(1,-1))
+                ret.append(np.concatenate((d,[trk.id,trk.score])).reshape(1,-1))
 
         if(len(ret)>0):
             return np.concatenate(ret)

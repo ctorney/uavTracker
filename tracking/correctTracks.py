@@ -16,10 +16,10 @@ import pandas as pd
 Simple video buffer to be able to go back a few frames when watching the track
 """
 class Vidbu:
-    def __init__(self,_cap,_nframes):
+    def __init__(self,_cap,_nframes, _buflen=200):
         self.filo_frames = []
         self.first_frame = 0
-        self.bufnlen = 10
+        self.bufnlen = _buflen
         self.nframes = _nframes
         self.cap = _cap
 
@@ -103,6 +103,7 @@ def main(args):
 
     data_dir = config['project_directory']
     tracking_setup = config["tracking_setup"]
+    buffer_size = config["corrections_buffer_size"]
 
     np.set_printoptions(suppress=True)
 
@@ -212,7 +213,7 @@ def main(args):
             i = 0
             key = ord('d')
 
-            filof = Vidbu(cap,nframes)
+            filof = Vidbu(cap,nframes,buffer_size)
 
             messy_tracks = pd.read_csv(data_file,header=None)
             messy_tracks.columns = ['frame_number','track_id','c0','c1','c2','c3']

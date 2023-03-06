@@ -37,4 +37,5 @@ common:
   COORD_SCALE: 2.0
   CLASS_SCALE: 1.0
   save_output: 1
-  showDetections: 1 # flag to show all detections in image
+  show_detections: 1 # flag to show all detections in image
+  corrections_buffer_size: 200 #number of frames kept in the memory for rewinding back the tracks
