@@ -14,7 +14,7 @@ predictions_dir: 'results/predictions/'
 results_dir: 'results/'
 
 autogen_annotations_fname: 'autogen_annotated.yml'
-autogen_annotations_md5 : ''
+autogen_annotations_md5 : '3a5d58d5d2f530d0d31662c7050bfdf1'
 autogen_model:
   pretrained_weights: 'any_light_smolts_lightz_phase_two_2023Feb01.h5'
   pretrained_weights_md5: "24d1ad328e55b0759a2d0e07ef6940de" #leave empty if you are retraining
@@ -23,7 +23,7 @@ autogen_model:
   nms_thresh: 0.05
 
 checked_annotations_fname: 'manual_annotated_christmas22.yml'
-checked_annotations_md5 : '18a5fe3c3d4152dfd93c615f68cc4638' #added additional_test set
+checked_annotations_md5 : '152a5208ab3a0a9e0b2c7e963a922268'
 
 results_config_name: 'results.yml'
 
@@ -268,13 +268,13 @@ subsets:
   additional_test:
     directory: 'subsets/additional_test/'
     number_of_images: 26
-    description: 'I see the tracker being extremely bad, so I want to see performance on some frames from the videos'
+    description: 'I see the tracker being extremely bad, so I want to see performance on some frames from the videos. Those pictures are repeated in train_mar partially'
     filelist: ''
     regex: '*.png'
   train_mar:
     directory: 'subsets/train_mar/'
-    number_of_images: 533
-    description: 'Extracted many images (mostly night) from the set of videos used for tunning of the tracker. I believe there are still some improvement to be made on training.'
+    number_of_images: 520
+    description: 'Extracted many images (mostly night) from the set of videos used for tunning of the tracker. I believe there are still some improvement to be made on training. Interestingly I presented 533 images, but becasue some were already in addtional_test set they were skipped.'
     filelist: ''
     regex: '*.png'
 
