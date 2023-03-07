@@ -16,8 +16,8 @@ results_dir: 'results/'
 autogen_annotations_fname: 'autogen_annotated.yml'
 autogen_annotations_md5 : ''
 autogen_model:
-  pretrained_weights: 'best_smolts_standard_phase_two_2022Dec05.h5'
-  pretrained_weights_md5: "451122ca9cd7d25a2006d3959557e848" #leave empty if you are retraining
+  pretrained_weights: 'any_light_smolts_lightz_phase_two_2023Feb01.h5'
+  pretrained_weights_md5: "24d1ad328e55b0759a2d0e07ef6940de" #leave empty if you are retraining
   num_class: 1
   obj_thresh: 0.9
   nms_thresh: 0.05
@@ -184,11 +184,36 @@ models:
       EPS: 0.1e-7
       MIN_DELTA: 0
       PATIENCE: 100
+  march:
+    pretrained_weights: 'any_light_smolts_lightz_phase_two_2023Feb01.h5'
+    pretrained_weights_md5: "24d1ad328e55b0759a2d0e07ef6940de" #leave empty if you are retraining
+    training_sets: ['training2019', 'day_choice_2019','day_choice_difficult_2019','nightly_2019','nightly_2021',"train_mar"]
+    phases: 2
+    num_class: 1
+    obj_thresh: 0.8
+    nms_thresh: 0.1
+    phase_one:
+      BATCH_SIZE: 16
+      EPOCHS: 500
+      LR: 0.5e-3
+      B1: 0.9
+      B2: 0.999
+      EPS: 0.1e-7
+      MIN_DELTA: 0
+      PATIENCE: 10
+    phase_two:
+      BATCH_SIZE: 4
+      EPOCHS: 100
+      LR: 0.1e-3
+      B1: 0.9
+      B2: 0.999
+      EPS: 0.1e-7
+      MIN_DELTA: 0
+      PATIENCE: 10
 
 
 
-#testing_sets: ['testing2019','test_2019', 'test_nightly_2021']
-testing_sets: ['additional_test']
+testing_sets: ['testing2019','test_2019', 'test_nightly_2021','additional_test']
 
 
 subsets:
@@ -246,13 +271,19 @@ subsets:
     description: 'I see the tracker being extremely bad, so I want to see performance on some frames from the videos'
     filelist: ''
     regex: '*.png'
+  train_mar:
+    directory: 'subsets/train_mar/'
+    number_of_images: 533
+    description: 'Extracted many images (mostly night) from the set of videos used for tunning of the tracker. I believe there are still some improvement to be made on training.'
+    filelist: ''
+    regex: '*.png'
 
 common:
   LABELS: ['aoi']
   IMAGE_W: 1280 # or must be a multiplier of 32 in current version
   IMAGE_H: 704 #must match whatever yolo model was trained on
-  MAX_L: 400
-  MIN_L: 4
+  MAX_L: 300
+  MIN_L: 20
 
   NO_OBJECT_SCALE: 1.0
   OBJECT_SCALE: 5.0

@@ -240,7 +240,6 @@ def main(args):
                 cv2.putText(frame, str(i),  (30,60), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2);
 
                 for track in tracks:
-                    print(track)
                     bbox = track[0:4]
                     if save_output:
                         iwarp = (full_warp)
