@@ -302,6 +302,7 @@ subsets:
     number_of_images: 520
     description: 'Extracted many images (mostly night) from the set of videos used for tunning of the tracker. I believe there are still some improvement to be made on training. Interestingly I presented 533 images, but becasue some were already in addtional_test set they were skipped.'
     filelist: ''
+  train_empty:
     regex: '*.png'
     directory: 'subsets/train_empty/'
     number_of_images: 380
