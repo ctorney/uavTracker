@@ -13,8 +13,8 @@ test_setup:
   link_iou: 0.1
   step_frames: 1 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
   videos_list: "my_videos.yml" #after transforms.py was run this is where video list live
-  weights: 'any_light_smolts_march_phase_two_2023Feb01.h5'
-  weights_md5: "8f39559c5a12a3e0367907d87d938e48"
+  weights: 'any_light_smolts_march_empty_phase_two_2023Feb01.h5'
+  weights_md5: "564fae3e235e996c0ab146a1e4d2670c"
   num_class: 1
   obj_thresh: 0.5
   nms_thresh: 0.1
