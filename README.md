@@ -2,11 +2,29 @@
 Animal tracking from overhead using YOLO
 
 Try the following example
+## Toy example
+
 ```
-python prepTrain.py -c ../experiments/easy_fish.yml
-python annotate.py -c ../experiments/easy_fish.yml
-python train.py --config ../experiments/easy_fish.yml
-python postTrainTest.py --config ../experiments/easy_fish.yml
+mkdir weights
+cd weights
+wget wget https://www.dropbox.com/s/9dq7kxrgzma4sx6/yolo-v3-coco.h5
+cd ../utils
+python toy_data_generator.py -c ../experiments/toys.yml
+cd ..
+ln -s weights data/toys/weights
+```
+in order to see how annotation work run the following to remove some annotation entries
+```
+cd utils
+python remove10annotations.py -c ../experiments/toys.yml
+```
+and now follow the normal procedure
+```
+cd train
+python prepTrain.py -c ../experiments/toys.yml
+python annotate.py -c ../experiments/toys.yml
+python train.py --config ../experiments/toys.yml
+python postTrainTest.py --config ../experiments/toys.yml
 ```
 ## Steps to create the tracker are
 ### Training/testing sets
