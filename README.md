@@ -1,6 +1,8 @@
 # uavTracker
 Animal tracking from overhead using YOLO
 
+The code is based on https://github.com/experiencor/keras-yolo3 and https://github.com/abewley/sort
+
 Try the following example
 ## Toy example
 
