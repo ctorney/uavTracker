@@ -149,6 +149,7 @@ def main(args):
     else:
         print('no automatically generate annotations provided, will have to annotate from scratch')
         from_scratch = True
+        raise Exception('BUG, currently you have to run prepTrain.py first and generate automatic annotations in order to annotate from scratch. Sorry!')
 
     if from_scratch:
         print('Not showing any bounding boxes. You are annotating from scratch. Remove relevant flag to use ourput of your previous training (or generic model)')
