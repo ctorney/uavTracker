@@ -137,6 +137,7 @@ def main(args):
 
     im_width = config['common']['IMAGE_W']  #size of training images for yolo
     im_height = config['common']['IMAGE_H']
+    obj_label = config['common']['LABELS'][0]
 
 
 
@@ -204,7 +205,7 @@ def main(args):
                 obj = {}
                 if ((b[2] - b[0]) * (b[3] - b[1])) < 10:
                     continue
-                obj['name'] = 'aoi'
+                obj['name'] = obj_label
                 obj['xmin'] = int(b[0])
                 obj['ymin'] = int(b[1])
                 obj['xmax'] = int(b[2])

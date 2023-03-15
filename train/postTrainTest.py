@@ -26,6 +26,8 @@ def main(args):
     data_dir = config['project_directory']
     project_name = config['project_name']
 
+    obj_label = config['common']['LABELS'][0]
+
     groundtruths_dir = os.path.join(data_dir, config['groundtruths_dir'])
     predictions_dir_general = os.path.join(data_dir, config['predictions_dir'])
     os.makedirs(predictions_dir_general, exist_ok=True)
@@ -137,12 +139,12 @@ def main(args):
                             obj = {}
                             if ((b[2] - b[0]) * (b[3] - b[1])) < 10:
                                 continue
-                            obj['name'] = 'aoi'
+                            obj['name'] = obj_label
                             obj['xmin'] = int(b[0])
                             obj['ymin'] = int(b[1])
                             obj['xmax'] = int(b[2])
                             obj['ymax'] = int(b[3])
-                            img_data['object'] += [obj]
+                            img_data['object'] += obj_label
                             file_gt.write(obj['name'] + " ")
                             file_gt.write(str(obj['xmin']) + " ")
                             file_gt.write(str(obj['ymin']) + " ")

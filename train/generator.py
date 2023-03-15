@@ -3,7 +3,7 @@ import copy
 import numpy as np
 from tensorflow.keras.utils import Sequence
 sys.path.append("..")
-from utils.bbox import BoundBox, bbox_iou
+from utils.decoder import bbox_iou
 from utils.image import apply_random_scale_and_crop, random_distort_image, random_flip, correct_bounding_boxes, random_flip2, correct_bounding_boxes2
 
 ANC_VALS = [[116, 90], [156, 198], [373, 326], [30, 61], [62, 45], [59, 119],
@@ -86,11 +86,11 @@ class BatchGenerator(Sequence):
                 max_index = -1
                 max_iou = -1
 
-                shifted_box = BoundBox(0, 0, obj['xmax'] - obj['xmin'],
-                                       obj['ymax'] - obj['ymin'])
+                shifted_box = [0, 0, obj['xmax'] - obj['xmin'],
+                                       obj['ymax'] - obj['ymin']]
 
                 for i in range(len(ANC_VALS)):
-                    anchor = BoundBox(0, 0, ANC_VALS[i][0], ANC_VALS[i][1])
+                    anchor = [0, 0, ANC_VALS[i][0], ANC_VALS[i][1]]
                     iou = bbox_iou(shifted_box, anchor)
 
                     if max_iou < iou:
