@@ -19,6 +19,7 @@ in order to see how annotation work run the following to remove some annotation 
 ```
 cd utils
 python remove10annotations.py -c ../experiments/toys.yml
+cd ..
 ```
 and now follow the normal procedure
 ```
@@ -27,7 +28,17 @@ python prepTrain.py -c ../experiments/toys.yml
 python annotate.py -c ../experiments/toys.yml
 python train.py --config ../experiments/toys.yml
 python postTrainTest.py --config ../experiments/toys.yml
+cd ..
 ```
+subsequently, get camera transformations for the video (in this case `-s` we know it is static camera) and track and correct tracks.
+```
+cd tracking
+python transforms.py -c ../experiments/toys.yml -s
+python runTracker.py -c ../experiments/toys.yml -v
+python correctTracks.py -c ../experiments/toys.yml
+```
+
+
 ## Steps to create the tracker are
 ### Training/testing sets
 You can specify any number of training and testing sets that will be used as described in the experiment config file. Just take a look at the provided example.
