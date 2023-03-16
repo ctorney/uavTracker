@@ -11,7 +11,7 @@ mkdir weights
 cd weights
 wget wget https://www.dropbox.com/s/9dq7kxrgzma4sx6/yolo-v3-coco.h5
 cd ../utils
-python toy_data_generator.py -c ../experiments/toys.yml
+python toy_data_generator.py -c ../experiments/toys.yml --size 400
 cd ..
 ln -s weights data/toys/weights
 ```

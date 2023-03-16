@@ -200,10 +200,10 @@ def main(args):
 
     ddir = config['project_directory']
     oname = config['project_name']
-    side = config['common']['IMAGE_W']
+    side = int(args.size[0])
 
-    if side != config['common']['IMAGE_H']:
-        raise Exception(f'Only square images work for now!')
+    print(f'Only square images work for now!')
+
     dp_train = config['subsets']['train']['number_of_images']
     dp_test = config['subsets']['test']['number_of_images']
     dp = dp_train + dp_test
@@ -227,7 +227,6 @@ def main(args):
     sequence_file = an_dir + '/seq_data.yml'
     all_imgs = []
     all_seq = []
-
 
     fourCC = cv2.VideoWriter_fourcc('X', 'V', 'I', 'D')
     out = cv2.VideoWriter(os.path.join(video_dir,'test.avi'), fourCC, 5, (side,side), True)
@@ -400,6 +399,8 @@ if __name__ == '__main__':
     parser.add_argument('--config', '-c', required=True, nargs=1, help='Your yml config file')
     parser.add_argument('--visual', '-v', default=False, action='store_true',
                         help='Show the process')
+    parser.add_argument('--size', '-s', required=True, default=False, nargs=1,
+                        help='Size of the image')
 
 
     args = parser.parse_args()

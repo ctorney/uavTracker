@@ -27,10 +27,6 @@ test_setup:
 
 common:
   LABELS: ['toy'] #this label is sort of hardcoded
-  IMAGE_W: 416 # or must be a multiplier of 32 in current version
-  IMAGE_H: 416 #must match whatever yolo model was trained on
-  # IMAGE_W: 640 # or must be a multiplier of 32 in current version
-  # IMAGE_H: 352 #must match whatever yolo model was trained on
   MAX_L: 400
   MIN_L: 4
 
