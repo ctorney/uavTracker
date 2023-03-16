@@ -196,7 +196,7 @@ def main(args):
 
             #do box processing
             img = cv2.imread(fullfile)
-            if check_boxes(img, boxes, im_width, im_height):
+            if check_boxes(img, boxes):
                 break
             for b in boxes:
                 obj = {}
