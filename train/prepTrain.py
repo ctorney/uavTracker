@@ -75,12 +75,8 @@ def pre_annotate(config, data_dir, DEBUG, TEST_RUN):
 
     #The following are *I KID YOU NOT* sort of global variables. tf function yolo_loss has only two arguemts that are explicit x and y. the rest must be global...
     LABELS = config['common']['LABELS']
-    IMAGE_H = config['common']['IMAGE_H']
-    IMAGE_W = config['common']['IMAGE_W']
     max_l = config['common']['MAX_L']  #max/min object size in pixels
     min_l = config['common']['MIN_L']
-    im_width = IMAGE_W
-    im_height = IMAGE_H
     NO_OBJECT_SCALE = config['common']['NO_OBJECT_SCALE']
     OBJECT_SCALE = config['common']['OBJECT_SCALE']
     COORD_SCALE = config['common']['COORD_SCALE']
@@ -92,7 +88,7 @@ def pre_annotate(config, data_dir, DEBUG, TEST_RUN):
     pretrained_weights = os.path.join(weights_dir, c_model['pretrained_weights'])
     md5check(c_model['pretrained_weights_md5'], pretrained_weights)
     model = get_yolo_model(
-        IMAGE_W, IMAGE_H, num_class=len(LABELS), headtrainable=True, raw_features=False)
+        num_class=len(LABELS), headtrainable=True)
     print("Loading weights %s", pretrained_weights)
     model.load_weights(pretrained_weights, by_name=True)
 
@@ -133,15 +129,16 @@ def pre_annotate(config, data_dir, DEBUG, TEST_RUN):
             if raw_imgs_dir_name in ssdir:
                 fullname = re.sub(raw_imgs_dir_name,'',fullname)
 
+            full_height, full_width = im.shape[:2]
             im_yolo = makeYoloCompatible(im)
             height, width = im_yolo.shape[:2]
             im_num += 1
             n_count = 0
 
             for x in np.arange(
-                    0, 1 + width - im_width, im_width
+                    0, 1 + width - full_width, full_width
             ):  #'1+' added to allow case when image has exactly size of one window
-                for y in np.arange(0, 1 + height - im_height, im_height):
+                for y in np.arange(0, 1 + height - full_height, full_height):
                     img_data = {
                         'object': []
                     }  #dictionary? key-value pair to store image data
@@ -149,11 +146,11 @@ def pre_annotate(config, data_dir, DEBUG, TEST_RUN):
                     noext, ext = os.path.splitext(tail)
                     save_name = fullname
                     save_name_short = imagename
-                    img = im[y:y + im_height, x:x + im_width, :]
+                    img = im[y:y + full_height, x:x + full_width, :]
                     cv2.imwrite(save_name, img)
                     img_data['filename'] = save_name_short
-                    img_data['width'] = im_width
-                    img_data['height'] = im_height
+                    img_data['width'] = width
+                    img_data['height'] = height
 
                     n_count += 1
                     # use the yolov3 model to predict 80 classes on COCO
@@ -185,8 +182,8 @@ def pre_annotate(config, data_dir, DEBUG, TEST_RUN):
 
                         if xmin < 0: continue
                         if ymin < 0: continue
-                        if xmax > im_width: continue
-                        if ymax > im_height: continue
+                        if xmax > width: continue
+                        if ymax > height: continue
                         if (xmax - xmin) < min_l: continue
                         if (xmax - xmin) > max_l: continue
                         if (ymax - ymin) < min_l: continue
