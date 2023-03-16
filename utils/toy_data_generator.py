@@ -200,7 +200,7 @@ def main(args):
 
     ddir = config['project_directory']
     oname = config['project_name']
-    side = int(args.size[0])
+    side = (int(args.size[0])//32)*32 #The generator provides images with annotations so they have to be yolo-compatible size already
 
     print(f'Only square images work for now!')
 
@@ -210,8 +210,11 @@ def main(args):
 
     os.makedirs(ddir, exist_ok=True)
 
-    test_dir = os.path.join(ddir,config['raw_imgs_dir'],config['subsets']['test']['directory'])
-    train_dir = os.path.join(ddir,config['raw_imgs_dir'],config['subsets']['train']['directory'])
+    #Those are *not* raw images as we forcing them to be yolo-compatible size as they are _already_ annotated!
+    #test_dir = os.path.join(ddir,config['raw_imgs_dir'],config['subsets']['test']['directory'])
+    #train_dir = os.path.join(ddir,config['raw_imgs_dir'],config['subsets']['train']['directory'])
+    test_dir = os.path.join(ddir,config['subsets']['test']['directory'])
+    train_dir = os.path.join(ddir,config['subsets']['train']['directory'])
 
     #prepare directories
     an_dir = os.path.join(ddir,"annotations")
