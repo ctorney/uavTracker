@@ -210,16 +210,16 @@ def main(args):
 
     os.makedirs(ddir, exist_ok=True)
 
+    test_dir = os.path.join(ddir,config['raw_imgs_dir'],config['subsets']['test']['directory'])
+    train_dir = os.path.join(ddir,config['raw_imgs_dir'],config['subsets']['train']['directory'])
+
     #prepare directories
     an_dir = os.path.join(ddir,"annotations")
-    img_dir = os.path.join(ddir,"subsets")
-    test_dir = os.path.join(img_dir,"test")
-    train_dir = os.path.join(img_dir,"train")
     gt_dir = os.path.join(ddir,"groundtruths")
     video_dir = os.path.join(ddir,"videos")
+
     os.makedirs(an_dir, exist_ok=True)
     os.makedirs(gt_dir, exist_ok=True)
-    os.makedirs(img_dir, exist_ok=True)
     os.makedirs(train_dir, exist_ok=True)
     os.makedirs(test_dir, exist_ok=True)
     os.makedirs(video_dir, exist_ok=True)

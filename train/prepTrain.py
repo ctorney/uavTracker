@@ -3,6 +3,8 @@ prepTrain.py: Pre-annotate (autogen) training and testing files that do not have
 
 WARNING!!!!
 Currently a massive flaw of my new end-to-end setup is that this script will edit the images provided a little bit (adjust them to the size of the yolo detector. I know it is bad and has to be fixed in the future when we want to work with different sized images.
+TODO Also I assume that all the files that have checked/manual annotations are already the correct size (yolo compatilble). I need to add a functionality to this script to check images for size
+ only preserve bboxes that are 80% in the preserved area
 '''
 import numpy as np
 import pandas as pd
@@ -47,12 +49,12 @@ def main(args):
     with open(args.config[0], 'r') as configfile:
         config = yaml.safe_load(configfile)
 
-    data_dir = config['project_directory']
 
     #logging and debugging setup
     DEBUG = args.debug
     TEST_RUN = args.test_run
 
+    data_dir = config['project_directory']
     pleaseCheckMyDirectories(config, data_dir)
 
     n_models_to_train = len(config['models'].keys())
@@ -126,6 +128,7 @@ def pre_annotate(config, data_dir, DEBUG, TEST_RUN):
             print('processing image ' + imagename + ', ' + str(im_num) + ' of ' +
                 str(len(sslist)) + '...')
             #that's gonna be a hack........
+            #We are changing fullname to be the target directory
             if raw_imgs_dir_name in ssdir:
                 fullname = re.sub(raw_imgs_dir_name,'',fullname)
 
@@ -135,69 +138,66 @@ def pre_annotate(config, data_dir, DEBUG, TEST_RUN):
             im_num += 1
             n_count = 0
 
-            for x in np.arange(
-                    0, 1 + width - full_width, full_width
-            ):  #'1+' added to allow case when image has exactly size of one window
-                for y in np.arange(0, 1 + height - full_height, full_height):
-                    img_data = {
-                        'object': []
-                    }  #dictionary? key-value pair to store image data
-                    head, tail = os.path.split(imagename)
-                    noext, ext = os.path.splitext(tail)
-                    save_name = fullname
-                    save_name_short = imagename
-                    img = im[y:y + full_height, x:x + full_width, :]
-                    cv2.imwrite(save_name, img)
-                    img_data['filename'] = save_name_short
-                    img_data['width'] = width
-                    img_data['height'] = height
+            #another little hack... HACK we will only allow one picture for yolo (even if it is quite big). This will simplify things a little bit. Shouldn't affect the accuracy of results and make tracking easier too?
+            img_data = {
+                'object': []
+            }
+            head, tail = os.path.split(imagename)
+            noext, ext = os.path.splitext(tail)
+            save_name = fullname
+            save_name_short = imagename
+            img = im_yolo
+            cv2.imwrite(save_name, img)
+            img_data['filename'] = save_name_short
+            img_data['width'] = width
+            img_data['height'] = height
 
-                    n_count += 1
-                    # use the yolov3 model to predict 80 classes on COCO
+            n_count += 1
+            # use the yolov3 model to predict 80 classes on COCO
 
-                    # preprocess the image
-                    image_h, image_w, _ = img.shape
-                    new_image = img[:, :, ::-1] / 255.
-                    new_image = np.expand_dims(new_image, 0)
+            # preprocess the image
+            image_h, image_w, _ = img.shape
+            new_image = img[:, :, ::-1] / 255.
+            new_image = np.expand_dims(new_image, 0)
 
-                    # run the prediction
-                    sys.stdout.write('Yolo predicting...')
-                    sys.stdout.flush()
-                    yolos = model.predict(new_image)
+            # run the prediction
+            sys.stdout.write('Yolo predicting...')
+            sys.stdout.flush()
+            yolos = model.predict(new_image)
 
-                    sys.stdout.write('Decoding...')
-                    sys.stdout.flush()
-                    boxes = decode(yolos, obj_thresh, nms_thresh)
-                    sys.stdout.write('Done!#of boxes:')
-                    sys.stdout.write(str(len(boxes)))
-                    sys.stdout.flush()
-                    for b in boxes:
-                        xmin = int(b[0])
-                        xmax = int(b[2])
-                        ymin = int(b[1])
-                        ymax = int(b[3])
-                        obj = {}
+            sys.stdout.write('Decoding...')
+            sys.stdout.flush()
+            boxes = decode(yolos, obj_thresh, nms_thresh)
+            sys.stdout.write('Done!#of boxes:')
+            sys.stdout.write(str(len(boxes)))
+            sys.stdout.flush()
+            for b in boxes:
+                xmin = int(b[0])
+                xmax = int(b[2])
+                ymin = int(b[1])
+                ymax = int(b[3])
+                obj = {}
 
-                        obj['name'] = config['common']['LABELS']
+                obj['name'] = config['common']['LABELS']
 
-                        if xmin < 0: continue
-                        if ymin < 0: continue
-                        if xmax > width: continue
-                        if ymax > height: continue
-                        if (xmax - xmin) < min_l: continue
-                        if (xmax - xmin) > max_l: continue
-                        if (ymax - ymin) < min_l: continue
-                        if (ymax - ymin) > max_l: continue
+                if xmin < 0: continue
+                if ymin < 0: continue
+                if xmax > width: continue
+                if ymax > height: continue
+                if (xmax - xmin) < min_l: continue
+                if (xmax - xmin) > max_l: continue
+                if (ymax - ymin) < min_l: continue
+                if (ymax - ymin) > max_l: continue
 
-                        obj['xmin'] = xmin
-                        obj['ymin'] = ymin
-                        obj['xmax'] = xmax
-                        obj['ymax'] = ymax
-                        img_data['object'] += [obj]
-                        cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 255, 0),
-                                    2)
+                obj['xmin'] = xmin
+                obj['ymin'] = ymin
+                obj['xmax'] = xmax
+                obj['ymax'] = ymax
+                img_data['object'] += [obj]
+                cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 255, 0),
+                            2)
 
-                    all_imgs += [img_data]
+            all_imgs += [img_data]
 
     autogen_annotations = os.path.join(config['project_directory'],config['annotations_dir'],config['autogen_annotations_fname'])
     print('Saving data to ' + autogen_annotations)

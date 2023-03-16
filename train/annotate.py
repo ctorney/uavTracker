@@ -23,7 +23,7 @@ rect_bbox = []
 drawing = False  #this have to be False for drawing to work properly!!!
 
 
-def check_boxes(img_clean, bbox_list, im_width, im_height):
+def check_boxes(img_clean, bbox_list):
     def draw_all_boxes():
         img = img_clean.copy()
         for b in bbox_list:
@@ -87,7 +87,6 @@ def check_boxes(img_clean, bbox_list, im_width, im_height):
             draw_all_boxes()
 
     cv2.namedWindow('image', cv2.WINDOW_GUI_EXPANDED)
-    #cv2.resizeWindow('image', im_width, im_height)
     cv2.resizeWindow('image', 1900, 1100)
     cv2.moveWindow('image', 20,20)
     cv2.setMouseCallback('image', draw_rect_roi)
@@ -135,8 +134,6 @@ def main(args):
     some_checked = md5check(config['checked_annotations_md5'], checked_annotations)
     some_autogen = md5check(config['autogen_annotations_md5'], autogen_annotations)
 
-    im_width = config['common']['IMAGE_W']  #size of training images for yolo
-    im_height = config['common']['IMAGE_H']
     obj_label = config['common']['LABELS'][0]
 
 
