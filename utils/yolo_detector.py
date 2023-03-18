@@ -29,7 +29,7 @@ class yoloDetector(object):
         self.nms_threshold = nms_threshold
         self.max_length = max_length
 
-        self.model = get_yolo_model(self.width, self.height, num_class=1)
+        self.model = get_yolo_model(num_class=1)
         self.model.load_weights(self.weight_file,by_name=True)
 
 

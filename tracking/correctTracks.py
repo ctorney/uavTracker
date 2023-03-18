@@ -126,8 +126,6 @@ def main(args):
 
     max_l = config['common']['MAX_L']  #maximal object size in pixels
     min_l = config['common']['MIN_L']
-    im_width = config['common']['IMAGE_W']  #size of training imageas for yolo
-    im_height = config['common']['IMAGE_H']
 
     save_output = True #corrections of tracks need to be visual and save output...
     showDetections = config['common']['show_detections']

@@ -37,8 +37,12 @@ def main(args):
     weights_dir = os.path.join(data_dir, config['weights_dir'])
 
     results_config_file = os.path.join(data_dir, config['results_dir'], config['results_config_name'])
-    with open(results_config_file, 'r') as handle:
-        results_config = yaml.safe_load(handle)
+    try:
+        with open(results_config_file, 'r') as handle:
+            results_config = yaml.safe_load(handle)
+    except:
+        raise Exception('The results file doesn\'t exist and should have been created during training stage.')
+
     c_date = results_config['c_date']
 
     results_config['AP'] = dict()
@@ -91,14 +95,12 @@ def main(args):
 
                 max_l = config['common']['MAX_L']  #maximal object size in pixels
                 min_l = config['common']['MIN_L']
-                im_size_h = config['common']['IMAGE_H']  #size of training imageas for yolo
-                im_size_w = config['common']['IMAGE_W']  #size of training imageas for yolo
 
                 ##################################################
                 print("Loading YOLO models")
                 print("We will use the following model for testing: ")
                 print(trained_weights[training_phase])
-                yolov3 = get_yolo_model(im_size_w, im_size_h, num_class, trainable=False)
+                yolov3 = get_yolo_model(num_class, trainable=False)
                 try:
                     yolov3.load_weights(
                         trained_weights[training_phase], by_name=True)  #TODO is by_name necessary here?
@@ -175,7 +177,7 @@ def main(args):
                         sys.stdout.write('o')
                         sys.stdout.flush()
                         # preprocess the image
-                        image_h, image_w, _ = img.shape
+                        im_size_h, im_size_w, _ = img.shape
                         new_image = img[:, :, ::-1] / 255.
                         new_image = np.expand_dims(new_image, 0)
 
