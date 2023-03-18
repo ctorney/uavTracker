@@ -21,9 +21,6 @@ import sys
 import os.path
 import scipy
 import numpy as np
-#import matplotlib.pyplot as plt
-#import matplotlib.patches as patches
-#from skimage import io
 sys.path.append('..')
 from utils.linear_assignment_ import linear_assignment
 from scipy.optimize import linear_sum_assignment
