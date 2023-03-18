@@ -1,0 +1,3 @@
+[submodule "deepBeastLinker"]
+	path = deepBeastLinker
+	url = git@github.com:ctorney/deepBeastLinker.git
