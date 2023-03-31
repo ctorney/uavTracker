@@ -1,4 +1,3 @@
-
 """
     Yolo v3 implementation pre-trained on COCO.
 
@@ -92,13 +91,10 @@ def reshape_last_layer(out_size):
 
     return Lambda(func)
 
-
-def get_yolo_model(num_class=80, trainable=False, headtrainable=False):
-
-
-    # for each box we have num_class outputs, 4 bbox coordinates, and 1 object confidence value
-    out_size = 5
-    input_image = Input(shape=(None, None, 3))
+"""
+Layers from 0 to 79 are the main detection block of Yolo
+"""
+def get_darknet_layers(input_image, trainable):
 
     # Layer  0 => 4
     x = _conv_block(input_image, [{'filter': 32, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 0},
@@ -156,17 +152,23 @@ def get_yolo_model(num_class=80, trainable=False, headtrainable=False):
                         {'filter': 1024, 'kernel': 3, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 78},
                         {'filter':  512, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 79}], skip=False, train=trainable)
 
+    return x, skip_36, skip_61
+
+def get_inner_layers(input_image, num_class, out_size, trainable, headtrainable):
+
+    x, skip_36, skip_61 = get_darknet_layers(input_image, trainable)
+
     # Layer 80 => 82
 
-    yolo_82_pre_layer = _conv_block(x, [{'filter': 1024, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 80}], skip=False, train=trainable)
-    yolo_82a = _conv_block(yolo_82_pre_layer, [{'filter':  3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False,'train': headtrainable, 'layer_idx': 1081}], skip=False, train=trainable)
-    yolo_82b = _conv_block(yolo_82_pre_layer, [{'filter':  3*num_class, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False,'train': headtrainable, 'layer_idx': 1081+num_class*10000}], skip=False, train=trainable)
+    yolo_80 = _conv_block(x, [{'filter': 1024, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 80}], skip=False, train=trainable)
+    yolo_81 = _conv_block(yolo_80, [{'filter':  3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False,'train': headtrainable, 'layer_idx': 81}], skip=False, train=trainable)
+    yolo_82 = _conv_block(yolo_80, [{'filter':  3*num_class, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False,'train': headtrainable, 'layer_idx': 82}], skip=False, train=trainable)
     # yolo_82 = Concatenate()([yolo_82a, yolo_82b])
 
     # Layer 83 => 86
     x = _conv_block(x, [{'filter': 256, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 84}], skip=False, train=trainable)
-    x = UpSampling2D(2)(x)
-    x = Concatenate()([x, skip_61])
+    x = UpSampling2D(2)(x) #85
+    x = Concatenate()([x, skip_61]) #86
 
     # Layer 87 => 91
     x = _conv_block(x, [{'filter': 256, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 87},
@@ -177,9 +179,9 @@ def get_yolo_model(num_class=80, trainable=False, headtrainable=False):
 
     # Layer 92 => 94
 
-    yolo_94_pre_layer = _conv_block(x, [{'filter': 512, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 92}], skip=False, train=trainable)
-    yolo_94a = _conv_block(yolo_94_pre_layer, [{'filter': 3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable, 'layer_idx': 1093}], skip=False, train=trainable)
-    yolo_94b = _conv_block(yolo_94_pre_layer, [{'filter': 3*num_class, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable, 'layer_idx': 1093+num_class*10000}], skip=False, train=trainable)
+    yolo_92 = _conv_block(x, [{'filter': 512, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 92}], skip=False, train=trainable)
+    yolo_93 = _conv_block(yolo_92, [{'filter': 3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable, 'layer_idx': 93}], skip=False, train=trainable)
+    yolo_94 = _conv_block(yolo_92, [{'filter': 3*num_class, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable, 'layer_idx': 94}], skip=False, train=trainable)
     # yolo_94 = Concatenate()([yolo_94a, yolo_94b])
 
 
@@ -196,14 +198,20 @@ def get_yolo_model(num_class=80, trainable=False, headtrainable=False):
                                {'filter': 128, 'kernel': 1, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 103},
                                {'filter': 256, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 104},], skip=False, train=trainable)
 
-
-    yolo_106a = _conv_block(x, [{'filter': 3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable,'layer_idx': 10105}], skip=False, train=trainable)
-    yolo_106b = _conv_block(x, [{'filter': 3*num_class, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable,'layer_idx': 10105+num_class*10000}], skip=False, train=trainable)
+    yolo_105 = x
+    yolo_106 = _conv_block(yolo_105, [{'filter': 3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable,'layer_idx': 106}], skip=False, train=trainable)
+    yolo_107 = _conv_block(yolo_105, [{'filter': 3*num_class, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable,'layer_idx': 107}], skip=False, train=trainable)
 
     # yolo_106 = Concatenate()([yolo_106a, yolo_106b])
 
+    inner_out_layers = [[yolo_83,yolo_84], [yolo_93,yolo_94], [yolo_106,yolo_107]]
+    return inner_out_layers
 
-    final_layers = [[yolo_82a,yolo_82b], [yolo_94a,yolo_94b], [yolo_106a,yolo_106b]]
+
+def get_layers(input_image, num_class, out_size, trainable, headtrainable, rawfeatures):
+
+    # inner_out_layers = [[yolo_83,yolo_84], [yolo_93,yolo_94], [yolo_106,yolo_107]]
+    inner_out_layers = get_inner_layers(input_image, num_class, out_size, trainable, headtrainable)
     output = []
     l_anchor = 0
 
@@ -225,6 +233,10 @@ def get_yolo_model(num_class=80, trainable=False, headtrainable=False):
         l_obj = crop(4,5)(final_shaped)
         l_obj = Activation('sigmoid')(l_obj)
 
+        #features map
+        l_feats = crop(5,9)(final_shaped)
+        l_feats = Activation('tanh')(l_feats)
+
         # class scores
         #l_cls = crop(out_size,out_size+num_class)(final_shaped)
         l_cls = Activation('softmax')(final_shaped_class)
@@ -233,10 +245,112 @@ def get_yolo_model(num_class=80, trainable=False, headtrainable=False):
         l_out = Concatenate()([l_offs, l_szs, l_obj, l_cls])
         output.append(l_out)
 
-    model = Model(input_image,output)
+    if rawfeatures:
+        output.append(yolo_82_pre_layer)
+        output.append(yolo_94_pre_layer)
+        output.append(yolo_106_pre_layer)
+
+    print(len(output))
+    return output
+
+def get_yolo_model(num_class=80,
+                   trainable=False,
+                   headtrainable=False,
+                   rawfeatures=False):
+    # for each box we have num_class outputs, 4 bbox coordinates, and 1 object confidence value
+    out_size = 5
+    input_image = Input(shape=(None, None, 3))
+    output = get_layers(
+            input_image, num_class, out_size, trainable,
+            headtrainable, rawfeatures)
+
+    model = Model(input_image, output)
 
     return model
 
+
+def get_train_base(weights_file,
+                   num_class=1,
+                   trainable=False):
+
+    # for each box we have num_class outputs, 3 linker features, 4 bbox coordinates, and 1 object confidence value
+    out_size = num_class + 8
+    out_size = 5
+    input_image = Input(shape=(None, None, 3))
+
+    output = get_layers(
+        input_image, num_class, out_size, trainable,
+            headtrainable=False, rawfeatures=True)
+
+    detection_model = Model(input_image, output)
+
+    print(detection_model.summary())
+    detection_model.load_weights(weights_file)
+
+    input_sequence = Input(shape=(3, in_h, in_w, 3))
+
+    seq_large = TimeDistributed(
+        Model(detection_model.input,
+              detection_model.output[3]))(input_sequence)
+    seq_med = TimeDistributed(
+        Model(detection_model.input,
+              detection_model.output[4]))(input_sequence)
+    seq_small = TimeDistributed(
+        Model(detection_model.input,
+              detection_model.output[5]))(input_sequence)
+
+    model = Model(input_sequence, [seq_large, seq_med, seq_small])
+    return model
+
+
+def get_tracker_model(in_w=416, in_h=416):
+
+    in_large = Input(shape=(3, in_h // 32, in_w // 32, 1024))
+    in_med = Input(shape=(3, in_h // 16, in_w // 16, 512))
+    in_small = Input(shape=(3, in_h // 8, in_w // 8, 256))
+
+    seq_large = Permute((2, 3, 1, 4))(in_large)
+    seq_large = Conv3D(512, 3, padding='same')(seq_large)
+    seq_large = BatchNormalization(epsilon=0.001,
+                                   name='bnorm_seq_large')(seq_large)
+    seq_large = LeakyReLU(alpha=0.1, name='leaky_seq_large')(seq_large)
+    seq_large = Conv3D(4, 1, padding='same')(seq_large)
+
+    seq_med = Permute((2, 3, 1, 4))(in_med)
+    seq_med = Conv3D(512, 3, padding='same')(seq_med)
+    seq_med = BatchNormalization(epsilon=0.001, name='bnorm_seq_med')(seq_med)
+    seq_med = LeakyReLU(alpha=0.1, name='leaky_seq_med')(seq_med)
+    seq_med = Conv3D(4, 1, padding='same')(seq_med)
+
+    seq_small = Permute((2, 3, 1, 4))(in_small)
+    seq_small = Conv3D(512, 3, padding='same')(seq_small)
+    seq_small = BatchNormalization(epsilon=0.001,
+                                   name='bnorm_seq_small')(seq_small)
+    seq_small = LeakyReLU(alpha=0.1, name='leaky_seq_small')(seq_small)
+    seq_small = Conv3D(4, 1, padding='same')(seq_small)
+
+    outputs = convert_tracker(seq_large, seq_med, seq_small, in_w, in_h)
+
+    model = Model([in_large, in_med, in_small], outputs)  #equence, raw_output)
+    return model
+
+
+def load_yolos(im_size_w, im_size_h, num_class, args_tracker, trained_detector_weights, trained_linker_weights):
+    ##################################################
+    print("Loading YOLO models")
+    print("We will use the following model for testing of detection: ")
+    print(trained_detector_weights)
+    yolov3 = get_yolo_model(num_class, trainable=False, rawfeatures = args_tracker)
+    yolov3.load_weights(
+        trained_detector_weights, by_name=True)  #TODO is by_name necessary here?
+    print("We will use the following model for testing of linking: ")
+    print(trained_linker_weights)
+    yolov3link = get_tracker_model()
+    yolov3link.load_weights(
+        trained_linker_weights, by_name=True)  #TODO is by_name necessary here?
+    print("YOLO models loaded, my dear.")
+    ########################################
+    return yolov3, yolov3link
 
 class yolo_model():
 

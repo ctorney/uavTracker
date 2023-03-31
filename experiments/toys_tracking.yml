@@ -1,9 +1,14 @@
+#set this up to get funny behaviour quickly. Like training for 1 epoch
+TEST_RUN: 1
+
 project_name: 'toys'
 project_directory: '../data/toys' #adding a '..' because the programs are run from subdirectories. feel free to specify an absolute path if that offends you
 c_date: '2023Mar11' #this is basically a part of project name if you wish.
 
 weights_dir: 'weights/'
 tracks_dir: 'extracted_tracks/'
+annotations_dir: 'annotations/'
+preped_images_dir: "images/"
 
 tracking_setup: 'test_setup'
 
@@ -13,6 +18,8 @@ test_setup:
   link_iou: 0.1
   step_frames: 1 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
   videos_list: "my_videos.yml" #after transforms.py was run this is where video list live
+  groundtruths_dir: 'gt/'
+  predictions_dir: 'pred/'
   weights: 'toys_model_1_phase_two_2023Mar11.h5'
   # weights: 'yolo-v3-coco.h5'
   weights_md5: ''
@@ -29,11 +36,30 @@ common:
   LABELS: ['toy'] #this label is sort of hardcoded
   MAX_L: 400
   MIN_L: 4
-
   NO_OBJECT_SCALE: 1.0
   OBJECT_SCALE: 5.0
   COORD_SCALE: 2.0
   CLASS_SCALE: 1.0
+  display: 1
   save_output: 1
   show_detections: 1 # flag to show all detections in image
   corrections_buffer_size: 200 #number of frames kept in the memory for rewinding back the tracks
+
+deepBeastLinking:
+  specific_train_files_regex: "images/*.png"
+  untrained_annotations_fname: ''
+  trained_annotations_fname: ''
+
+  #checked annotations are used for training:
+  checked_annotations_fname: 'train_data.yml'
+  checked_tracks_fname: 'seq_data.yml'
+  detection_net_weights: 'toys_model_1_phase_two_2023Mar11.h5'
+  linking_net_weights: 'toys_link.h5'
+
+  #training parameters
+  FINE_TUNE: 1
+  IMAGE_H: 416
+  IMAGE_W: 416
+  BATCH_SIZE: 16
+  EPOCHS: 20
+  LR: 0.5e-4
