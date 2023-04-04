@@ -161,8 +161,8 @@ def get_inner_layers(input_image, num_class, out_size, trainable, headtrainable)
     # Layer 80 => 82
     #x (75-79) creates an input for large_raw, which is layer 80
     yolo_80 = _conv_block(x, [{'filter': 1024, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 80}], skip=False, train=trainable)
-    yolo_81 = _conv_block(yolo_80, [{'filter':  3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False,'train': headtrainable, 'layer_idx': 81}], skip=False, train=trainable)
-    yolo_82 = _conv_block(yolo_80, [{'filter':  3*num_class, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False,'train': headtrainable, 'layer_idx': 82}], skip=False, train=trainable)
+    yolo_81 = _conv_block(yolo_80, [{'filter':  3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False,'train': headtrainable, 'layer_idx': 'special_81'}], skip=False, train=trainable)
+    yolo_82 = _conv_block(yolo_80, [{'filter':  3*num_class, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False,'train': headtrainable, 'layer_idx': 'special_82'}], skip=False, train=trainable)
 
     # again using layer x (75-79) here
     # Layer 84 => 86
@@ -181,8 +181,8 @@ def get_inner_layers(input_image, num_class, out_size, trainable, headtrainable)
 
     # Here we are getting outputs for medium from x (87-91)
     yolo_92 = _conv_block(x, [{'filter': 512, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 92}], skip=False, train=trainable)
-    yolo_93 = _conv_block(yolo_92, [{'filter': 3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable, 'layer_idx': 93}], skip=False, train=trainable)
-    yolo_94 = _conv_block(yolo_92, [{'filter': 3*num_class, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable, 'layer_idx': 94}], skip=False, train=trainable)
+    yolo_93 = _conv_block(yolo_92, [{'filter': 3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable, 'layer_idx': 'special_93'}], skip=False, train=trainable)
+    yolo_94 = _conv_block(yolo_92, [{'filter': 3*num_class, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable, 'layer_idx': 'special_94'}], skip=False, train=trainable)
 
     # again using x conv(87-91)
     # Layer 95 => 98
@@ -281,6 +281,7 @@ def get_yolo_model(num_class=80,
             headtrainable, rawfeatures)
 
     model = Model(input_image, output)
+    print(model.summary())
 
     return model
 
