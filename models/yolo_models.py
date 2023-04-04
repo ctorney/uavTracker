@@ -207,24 +207,10 @@ def get_inner_layers(input_image, num_class, out_size, trainable, headtrainable)
     # yolo_106 = Concatenate()([yolo_106a, yolo_106b])
 
     inner_out_layers = [[yolo_83,yolo_84], [yolo_93,yolo_94], [yolo_106,yolo_107]]
-    return inner_out_layers
+    raw_layers = [yolo_80, yolo_92, yolo_105]
+    return inner_out_layers, raw_layers
 
-
-def get_layers(input_image, num_class, out_size, trainable, headtrainable, rawfeatures):
-
-    # in previous versions we would have
-    # large_raw = yolo_80
-    # final_large = Reshape((in_h // 32, in_w // 32, 3, out_size))(yolo_81)
-    # med_raw = yolo_92
-    # final_med = Reshape((in_h // 16, in_w // 16, 3, out_size))(yolo_93)
-    # small_raw = yolo_105
-    # final_small = Reshape((in_h // 8, in_w // 8, 3, out_size))(yolo_106)
-
-    # from get_layers to convert_output
-    # return [final_large, final_med, final_small[, large_raw, med_raw, small_raw]
-
-    # inner_out_layers = [[yolo_83,yolo_84], [yolo_93,yolo_94], [yolo_106,yolo_107]]
-    inner_out_layers = get_inner_layers(input_image, num_class, out_size, trainable, headtrainable)
+def convert_output_layers(inner_out_layers, out_size, num_class):
     output = []
     l_anchor = 0
 
@@ -258,13 +244,28 @@ def get_layers(input_image, num_class, out_size, trainable, headtrainable, rawfe
         l_out = Concatenate()([l_offs, l_szs, l_obj, l_cls])
         output.append(l_out)
 
-    if rawfeatures:
-        output.append(yolo_82_pre_layer)
-        output.append(yolo_94_pre_layer)
-        output.append(yolo_106_pre_layer)
 
-    print(len(output))
-    return output
+def get_layers(input_image, num_class, out_size, trainable, headtrainable, rawfeatures):
+
+    # in previous versions we would have
+    # large_raw = yolo_80
+    # final_large = Reshape((in_h // 32, in_w // 32, 3, out_size))(yolo_81)
+    # med_raw = yolo_92
+    # final_med = Reshape((in_h // 16, in_w // 16, 3, out_size))(yolo_93)
+    # small_raw = yolo_105
+    # final_small = Reshape((in_h // 8, in_w // 8, 3, out_size))(yolo_106)
+
+    # from get_layers to convert_output
+    # return [final_large, final_med, final_small[, large_raw, med_raw, small_raw]
+
+    # inner_out_layers = [[yolo_83,yolo_84], [yolo_93,yolo_94], [yolo_106,yolo_107]]
+    inner_out_layers, raw_layers = get_inner_layers(input_image, num_class, out_size, trainable, headtrainable)
+    output_layers = convert_output_layers(inner_out_layers, out_size, num_class)
+
+    if rawfeatures:
+        output_layers = output_layers + raw_layers
+
+    return output_layers
 
 def get_yolo_model(num_class=80,
                    trainable=False,
