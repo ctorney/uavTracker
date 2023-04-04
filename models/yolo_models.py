@@ -163,7 +163,6 @@ def get_inner_layers(input_image, num_class, out_size, trainable, headtrainable)
     yolo_80 = _conv_block(x, [{'filter': 1024, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 80}], skip=False, train=trainable)
     yolo_81 = _conv_block(yolo_80, [{'filter':  3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False,'train': headtrainable, 'layer_idx': 81}], skip=False, train=trainable)
     yolo_82 = _conv_block(yolo_80, [{'filter':  3*num_class, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False,'train': headtrainable, 'layer_idx': 82}], skip=False, train=trainable)
-    # yolo_82 = Concatenate()([yolo_82a, yolo_82b])
 
     # again using layer x (75-79) here
     # Layer 84 => 86
@@ -184,7 +183,6 @@ def get_inner_layers(input_image, num_class, out_size, trainable, headtrainable)
     yolo_92 = _conv_block(x, [{'filter': 512, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 92}], skip=False, train=trainable)
     yolo_93 = _conv_block(yolo_92, [{'filter': 3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable, 'layer_idx': 93}], skip=False, train=trainable)
     yolo_94 = _conv_block(yolo_92, [{'filter': 3*num_class, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable, 'layer_idx': 94}], skip=False, train=trainable)
-    # yolo_94 = Concatenate()([yolo_94a, yolo_94b])
 
     # again using x conv(87-91)
     # Layer 95 => 98
@@ -204,17 +202,15 @@ def get_inner_layers(input_image, num_class, out_size, trainable, headtrainable)
     yolo_106 = _conv_block(yolo_105, [{'filter': 3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable,'layer_idx': 106}], skip=False, train=trainable)
     yolo_107 = _conv_block(yolo_105, [{'filter': 3*num_class, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable,'layer_idx': 107}], skip=False, train=trainable)
 
-    # yolo_106 = Concatenate()([yolo_106a, yolo_106b])
-
-    inner_out_layers = [[yolo_83,yolo_84], [yolo_93,yolo_94], [yolo_106,yolo_107]]
+    inner_out_layers = [[yolo_81,yolo_82], [yolo_93,yolo_94], [yolo_106,yolo_107]]
     raw_layers = [yolo_80, yolo_92, yolo_105]
     return inner_out_layers, raw_layers
 
-def convert_output_layers(inner_out_layers, out_size, num_class):
+def convert_output_layers(inner_out_layers, input_image, out_size, num_class):
     output = []
     l_anchor = 0
 
-    for fl in final_layers:
+    for fl in inner_out_layers:
 
         final_shaped = reshape_last_layer(out_size)(fl[0])
         final_shaped_class = reshape_last_layer(num_class)(fl[1])
@@ -243,7 +239,7 @@ def convert_output_layers(inner_out_layers, out_size, num_class):
         # combine results
         l_out = Concatenate()([l_offs, l_szs, l_obj, l_cls])
         output.append(l_out)
-
+    return output
 
 def get_layers(input_image, num_class, out_size, trainable, headtrainable, rawfeatures):
 
@@ -260,7 +256,7 @@ def get_layers(input_image, num_class, out_size, trainable, headtrainable, rawfe
 
     # inner_out_layers = [[yolo_83,yolo_84], [yolo_93,yolo_94], [yolo_106,yolo_107]]
     inner_out_layers, raw_layers = get_inner_layers(input_image, num_class, out_size, trainable, headtrainable)
-    output_layers = convert_output_layers(inner_out_layers, out_size, num_class)
+    output_layers = convert_output_layers(inner_out_layers, input_image, out_size, num_class)
 
     if rawfeatures:
         output_layers = output_layers + raw_layers
