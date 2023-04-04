@@ -232,11 +232,11 @@ def convert_output_layers(inner_out_layers, input_image, out_size, num_class):
         anchor+=1
 
         # object confidence, aga scores
-        obj = crop(4,outsize-3)(finashaped)
+        obj = crop(4,out_size-3)(finashaped)
         obj = Activation('sigmoid')(obj)
 
         #features map
-        feats = crop(outsize-3,outsize)(finashaped)
+        feats = crop(out_size-3,out_size)(finashaped)
         feats = Activation('tanh')(feats)
 
         # class scores
@@ -244,12 +244,11 @@ def convert_output_layers(inner_out_layers, input_image, out_size, num_class):
         cls = Activation('softmax')(finashaped_class)
 
         # combine results
-        out = concatenate()([offs, szs, obj, feats])
+        out = Concatenate()([offs, szs, obj, feats])
         output.append(out)
     return output
 
 def get_layers(input_image, num_class, out_size, trainable, headtrainable, rawfeatures):
-
     # in previous versions we would have
     # large_raw = yolo_80
     # final_large = Reshape((in_h // 32, in_w // 32, 3, out_size))(yolo_81)
@@ -292,7 +291,7 @@ def get_train_base(weights_file,
 
     # for each box we have num_class outputs, 3 linker features, 4 bbox coordinates, and 1 object confidence value
     out_size = num_class + 8
-    out_size = 5
+    out_size = 5 #HACK
     input_image = Input(shape=(None, None, 3))
 
     output = get_layers(
@@ -302,7 +301,7 @@ def get_train_base(weights_file,
     detection_model = Model(input_image, output)
 
     print(detection_model.summary())
-    detection_model.load_weights(weights_file)
+    detection_model.load_weights(weights_file, by_name=False)
 
     input_sequence = Input(shape=(3, in_h, in_w, 3))
 
@@ -359,12 +358,12 @@ def load_yolos(im_size_w, im_size_h, num_class, args_tracker, trained_detector_w
     print(trained_detector_weights)
     yolov3 = get_yolo_model(num_class, trainable=False, rawfeatures = args_tracker)
     yolov3.load_weights(
-        trained_detector_weights, by_name=True)  #TODO is by_name necessary here?
+        trained_detector_weights, by_name=False)
     print("We will use the following model for testing of linking: ")
     print(trained_linker_weights)
     yolov3link = get_tracker_model()
     yolov3link.load_weights(
-        trained_linker_weights, by_name=True)  #TODO is by_name necessary here?
+        trained_linker_weights, by_name=False)
     print("YOLO models loaded, my dear.")
     ########################################
     return yolov3, yolov3link
