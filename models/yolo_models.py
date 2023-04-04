@@ -206,39 +206,46 @@ def get_inner_layers(input_image, num_class, out_size, trainable, headtrainable)
     raw_layers = [yolo_80, yolo_92, yolo_105]
     return inner_out_layers, raw_layers
 
+"""
+This function is modification of Colin's code that provided
+l_out = Concatenate()([l_offs, l_szs, l_obj, l_cls])
+and instead provides
+l_out = concatenate([l_offs, l_szs, l_scores, l_feats])
+as in previous version of uavTracker
+"""
 def convert_output_layers(inner_out_layers, input_image, out_size, num_class):
     output = []
-    l_anchor = 0
+    anchor = 0
 
     for fl in inner_out_layers:
 
-        final_shaped = reshape_last_layer(out_size)(fl[0])
-        final_shaped_class = reshape_last_layer(num_class)(fl[1])
+        finashaped = reshape_last_layer(out_size)(fl[0])
+        finashaped_class = reshape_last_layer(num_class)(fl[1])
         # process centre points for grid offsets and convert to image coordinates
-        l_offs = crop(0,2)(final_shaped)
-        l_offs = Activation('sigmoid')(l_offs)
-        l_offs = positions()([l_offs, input_image])
+        offs = crop(0,2)(finashaped)
+        offs = Activation('sigmoid')(offs)
+        offs = positions()([offs, input_image])
 
         # process anchor boxes
-        l_szs = crop(2,4)(final_shaped)
-        l_szs = anchors(l_anchor)(l_szs)
-        l_anchor+=1
+        szs = crop(2,4)(finashaped)
+        szs = anchors(anchor)(szs)
+        anchor+=1
 
-        # object confidence
-        l_obj = crop(4,5)(final_shaped)
-        l_obj = Activation('sigmoid')(l_obj)
+        # object confidence, aga scores
+        obj = crop(4,outsize-3)(finashaped)
+        obj = Activation('sigmoid')(obj)
 
         #features map
-        l_feats = crop(5,9)(final_shaped)
-        l_feats = Activation('tanh')(l_feats)
+        feats = crop(outsize-3,outsize)(finashaped)
+        feats = Activation('tanh')(feats)
 
         # class scores
-        #l_cls = crop(out_size,out_size+num_class)(final_shaped)
-        l_cls = Activation('softmax')(final_shaped_class)
+        #cls = crop(out_size,out_size+num_class)(finashaped)
+        cls = Activation('softmax')(finashaped_class)
 
         # combine results
-        l_out = Concatenate()([l_offs, l_szs, l_obj, l_cls])
-        output.append(l_out)
+        out = concatenate()([offs, szs, obj, feats])
+        output.append(out)
     return output
 
 def get_layers(input_image, num_class, out_size, trainable, headtrainable, rawfeatures):
