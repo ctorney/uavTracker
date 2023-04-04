@@ -159,16 +159,17 @@ def get_inner_layers(input_image, num_class, out_size, trainable, headtrainable)
     x, skip_36, skip_61 = get_darknet_layers(input_image, trainable)
 
     # Layer 80 => 82
-
+    #x (75-79) creates an input for large_raw, which is layer 80
     yolo_80 = _conv_block(x, [{'filter': 1024, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 80}], skip=False, train=trainable)
     yolo_81 = _conv_block(yolo_80, [{'filter':  3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False,'train': headtrainable, 'layer_idx': 81}], skip=False, train=trainable)
     yolo_82 = _conv_block(yolo_80, [{'filter':  3*num_class, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False,'train': headtrainable, 'layer_idx': 82}], skip=False, train=trainable)
     # yolo_82 = Concatenate()([yolo_82a, yolo_82b])
 
-    # Layer 83 => 86
+    # again using layer x (75-79) here
+    # Layer 84 => 86
     x = _conv_block(x, [{'filter': 256, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 84}], skip=False, train=trainable)
-    x = UpSampling2D(2)(x) #85
-    x = Concatenate()([x, skip_61]) #86
+    x = UpSampling2D(2)(x) # layer 85
+    x = Concatenate()([x, skip_61]) # layer 86
 
     # Layer 87 => 91
     x = _conv_block(x, [{'filter': 256, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True, 'layer_idx': 87},
@@ -179,12 +180,13 @@ def get_inner_layers(input_image, num_class, out_size, trainable, headtrainable)
 
     # Layer 92 => 94
 
+    # Here we are getting outputs for medium from x (87-91)
     yolo_92 = _conv_block(x, [{'filter': 512, 'kernel': 3, 'stride': 1, 'bnorm': True,  'leaky': True,  'layer_idx': 92}], skip=False, train=trainable)
     yolo_93 = _conv_block(yolo_92, [{'filter': 3*out_size, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable, 'layer_idx': 93}], skip=False, train=trainable)
     yolo_94 = _conv_block(yolo_92, [{'filter': 3*num_class, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable, 'layer_idx': 94}], skip=False, train=trainable)
     # yolo_94 = Concatenate()([yolo_94a, yolo_94b])
 
-
+    # again using x conv(87-91)
     # Layer 95 => 98
     x = _conv_block(x, [{'filter': 128, 'kernel': 1, 'stride': 1, 'bnorm': True, 'leaky': True,   'layer_idx': 96}], skip=False, train=trainable)
     x = UpSampling2D(2)(x)
@@ -209,6 +211,17 @@ def get_inner_layers(input_image, num_class, out_size, trainable, headtrainable)
 
 
 def get_layers(input_image, num_class, out_size, trainable, headtrainable, rawfeatures):
+
+    # in previous versions we would have
+    # large_raw = yolo_80
+    # final_large = Reshape((in_h // 32, in_w // 32, 3, out_size))(yolo_81)
+    # med_raw = yolo_92
+    # final_med = Reshape((in_h // 16, in_w // 16, 3, out_size))(yolo_93)
+    # small_raw = yolo_105
+    # final_small = Reshape((in_h // 8, in_w // 8, 3, out_size))(yolo_106)
+
+    # from get_layers to convert_output
+    # return [final_large, final_med, final_small[, large_raw, med_raw, small_raw]
 
     # inner_out_layers = [[yolo_83,yolo_84], [yolo_93,yolo_94], [yolo_106,yolo_107]]
     inner_out_layers = get_inner_layers(input_image, num_class, out_size, trainable, headtrainable)
