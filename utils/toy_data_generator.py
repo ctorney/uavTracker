@@ -286,6 +286,7 @@ def main(args):
         img_data['width'] = side
         img_data['height'] = side
 
+        training_datapoint = it < dp_train
 
         for alf in alfs:
             alf, is_same_panel = updateZwkPosition(alf,alfs,side)
@@ -326,6 +327,9 @@ def main(args):
             # print("New TL again: {}".format(alf.topleft[0]))
             # print("Old TL: {}".format(alf.topleft_prev[0]))
 
+        #only record the sequence for training images
+        recthosealfs.append(training_datapoint)
+        # print(recthosealfs)
         record_the_seq = np.all(recthosealfs)
 
         if record_the_seq:
@@ -366,7 +370,7 @@ def main(args):
         if record_the_seq:
             all_seq += [seq_data]
 
-        if (it < dp_train):
+        if (training_datapoint):
             cv2.imwrite(train_dir + '/' + save_name,plane_cur)
         else:
             cv2.imwrite(test_dir + '/' + save_name,plane_cur)
