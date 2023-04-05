@@ -107,9 +107,10 @@ Our animal can have different colour or the same
 """
 
 class Zwierzak:
-    def __init__(self, zwkid, x_init,y_init, mm, hue=0, sat=1):
+    def __init__(self, zwkid, track_id, x_init,y_init, mm, hue=0, sat=1):
         self.mm = mm #movememnt mode, each animus has its own now
         self.id = zwkid
+        self.track_id = track_id #this changes whenever the animal disappears from view
         self.x_pos=x_init
         self.y_pos=y_init
         self.x_prev=x_init
@@ -249,9 +250,9 @@ def main(args):
     theta_speed = 0.5
     theta_angular_velocity = 0.5
 
-
+    no_alfs = 3
     alfs = []
-    for a in range(3):
+    for a in range(no_alfs):
         x_init, y_init = map(int,map(round,mr.uniform(0, side-1, 2)))
         mm = Mooveemodel(x_init,y_init,
                          mr.integers(0,5), #mu_s,
@@ -261,13 +262,14 @@ def main(args):
                          mr.uniform(0,0.7),#theta_angular_velocity
                          )
         curalf = Zwierzak(f'alf{a}',
+                          a,
                           x_init,
                           y_init,
                           mm,
                           hue=mr.uniform(0,1),
                           sat=1)
         alfs.append(curalf)
-
+    next_track_id = no_alfs
     #centre, axes W, H, angle, startagnel, endangle, colour, thinkcness
     # cv2.ellipse(hdplane,(100,100),(50,10),30,0,360,(255,255,0),-1)
 
@@ -278,9 +280,11 @@ def main(args):
         #saving all the output:
         save_name_seed = oname + 'im' + '{:05d}'.format(it)
         save_name = save_name_seed + '.jpg'
-        fname_gt = os.path.join(gt_dir, f'{save_name_seed}.txt')
+        fnames_gt = os.path.join(gt_dir, f'{save_name_seed}.txt')
+        one_fname_gt = os.path.join(an_dir, config['seq_fname'])
 
-        file_gt = open(fname_gt, 'w')
+        one_file_gt = open(one_fname_gt, 'a')
+        files_gt = open(fnames_gt, 'w')
         img_data = {'object':[]}
         img_data['filename'] = save_name
         img_data['width'] = side
@@ -290,6 +294,9 @@ def main(args):
 
         for alf in alfs:
             alf, is_same_panel = updateZwkPosition(alf,alfs,side)
+            if not is_same_panel:
+                alf.track_id = next_track_id
+                next_track_id += 1
             cv2.ellipse(plane_cur,(alf.x_pos,alf.y_pos),(alf.islong,alf.iswide),alf.angle,0,360,colorsys.hsv_to_rgb(alf.hsv[0], alf.hsv[1],255),-1)
             (head, r1,r2) = getRoI(alf)
 
@@ -344,7 +351,7 @@ def main(args):
         for alf in alfs:
             if record_the_seq:
                 obj = {}
-                obj['name'] = 'alf'
+                obj['name'] = 'toy'
                 obj['xmin'] = alf.topleft[0]
                 obj['ymin'] = alf.topleft[1]
                 obj['xmax'] = alf.bottomright[0]
@@ -355,17 +362,25 @@ def main(args):
                 obj['pymax'] = alf.bottomright_prev[1]
                 seq_data['object'] += [obj]
 
-            file_gt.write('alf' + " ")
-            file_gt.write(str(alf.topleft[0]) + " ")
-            file_gt.write(str(alf.topleft[1]) + " ")
-            file_gt.write(str(alf.bottomright[0]) + " ")
-            file_gt.write(str(alf.bottomright[1]))
-            file_gt.write('\n')
+            one_file_gt.write(save_name + " ")
+            one_file_gt.write(str(alf.track_id) + " ")
+            one_file_gt.write(str(alf.topleft[0]) + " ")
+            one_file_gt.write(str(alf.topleft[1]) + " ")
+            one_file_gt.write(str(alf.bottomright[0]) + " ")
+            one_file_gt.write(str(alf.bottomright[1]))
+            one_file_gt.write('\n')
+
+            files_gt.write('toy' + " ")
+            files_gt.write(str(alf.topleft[0]) + " ")
+            files_gt.write(str(alf.topleft[1]) + " ")
+            files_gt.write(str(alf.bottomright[0]) + " ")
+            files_gt.write(str(alf.bottomright[1]))
+            files_gt.write('\n')
 
             alf.topleft_prev = alf.topleft
             alf.bottomright_prev = alf.bottomright
 
-        file_gt.close()
+        files_gt.close()
 
         if record_the_seq:
             all_seq += [seq_data]
