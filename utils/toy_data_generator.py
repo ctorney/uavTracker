@@ -338,8 +338,8 @@ def main(args):
             seq_data['filename'] = save_name
             seq_data['p1_filename'] = oname + 'im' + '{:05d}'.format(it-1) + '.jpg'
             seq_data['p2_filename'] = oname + 'im' + '{:05d}'.format(it-2) + '.jpg'
-            seq_data['width'] = 416
-            seq_data['height'] = 416
+            seq_data['width'] = side
+            seq_data['height'] = side
 
         for alf in alfs:
             if record_the_seq:
