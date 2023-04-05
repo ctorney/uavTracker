@@ -10,7 +10,7 @@
 """
 from datetime import datetime
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Conv2D, Input, BatchNormalization, LeakyReLU, ZeroPadding2D, UpSampling2D, Dense, Flatten, Activation, Reshape, Lambda
+from tensorflow.keras.layers import Conv2D, Input, BatchNormalization, LeakyReLU, ZeroPadding2D, UpSampling2D, Dense, Flatten, Activation, Reshape, Lambda, TimeDistributed, Permute, Conv3D
 from tensorflow.keras.layers import Add, Concatenate
 import tensorflow as tf
 
@@ -203,8 +203,15 @@ def get_inner_layers(input_image, num_class, out_size, trainable, headtrainable)
     yolo_107 = _conv_block(yolo_105, [{'filter': 3*num_class, 'kernel': 1, 'stride': 1, 'bnorm': False, 'leaky': False, 'train': headtrainable,'layer_idx': 107}], skip=False, train=trainable)
 
     inner_out_layers = [[yolo_81,yolo_82], [yolo_93,yolo_94], [yolo_106,yolo_107]]
+    inner_out_layers_reshaped = []
+    for fl in inner_out_layers:
+        finashaped = reshape_last_layer(out_size)(fl[0])
+        finashaped_class = reshape_last_layer(num_class)(fl[1])
+        inner_out_layers_reshaped.append([finashaped,finashaped_class])
+
+
     raw_layers = [yolo_80, yolo_92, yolo_105]
-    return inner_out_layers, raw_layers
+    return inner_out_layers_reshaped, raw_layers
 
 """
 This function is modification of Colin's code that provided
@@ -217,10 +224,10 @@ def convert_output_layers(inner_out_layers, input_image, out_size, num_class):
     output = []
     anchor = 0
 
-    for fl in inner_out_layers:
+    for fl in inner_out_layers[:3]:
 
-        finashaped = reshape_last_layer(out_size)(fl[0])
-        finashaped_class = reshape_last_layer(num_class)(fl[1])
+        finashaped = fl[0]
+        finashaped_class = fl[1]
         # process centre points for grid offsets and convert to image coordinates
         offs = crop(0,2)(finashaped)
         offs = Activation('sigmoid')(offs)
@@ -246,6 +253,10 @@ def convert_output_layers(inner_out_layers, input_image, out_size, num_class):
         # combine results
         out = Concatenate()([offs, szs, obj, feats])
         output.append(out)
+
+    if len(inner_out_layers) > 3:
+        output = output + inner_out_layers[3:]
+
     return output
 
 def get_layers(input_image, num_class, out_size, trainable, headtrainable, rawfeatures):
@@ -262,25 +273,26 @@ def get_layers(input_image, num_class, out_size, trainable, headtrainable, rawfe
 
     # inner_out_layers = [[yolo_83,yolo_84], [yolo_93,yolo_94], [yolo_106,yolo_107]]
     inner_out_layers, raw_layers = get_inner_layers(input_image, num_class, out_size, trainable, headtrainable)
-    output_layers = convert_output_layers(inner_out_layers, input_image, out_size, num_class)
 
     if rawfeatures:
-        output_layers = output_layers + raw_layers
+        inner_out_layers = inner_out_layers + raw_layers
 
-    return output_layers
+    return inner_out_layers
 
 def get_yolo_model(num_class=80,
                    trainable=False,
                    headtrainable=False,
                    rawfeatures=False):
-    # for each box we have num_class outputs, 4 bbox coordinates, and 1 object confidence value
-    out_size = 5
+    # for each box we have num_class outputs, 4 bbox coordinates, and 1 object confidence value (and 3 linker features?!)
+    out_size = num_class + 8
     input_image = Input(shape=(None, None, 3))
-    output = get_layers(
+    inner_out_layers = get_layers(
             input_image, num_class, out_size, trainable,
             headtrainable, rawfeatures)
 
-    model = Model(input_image, output)
+    output_layers = convert_output_layers(inner_out_layers, input_image, out_size, num_class)
+
+    model = Model(input_image, output_layers)
     print(model.summary())
 
     return model
@@ -290,21 +302,27 @@ def get_train_base(weights_file,
                    num_class=1,
                    trainable=False):
 
-    # for each box we have num_class outputs, 3 linker features, 4 bbox coordinates, and 1 object confidence value
+    # for each box we have num_class outputs,
+    # 3 linker features, - ?!
+    # 4 bbox coordinates, and
+    # 1 object confidence value
     out_size = num_class + 8
-    out_size = 5 #HACK
+    # out_size = 5 #HACK
     input_image = Input(shape=(None, None, 3))
 
-    output = get_layers(
+    inner_out_layers = get_layers(
         input_image, num_class, out_size, trainable,
-            headtrainable=False, rawfeatures=True)
+        headtrainable=False, rawfeatures=True)
 
-    detection_model = Model(input_image, output)
+    #Previously we wouldn't convert output layers when loading the training base, however now we get an error when we don't
+    #ValueError: Layer count mismatch when loading weights from file. Model expected 150 layers, found 147 saved layers.
+    output_layers = convert_output_layers(inner_out_layers, input_image, out_size, num_class)
+    detection_model = Model(input_image, output_layers)
 
-    print(detection_model.summary())
+    # print(detection_model.summary(line_length=120))
     detection_model.load_weights(weights_file, by_name=False)
 
-    input_sequence = Input(shape=(3, in_h, in_w, 3))
+    input_sequence = Input(shape=(3, None, None, 3))
 
     seq_large = TimeDistributed(
         Model(detection_model.input,
@@ -319,6 +337,39 @@ def get_train_base(weights_file,
     model = Model(input_sequence, [seq_large, seq_med, seq_small])
     return model
 
+def rescale():
+    def func(x):
+        return (3.0 * x) - 1.0
+
+    return Lambda(func)
+
+def convert_tracker(final_large, final_med, final_small):
+
+    s_offs = crop(0, 2)(final_small)
+    s_szs = crop(2, 4)(final_small)
+    s_szs = anchors(2)(s_szs)
+    s_offs = Activation('sigmoid')(s_offs)
+    s_offs = rescale()(s_offs)
+    s_offs = positions()(s_offs)
+    s_out = concatenate([s_offs, s_szs])
+
+    m_offs = crop(0, 2)(final_med)
+    m_szs = crop(2, 4)(final_med)
+    m_szs = anchors(1)(m_szs)
+    m_offs = Activation('sigmoid')(m_offs)
+    m_offs = rescale()(m_offs)
+    m_offs = positions()(m_offs)
+    m_out = concatenate([m_offs, m_szs])
+
+    l_offs = crop(0, 2)(final_large)
+    l_szs = crop(2, 4)(final_large)
+    l_szs = anchors(0)(l_szs)
+    l_offs = Activation('sigmoid')(l_offs)
+    l_offs = rescale()(l_offs)
+    l_offs = positions()(l_offs)
+    l_out = concatenate([l_offs, l_szs])
+
+    return [l_out, m_out, s_out]
 
 def get_tracker_model(in_w=416, in_h=416):
 
@@ -346,7 +397,7 @@ def get_tracker_model(in_w=416, in_h=416):
     seq_small = LeakyReLU(alpha=0.1, name='leaky_seq_small')(seq_small)
     seq_small = Conv3D(4, 1, padding='same')(seq_small)
 
-    outputs = convert_tracker(seq_large, seq_med, seq_small, in_w, in_h)
+    outputs = convert_tracker(seq_large, seq_med, seq_small)
 
     model = Model([in_large, in_med, in_small], outputs)  #equence, raw_output)
     return model

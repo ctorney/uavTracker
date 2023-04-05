@@ -78,7 +78,7 @@ def run_full_training(model_name, config, data_dir, c_date, DEBUG, TEST_RUN):
                 "Fine tuning phase 2. We retrain all layers with small learning rate"
             )
             pretrained_weights = trained_weights['phase_one']
-            model = get_yolo_model(
+        model = get_yolo_model(
                 num_class=len(LABELS), headtrainable=True, trainable=False)
             print("Loading weights %s", pretrained_weights)
             model.load_weights(pretrained_weights)
