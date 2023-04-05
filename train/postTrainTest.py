@@ -270,8 +270,7 @@ def main(args):
                 #count prediction which reache a threshold of let's say 0.5
                 # if we cahnge the dection threshold I think we'll get ROC curve - that'd be cute.
                 results_config['AP'][setname][model_name][training_phase] = dict()
-                # print("END")
-                # print(pr_list[0.5][0])
+                print('Now caluclate AP')
                 for iou_thresh in pr_list.keys():
                     prediction_list = pr_list[iou_thresh][0]
                     nall = pr_list[iou_thresh][1]
