@@ -351,7 +351,7 @@ def convert_tracker(final_large, final_med, final_small):
     s_offs = Activation('sigmoid')(s_offs)
     s_offs = rescale()(s_offs)
     s_offs = positions()(s_offs)
-    s_out = concatenate([s_offs, s_szs])
+    s_out = Concatenate()([s_offs, s_szs])
 
     m_offs = crop(0, 2)(final_med)
     m_szs = crop(2, 4)(final_med)
@@ -359,7 +359,7 @@ def convert_tracker(final_large, final_med, final_small):
     m_offs = Activation('sigmoid')(m_offs)
     m_offs = rescale()(m_offs)
     m_offs = positions()(m_offs)
-    m_out = concatenate([m_offs, m_szs])
+    m_out = Concatenate()([m_offs, m_szs])
 
     l_offs = crop(0, 2)(final_large)
     l_szs = crop(2, 4)(final_large)
@@ -367,15 +367,15 @@ def convert_tracker(final_large, final_med, final_small):
     l_offs = Activation('sigmoid')(l_offs)
     l_offs = rescale()(l_offs)
     l_offs = positions()(l_offs)
-    l_out = concatenate([l_offs, l_szs])
+    l_out = Concatenate()([l_offs, l_szs])
 
     return [l_out, m_out, s_out]
 
-def get_tracker_model(in_w=416, in_h=416):
+def get_tracker_model():
 
-    in_large = Input(shape=(3, in_h // 32, in_w // 32, 1024))
-    in_med = Input(shape=(3, in_h // 16, in_w // 16, 512))
-    in_small = Input(shape=(3, in_h // 8, in_w // 8, 256))
+    in_large = Input(shape=(3, None, None, 1024))
+    in_med = Input(shape=(3, None, None, 512))
+    in_small = Input(shape=(3, None, None, 256))
 
     seq_large = Permute((2, 3, 1, 4))(in_large)
     seq_large = Conv3D(512, 3, padding='same')(seq_large)

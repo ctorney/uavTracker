@@ -14,7 +14,6 @@ class BatchGenerator(Sequence):
     def __init__(
             self,
             data_dir,
-            preped_images_dir,
             instances,
             labels,
             objects=1,
@@ -27,7 +26,6 @@ class BatchGenerator(Sequence):
             jitter=True):
 
         self.data_dir = data_dir
-        self.preped_images_dir = preped_images_dir
         self.instances = instances
         self.batch_size = batch_size
         self.labels = labels
@@ -211,5 +209,4 @@ class BatchGenerator(Sequence):
         return np.array(annots)
 
     def load_image(self, i):
-        return cv2.imread(self.data_dir + self.preped_imgs_dir +
-                          self.instances[i]['filename'])
+        return cv2.imread(os.path.join(self.data_dir, self.instances[i]['filename']))

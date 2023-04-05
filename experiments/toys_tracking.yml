@@ -8,7 +8,7 @@ c_date: '2023Mar11' #this is basically a part of project name if you wish.
 weights_dir: 'weights/'
 tracks_dir: 'extracted_tracks/'
 annotations_dir: 'annotations/'
-preped_images_dir: "images/"
+preped_images_dir: "subsets/train/"
 
 tracking_setup: 'test_setup'
 
@@ -46,7 +46,6 @@ common:
   corrections_buffer_size: 200 #number of frames kept in the memory for rewinding back the tracks
 
 deepBeastLinking:
-  specific_train_files_regex: "images/*.png"
   untrained_annotations_fname: ''
   trained_annotations_fname: ''
 

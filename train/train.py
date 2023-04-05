@@ -161,7 +161,6 @@ def run_full_training(model_name, config, data_dir, c_date, DEBUG, TEST_RUN):
         train_imgs = list(itemgetter(*indexes[num_val:].tolist())(all_imgs))
         train_batch = BatchGenerator(
             data_dir = data_dir,
-            preped_images_dir = data_dir,
             instances=train_imgs,
             labels=LABELS,
             objects=len(LABELS),
