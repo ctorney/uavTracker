@@ -108,6 +108,7 @@ common:
   MAX_L: 400
   MIN_L: 4
   OBJECT_SCALE: 5.0
+  NO_OBJECT_SCALE: 1.0
   COORD_SCALE: 2.0
   CLASS_SCALE: 1.0
   display: 1

@@ -293,7 +293,6 @@ def get_yolo_model(num_class=80,
     output_layers = convert_output_layers(inner_out_layers, input_image, out_size, num_class)
 
     model = Model(input_image, output_layers)
-    print(model.summary())
 
     return model
 

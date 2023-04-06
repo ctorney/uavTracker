@@ -270,9 +270,11 @@ def main(args):
                 #count prediction which reache a threshold of let's say 0.5
                 # if we cahnge the dection threshold I think we'll get ROC curve - that'd be cute.
                 results_config['AP'][setname][model_name][training_phase] = dict()
-                print('Now caluclate AP')
+                print('\nNow calculating AP. If detector is really, really bad, this sage can take ages. Just see how many ')
                 for iou_thresh in pr_list.keys():
                     prediction_list = pr_list[iou_thresh][0]
+                    pred_per_img = len(prediction_list)/len(all_imgs)
+                    print(f'IoU thresh is {iou_thresh} and we have {pred_per_img:.2f} predictions per image.')
                     nall = pr_list[iou_thresh][1]
                     results_config['AP'][setname][model_name][training_phase][iou_thresh] = get_AP(prediction_list,nall)
                 AP5 = results_config['AP'][setname][model_name][training_phase][0.5]
