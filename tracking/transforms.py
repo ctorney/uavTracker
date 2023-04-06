@@ -29,9 +29,6 @@ def main(args):
     videos_list = os.path.join(data_dir,config[tracking_setup]['videos_list'])
     videos_info = []  #this list will be saved into videos_list file
 
-    im_width = config['common']['IMAGE_W']  #size of training imageas for yolo
-    im_height = config['common']['IMAGE_H']
-
     filelist = glob.glob(os.path.join(data_dir, videos_name_regex_short))
     print(filelist)
     scalefact = 4.0

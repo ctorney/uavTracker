@@ -28,65 +28,11 @@ def run_full_training(model_name, config, data_dir, c_date, DEBUG, TEST_RUN):
 
     #The following are *I KID YOU NOT* sort of global variables. tf function yolo_loss has only two arguemts that are explicit x and y. the rest must be global...
     LABELS = config['common']['LABELS']
-    IMAGE_H = config['common']['IMAGE_H']
-    IMAGE_W = config['common']['IMAGE_W']
     NO_OBJECT_SCALE = config['common']['NO_OBJECT_SCALE']
     OBJECT_SCALE = config['common']['OBJECT_SCALE']
     COORD_SCALE = config['common']['COORD_SCALE']
     CLASS_SCALE = config['common']['CLASS_SCALE']
 
-    #   @tf.function
-    # Jesus Christ, this function has to be defined INSIDE another function so it can set those variables in bold which cannot be passed as normal variables becasue.. just because.
-    def yolo_loss(y_true, y_pred):
-        #grid factor and net factor are different at different scle levels (yolo has 3)
-        grid_h = tf.shape(y_true)[1]
-        grid_w = tf.shape(y_true)[2]
-        grid_factor = tf.reshape(
-            tf.cast([grid_w, grid_h], tf.float32), [1, 1, 1, 1, 2])
-
-        net_h = IMAGE_H / grid_h
-        net_w = IMAGE_W / grid_w
-        net_factor = tf.reshape(
-            tf.cast([net_w, net_h], tf.float32), [1, 1, 1, 1, 2])
-
-        pred_box_xy = y_pred[..., 0:2]  # t_wh
-        pred_box_wh = tf.math.log(y_pred[..., 2:4])  # t_wh
-        pred_box_conf = tf.expand_dims(y_pred[..., 4], 4)
-        pred_box_class = y_pred[..., 5:]  # adjust class probabilities
-        # initialize the masks
-        object_mask = tf.expand_dims(y_true[..., 4], 4)#zeroes outside object of interest mean that we only penalise incorrect box for current object.
-
-        true_box_xy = y_true[..., 0:2]  # (sigma(t_xy) + c_xy)
-        true_box_wh = tf.where(y_true[..., 2:4] > 0,
-                            tf.math.log(tf.cast(y_true[..., 2:4], tf.float32)),
-                            y_true[..., 2:4])
-        true_box_conf = tf.expand_dims(y_true[..., 4], 4)
-        true_box_class = y_true[..., 5:]
-
-        xy_delta = COORD_SCALE * object_mask * (pred_box_xy - true_box_xy
-                                                )  #/net_factor #* xywh_scale
-        wh_delta = COORD_SCALE * object_mask * (pred_box_wh - true_box_wh
-                                                )  #/ net_factor #* xywh_scale
-
-        obj_delta = OBJECT_SCALE * object_mask * (
-            pred_box_conf - true_box_conf)
-        no_obj_delta = NO_OBJECT_SCALE * (1 - object_mask) * pred_box_conf
-        class_delta = CLASS_SCALE * object_mask * (
-            pred_box_class - true_box_class)
-        #tf.print(pred_box_class,summarize=-1,output_stream= "file:///home/ctorney/workspace/uavTracker/train/true_cls.out")
-        #tf.print("============",output_stream= "file:///home/ctorney/workspace/uavTracker/train/true_cls.out")
-        #tf.print(true_box_class,summarize=-1,output_stream= "file:///home/ctorney/workspace/uavTracker/train/true_cls.out")
-        #tf.print("***************============",output_stream= "file:///home/ctorney/workspace/uavTracker/train/true_cls.out")
-
-
-        loss_xy = tf.reduce_sum(tf.square(xy_delta), list(range(1, 5)))
-        loss_wh = tf.reduce_sum(tf.square(wh_delta), list(range(1, 5)))
-        loss_obj = tf.reduce_sum(tf.square(obj_delta), list(range(1, 5)))
-        lossnobj = tf.reduce_sum(tf.square(no_obj_delta), list(range(1, 5)))
-        loss_cls = tf.reduce_sum(tf.square(class_delta), list(range(1, 5)))
-
-        loss = loss_xy + loss_wh + loss_obj + lossnobj + loss_cls
-        return loss
 
     #We are having potentially one large annotations file and physically separated subsets to be able to review them easily. But for the old code to work easily we need to have only the files we use in one annotation file. For this we are dynamically generate this file by reading in our existing annotation file and information about structure of the training sets we want to use
     list_of_train_files = read_tsets(config,model_name,c_date,c_model['training_sets'])
@@ -124,7 +70,7 @@ def run_full_training(model_name, config, data_dir, c_date, DEBUG, TEST_RUN):
             pretrained_weights = weights_dir + c_model['pretrained_weights']
             md5check(c_model['pretrained_weights_md5'], pretrained_weights)
             model = get_yolo_model(
-                IMAGE_W, IMAGE_H, num_class=len(LABELS), headtrainable=True, raw_features=False)
+                num_class=len(LABELS), headtrainable=True)
             print("Loading weights %s", pretrained_weights)
             model.load_weights(pretrained_weights, by_name=True)
         else:
@@ -133,7 +79,7 @@ def run_full_training(model_name, config, data_dir, c_date, DEBUG, TEST_RUN):
             )
             pretrained_weights = trained_weights['phase_one']
             model = get_yolo_model(
-                IMAGE_W, IMAGE_H, num_class=len(LABELS), headtrainable=True, trainable=False, raw_features=False)
+                num_class=len(LABELS), headtrainable=True, trainable=False)
             print("Loading weights %s", pretrained_weights)
             model.load_weights(pretrained_weights)
 
@@ -147,6 +93,65 @@ def run_full_training(model_name, config, data_dir, c_date, DEBUG, TEST_RUN):
 
         print('Reading YaML file finished. Time to lock and load!\n')
 
+        #get size of the image
+        #and define yolo loss
+        im = cv2.imread(all_imgs[0]['filename'])
+        IMAGE_H, IMAGE_W = im.shape[:2]
+
+        #   @tf.function
+        # Jesus Christ, this function has to be defined INSIDE another function so it can set those variables in bold which cannot be passed as normal variables becasue.. just because.
+        def yolo_loss(y_true, y_pred):
+            #grid factor and net factor are different at different scle levels (yolo has 3)
+            grid_h = tf.shape(y_true)[1]
+            grid_w = tf.shape(y_true)[2]
+            grid_factor = tf.reshape(
+                tf.cast([grid_w, grid_h], tf.float32), [1, 1, 1, 1, 2])
+
+            net_h = IMAGE_H / grid_h
+            net_w = IMAGE_W / grid_w
+            net_factor = tf.reshape(
+                tf.cast([net_w, net_h], tf.float32), [1, 1, 1, 1, 2])
+
+            pred_box_xy = y_pred[..., 0:2]  # t_wh
+            pred_box_wh = tf.math.log(y_pred[..., 2:4])  # t_wh
+            pred_box_conf = tf.expand_dims(y_pred[..., 4], 4)
+            pred_box_class = y_pred[..., 5:]  # adjust class probabilities
+            # initialize the masks
+            object_mask = tf.expand_dims(y_true[..., 4], 4)#zeroes outside object of interest mean that we only penalise incorrect box for current object.
+
+            true_box_xy = y_true[..., 0:2]  # (sigma(t_xy) + c_xy)
+            true_box_wh = tf.where(y_true[..., 2:4] > 0,
+                                tf.math.log(tf.cast(y_true[..., 2:4], tf.float32)),
+                                y_true[..., 2:4])
+            true_box_conf = tf.expand_dims(y_true[..., 4], 4)
+            true_box_class = y_true[..., 5:]
+
+            xy_delta = COORD_SCALE * object_mask * (pred_box_xy - true_box_xy
+                                                    )  #/net_factor #* xywh_scale
+            wh_delta = COORD_SCALE * object_mask * (pred_box_wh - true_box_wh
+                                                    )  #/ net_factor #* xywh_scale
+
+            obj_delta = OBJECT_SCALE * object_mask * (
+                pred_box_conf - true_box_conf)
+            no_obj_delta = NO_OBJECT_SCALE * (1 - object_mask) * pred_box_conf
+            class_delta = CLASS_SCALE * object_mask * (
+                pred_box_class - true_box_class)
+            #tf.print(pred_box_class,summarize=-1,output_stream= "file:///home/ctorney/workspace/uavTracker/train/true_cls.out")
+            #tf.print("============",output_stream= "file:///home/ctorney/workspace/uavTracker/train/true_cls.out")
+            #tf.print(true_box_class,summarize=-1,output_stream= "file:///home/ctorney/workspace/uavTracker/train/true_cls.out")
+            #tf.print("***************============",output_stream= "file:///home/ctorney/workspace/uavTracker/train/true_cls.out")
+
+
+            loss_xy = tf.reduce_sum(tf.square(xy_delta), list(range(1, 5)))
+            loss_wh = tf.reduce_sum(tf.square(wh_delta), list(range(1, 5)))
+            loss_obj = tf.reduce_sum(tf.square(obj_delta), list(range(1, 5)))
+            lossnobj = tf.reduce_sum(tf.square(no_obj_delta), list(range(1, 5)))
+            loss_cls = tf.reduce_sum(tf.square(class_delta), list(range(1, 5)))
+
+            loss = loss_xy + loss_wh + loss_obj + lossnobj + loss_cls
+            return loss
+
+        #Read image width and height. For training it has to be
         num_ims = len(all_imgs)
         indexes = np.arange(num_ims)
         random.shuffle(indexes)
@@ -156,7 +161,6 @@ def run_full_training(model_name, config, data_dir, c_date, DEBUG, TEST_RUN):
         train_imgs = list(itemgetter(*indexes[num_val:].tolist())(all_imgs))
         train_batch = BatchGenerator(
             data_dir = data_dir,
-            preped_images_dir = data_dir,
             instances=train_imgs,
             labels=LABELS,
             objects=len(LABELS),

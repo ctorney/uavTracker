@@ -4,40 +4,10 @@ import time, math
 sys.path.append("..")
 from models.yolo_models import get_yolo_model
 from utils.utils import makeYoloCompatible
-
+from utils.decoder import bbox_iou, _interval_overlap
 
 def _sigmoid(x):
     return 1. / (1. + np.exp(-x))
-
-def _interval_overlap(interval_a, interval_b):
-    x1, x2 = interval_a
-    x3, x4 = interval_b
-
-    if x3 < x1:
-        if x4 < x1:
-            return 0
-        else:
-            return min(x2,x4) - x1
-    else:
-        if x2 < x3:
-             return 0
-        else:
-            return min(x2,x4) - x3
-
-def bbox_iou(box1, box2):
-
-    intersect_w = _interval_overlap([box1[0], box1[2]], [box2[0], box2[2]])
-    intersect_h = _interval_overlap([box1[1], box1[3]], [box2[1], box2[3]])
-
-    intersect = intersect_w * intersect_h
-
-    w1, h1 = box1[2]-box1[0], box1[3]-box1[1]
-    w2, h2 = box2[2]-box2[0], box2[3]-box2[1]
-
-    union = w1*h1 + w2*h2 - intersect
-
-    return float(intersect) / union
-
 
 class yoloDetector(object):
     """
@@ -59,7 +29,7 @@ class yoloDetector(object):
         self.nms_threshold = nms_threshold
         self.max_length = max_length
 
-        self.model = get_yolo_model(self.width, self.height, num_class=1)
+        self.model = get_yolo_model(num_class=1)
         self.model.load_weights(self.weight_file,by_name=True)
 
 

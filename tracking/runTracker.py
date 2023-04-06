@@ -81,8 +81,6 @@ def main(args):
 
     max_l = config['common']['MAX_L']  #maximal object size in pixels
     min_l = config['common']['MIN_L']
-    im_width = config['common']['IMAGE_W']  #size of training imageas for yolo
-    im_height = config['common']['IMAGE_H']
 
     save_output = config['common']['save_output']
     show_detections = config['common']['show_detections']

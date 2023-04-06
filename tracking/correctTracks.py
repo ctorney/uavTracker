@@ -103,7 +103,7 @@ def main(args):
 
     data_dir = config['project_directory']
     tracking_setup = config["tracking_setup"]
-    buffer_size = config["corrections_buffer_size"]
+    buffer_size = config['common']["corrections_buffer_size"]
 
     np.set_printoptions(suppress=True)
 
@@ -126,11 +126,9 @@ def main(args):
 
     max_l = config['common']['MAX_L']  #maximal object size in pixels
     min_l = config['common']['MIN_L']
-    im_width = config['common']['IMAGE_W']  #size of training imageas for yolo
-    im_height = config['common']['IMAGE_H']
 
     save_output = True #corrections of tracks need to be visual and save output...
-    showDetections = config['common']['showDetections']
+    showDetections = config['common']['show_detections']
 
     with open(videos_list, 'r') as video_config_file_h:
         video_config = yaml.safe_load(video_config_file_h)

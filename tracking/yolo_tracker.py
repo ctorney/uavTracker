@@ -21,9 +21,6 @@ import sys
 import os.path
 import scipy
 import numpy as np
-#import matplotlib.pyplot as plt
-#import matplotlib.patches as patches
-#from skimage import io
 sys.path.append('..')
 from utils.linear_assignment_ import linear_assignment
 from scipy.optimize import linear_sum_assignment
@@ -33,56 +30,7 @@ import argparse
 from filterpy.kalman import KalmanFilter
 from filterpy.stats import mahalanobis
 import filterpy
-
-def _interval_overlap(interval_a, interval_b):
-    x1, x2 = interval_a
-    x3, x4 = interval_b
-
-    if x3 < x1:
-        if x4 < x1:
-            return 0
-        else:
-            return min(x2,x4) - x1
-    else:
-        if x2 < x3:
-             return 0
-        else:
-            return min(x2,x4) - x3
-
-def bbox_iou(box1, box2):
-
-    intersect_w = _interval_overlap([box1[0], box1[2]], [box2[0], box2[2]])
-    intersect_h = _interval_overlap([box1[1], box1[3]], [box2[1], box2[3]])
-
-    intersect = intersect_w * intersect_h
-
-    w1, h1 = box1[2]-box1[0], box1[3]-box1[1]
-    w2, h2 = box2[2]-box2[0], box2[3]-box2[1]
-
-    union = w1*h1 + w2*h2 - intersect
-
-    return float(intersect) / union
-
-def do_nms(new_boxes, nms_thresh):
-    # do nms
-    sorted_indices = np.argsort(-new_boxes[:,4])
-    boxes=new_boxes.tolist()
-
-    for i in range(len(sorted_indices)):
-
-        index_i = sorted_indices[i]
-
-        if new_boxes[index_i,4] == 0: continue
-
-        for j in range(i+1, len(sorted_indices)):
-            index_j = sorted_indices[j]
-            # anything with certainty above 1 is untouchable
-            if boxes[index_j][4]>1:
-                continue
-            if bbox_iou(boxes[index_i][0:4], boxes[index_j][0:4]) > nms_thresh:
-                new_boxes[index_j,4] = 0
-
-    return
+from utils.decoder import do_nms, bbox_iou, _interval_overlap
 
 def convert_bbox_to_kfx(bbox):
     """
@@ -105,6 +53,93 @@ def convert_kfx_to_bbox(x):
     h=max(0.0,x[3])
     return np.array([x[0]-w/2.,x[1]-h/2.,x[0]+w/2.,x[1]+h/2.]).reshape((1,4))
 
+def convert_bbox_to_z(bbox):
+  """
+  Takes a bounding box in the form [x1,y1,x2,y2] and returns z in the form
+    [x,y,s,r] where x,y is the centre of the box and s is the scale/area and r is
+    the aspect ratio
+  """
+  w = bbox[2] - bbox[0]
+  h = bbox[3] - bbox[1]
+  x = bbox[0] + w/2.
+  y = bbox[1] + h/2.
+  s = w * h    #scale is just area
+  r = w / float(h)
+  return np.array([x, y, s, r]).reshape((4, 1))
+
+
+def convert_x_to_bbox(x,score=None):
+  """
+  Takes a bounding box in the centre form [x,y,s,r] and returns it in the form
+    [x1,y1,x2,y2] where x1,y1 is the top left and x2,y2 is the bottom right
+  """
+  w = np.sqrt(x[2] * x[3])
+  h = x[2] / w
+  if(score==None):
+    return np.array([x[0]-w/2.,x[1]-h/2.,x[0]+w/2.,x[1]+h/2.]).reshape((1,4))
+  else:
+    return np.array([x[0]-w/2.,x[1]-h/2.,x[0]+w/2.,x[1]+h/2.,score]).reshape((1,5))
+
+class KalmanBoxSortTracker(object):
+  """
+  This class represents the internal state of individual tracked objects observed as bbox.
+  """
+  count = 0
+  def __init__(self,bbox):
+    """
+    Initialises a tracker using initial bounding box.
+    """
+    #define constant velocity model
+    self.kf = KalmanFilter(dim_x=7, dim_z=4)
+    self.kf.F = np.array([[1,0,0,0,1,0,0],[0,1,0,0,0,1,0],[0,0,1,0,0,0,1],[0,0,0,1,0,0,0],  [0,0,0,0,1,0,0],[0,0,0,0,0,1,0],[0,0,0,0,0,0,1]])
+    self.kf.H = np.array([[1,0,0,0,0,0,0],[0,1,0,0,0,0,0],[0,0,1,0,0,0,0],[0,0,0,1,0,0,0]])
+
+    self.kf.R[2:,2:] *= 10.
+    self.kf.P[4:,4:] *= 1000. #give high uncertainty to the unobservable initial velocities
+    self.kf.P *= 10.
+    self.kf.Q[-1,-1] *= 0.01
+    self.kf.Q[4:,4:] *= 0.01
+
+    self.kf.x[:4] = convert_bbox_to_z(bbox)
+    self.time_since_update = 0
+    self.id = KalmanBoxTracker.count
+    KalmanBoxTracker.count += 1
+    self.history = []
+    self.hits = 0
+    self.hit_streak = 0
+    self.age = 0
+    self.score = bbox[4]
+
+  def update(self,bbox):
+    """
+    Updates the state vector with observed bbox.
+    """
+    self.time_since_update = 0
+    self.history = []
+    self.hits += 1
+    self.hit_streak += 1
+    self.score = (self.score*(self.hits-1.0)/float(self.hits)) + (bbox[4]/float(self.hits))
+    self.kf.update(convert_bbox_to_z(bbox))
+
+  def predict(self):
+    """
+    Advances the state vector and returns the predicted bounding box estimate.
+    """
+    if((self.kf.x[6]+self.kf.x[2])<=0):
+      self.kf.x[6] *= 0.0
+    self.kf.predict()
+    self.age += 1
+    if(self.time_since_update>0):
+      self.hit_streak = 0
+    self.time_since_update += 1
+    self.history.append(convert_x_to_bbox(self.kf.x))
+    return self.history[-1]
+
+  def get_state(self):
+    """
+    Returns the current bounding box estimate.
+    """
+    return convert_x_to_bbox(self.kf.x)
 
 class KalmanBoxTracker(object):
     """

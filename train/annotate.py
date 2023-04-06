@@ -23,7 +23,7 @@ rect_bbox = []
 drawing = False  #this have to be False for drawing to work properly!!!
 
 
-def check_boxes(img_clean, bbox_list, im_width, im_height):
+def check_boxes(img_clean, bbox_list):
     def draw_all_boxes():
         img = img_clean.copy()
         for b in bbox_list:
@@ -87,7 +87,6 @@ def check_boxes(img_clean, bbox_list, im_width, im_height):
             draw_all_boxes()
 
     cv2.namedWindow('image', cv2.WINDOW_GUI_EXPANDED)
-    #cv2.resizeWindow('image', im_width, im_height)
     cv2.resizeWindow('image', 1900, 1100)
     cv2.moveWindow('image', 20,20)
     cv2.setMouseCallback('image', draw_rect_roi)
@@ -135,8 +134,7 @@ def main(args):
     some_checked = md5check(config['checked_annotations_md5'], checked_annotations)
     some_autogen = md5check(config['autogen_annotations_md5'], autogen_annotations)
 
-    im_width = config['common']['IMAGE_W']  #size of training images for yolo
-    im_height = config['common']['IMAGE_H']
+    obj_label = config['common']['LABELS'][0]
 
 
 
@@ -149,6 +147,7 @@ def main(args):
     else:
         print('no automatically generate annotations provided, will have to annotate from scratch')
         from_scratch = True
+        raise Exception('BUG, currently you have to run prepTrain.py first and generate automatic annotations in order to annotate from scratch. Sorry!')
 
     if from_scratch:
         print('Not showing any bounding boxes. You are annotating from scratch. Remove relevant flag to use ourput of your previous training (or generic model)')
@@ -197,13 +196,13 @@ def main(args):
 
             #do box processing
             img = cv2.imread(fullfile)
-            if check_boxes(img, boxes, im_width, im_height):
+            if check_boxes(img, boxes):
                 break
             for b in boxes:
                 obj = {}
                 if ((b[2] - b[0]) * (b[3] - b[1])) < 10:
                     continue
-                obj['name'] = 'aoi'
+                obj['name'] = obj_label
                 obj['xmin'] = int(b[0])
                 obj['ymin'] = int(b[1])
                 obj['xmax'] = int(b[2])

@@ -26,6 +26,8 @@ def main(args):
     data_dir = config['project_directory']
     project_name = config['project_name']
 
+    obj_label = config['common']['LABELS'][0]
+
     groundtruths_dir = os.path.join(data_dir, config['groundtruths_dir'])
     predictions_dir_general = os.path.join(data_dir, config['predictions_dir'])
     os.makedirs(predictions_dir_general, exist_ok=True)
@@ -35,8 +37,12 @@ def main(args):
     weights_dir = os.path.join(data_dir, config['weights_dir'])
 
     results_config_file = os.path.join(data_dir, config['results_dir'], config['results_config_name'])
-    with open(results_config_file, 'r') as handle:
-        results_config = yaml.safe_load(handle)
+    try:
+        with open(results_config_file, 'r') as handle:
+            results_config = yaml.safe_load(handle)
+    except:
+        raise Exception('The results file doesn\'t exist and should have been created during training stage.')
+
     c_date = results_config['c_date']
 
     results_config['AP'] = dict()
@@ -89,14 +95,12 @@ def main(args):
 
                 max_l = config['common']['MAX_L']  #maximal object size in pixels
                 min_l = config['common']['MIN_L']
-                im_size_h = config['common']['IMAGE_H']  #size of training imageas for yolo
-                im_size_w = config['common']['IMAGE_W']  #size of training imageas for yolo
 
                 ##################################################
                 print("Loading YOLO models")
                 print("We will use the following model for testing: ")
                 print(trained_weights[training_phase])
-                yolov3 = get_yolo_model(im_size_w, im_size_h, num_class, trainable=False)
+                yolov3 = get_yolo_model(num_class, trainable=False)
                 try:
                     yolov3.load_weights(
                         trained_weights[training_phase], by_name=True)  #TODO is by_name necessary here?
@@ -137,12 +141,12 @@ def main(args):
                             obj = {}
                             if ((b[2] - b[0]) * (b[3] - b[1])) < 10:
                                 continue
-                            obj['name'] = 'aoi'
+                            obj['name'] = obj_label
                             obj['xmin'] = int(b[0])
                             obj['ymin'] = int(b[1])
                             obj['xmax'] = int(b[2])
                             obj['ymax'] = int(b[3])
-                            img_data['object'] += [obj]
+                            img_data['object'] += obj_label
                             file_gt.write(obj['name'] + " ")
                             file_gt.write(str(obj['xmin']) + " ")
                             file_gt.write(str(obj['ymin']) + " ")
@@ -173,7 +177,7 @@ def main(args):
                         sys.stdout.write('o')
                         sys.stdout.flush()
                         # preprocess the image
-                        image_h, image_w, _ = img.shape
+                        im_size_h, im_size_w, _ = img.shape
                         new_image = img[:, :, ::-1] / 255.
                         new_image = np.expand_dims(new_image, 0)
 
@@ -266,10 +270,11 @@ def main(args):
                 #count prediction which reache a threshold of let's say 0.5
                 # if we cahnge the dection threshold I think we'll get ROC curve - that'd be cute.
                 results_config['AP'][setname][model_name][training_phase] = dict()
-                # print("END")
-                # print(pr_list[0.5][0])
+                print('\nNow calculating AP. If detector is really, really bad, this sage can take ages. Just see how many ')
                 for iou_thresh in pr_list.keys():
                     prediction_list = pr_list[iou_thresh][0]
+                    pred_per_img = len(prediction_list)/len(all_imgs)
+                    print(f'IoU thresh is {iou_thresh} and we have {pred_per_img:.2f} predictions per image.')
                     nall = pr_list[iou_thresh][1]
                     results_config['AP'][setname][model_name][training_phase][iou_thresh] = get_AP(prediction_list,nall)
                 AP5 = results_config['AP'][setname][model_name][training_phase][0.5]

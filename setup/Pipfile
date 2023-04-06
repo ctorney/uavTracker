@@ -4,8 +4,8 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-tensorflow-macos = "*"
-tensorflow-metal = "*"
+tensorflow-macos = "2.9"
+tensorflow-metal = "0.5.0"
 opencv-python = "*"
 ipython = "*"
 matplotlib = "*"
@@ -16,6 +16,7 @@ pyyaml = "*"
 scipy = "*"
 scikit-image = "*"
 filterpy = "*"
+jupyterlab = "*"
 
 [dev-packages]
 
