@@ -313,8 +313,6 @@ def get_train_base(weights_file,
         input_image, num_class, out_size, trainable,
         headtrainable=False, rawfeatures=True)
 
-    #Previously we wouldn't convert output layers when loading the training base, however now we get an error when we don't
-    #ValueError: Layer count mismatch when loading weights from file. Model expected 150 layers, found 147 saved layers.
     detection_model = Model(input_image, inner_out_layers)
 
     print('#############')

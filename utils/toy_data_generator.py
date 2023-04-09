@@ -228,7 +228,7 @@ def main(args):
     os.makedirs(test_dir, exist_ok=True)
     os.makedirs(video_dir, exist_ok=True)
     annotations_file = an_dir + '/train_data.yml'
-    sequence_file = an_dir + '/seq_data.yml'
+    sequence_file = os.path.join(an_dir,config['seq_yml'])
     all_imgs = []
     all_seq = []
 

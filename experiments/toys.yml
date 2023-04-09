@@ -18,6 +18,7 @@ bbox_images_dir: 'extracted_tracks/'
 groundtruths_dir: 'results/groundtruths/'
 predictions_dir: 'results/predictions/'
 results_dir: 'results/'
+seq_yml: 'seq_data.yml'
 
 #This is annotations
 preped_images_dir: "subsets/train/"
