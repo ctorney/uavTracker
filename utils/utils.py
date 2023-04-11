@@ -165,3 +165,80 @@ def pleaseCheckMyDirectories(config, data_dir):
         if not os.path.isdir(dir):
             print('Creating ' + dir)
             os.makedirs(dir, exist_ok=True)
+
+def save_pascal_gt_detect_file(fname_gt, boxes_gt, args_visual, frame, img_data):
+    with open(fname_gt, 'w') as file_gt:  #left top righ bottom
+        for b in boxes_gt:
+            obj = {}
+            if ((b[2] - b[0]) * (b[3] - b[1])) < 10:
+                continue
+            obj['name'] = 'aoi'
+            obj['xmin'] = int(b[0])
+            obj['ymin'] = int(b[1])
+            obj['xmax'] = int(b[2])
+            obj['ymax'] = int(b[3])
+            img_data['object'] += [obj]
+            file_gt.write(obj['name'] + " ")
+            file_gt.write(str(obj['xmin']) + " ")
+            file_gt.write(str(obj['ymin']) + " ")
+            file_gt.write(str(obj['xmax']) + " ")
+            file_gt.write(str(obj['ymax']))
+            file_gt.write('\n')
+
+            if args_visual:
+                cv2.rectangle(
+                    frame, (int(obj['xmin']) - 2, int(obj['ymin']) - 2),
+                    (int(obj['xmax']) + 2, int(obj['ymax']) + 2), (200, 0, 0), 1)
+    return frame
+
+def from_annot_save_pascal_pred_detect_file(pred_imgs,i,fname_pred,args,frame,max_l, min_l, im_size_w, im_size_h):
+    boxes_pred = []
+    for obj in pred_imgs[i]['object']:
+        boxes_pred.append(
+            [obj['xmin'], obj['ymin'], obj['xmax'], obj['ymax']])
+
+
+    frame = save_pascal_pred_detect_file(boxes_pred,i,fname_pred,args,frame,max_l, min_l, im_size_w, im_size_h)
+    return frame
+
+def save_pascal_pred_detect_file(boxes_predict,i,fname_pred,args_visual,frame,max_l, min_l, im_size_w, im_size_h):
+    with open(fname_pred, 'w') as file_pred:  #left top righ bottom
+        for b in boxes_predict:
+            xmin = int(b[0])
+            xmax = int(b[2])
+            ymin = int(b[1])
+            ymax = int(b[3])
+            confidence = float(b[4])
+            objpred = {}
+
+            objpred['name'] = 'aoi'
+
+            if xmin < 0: continue
+            if ymin < 0: continue
+            if xmax > im_size_w: continue
+            if ymax > im_size_h: continue
+            if (xmax - xmin) < min_l: continue
+            if (xmax - xmin) > max_l: continue
+            if (ymax - ymin) < min_l: continue
+            if (ymax - ymin) > max_l: continue
+
+            objpred['xmin'] = xmin
+            objpred['ymin'] = ymin
+            objpred['xmax'] = xmax
+            objpred['ymax'] = ymax
+            objpred['confidence'] = confidence
+            file_pred.write(objpred['name'] + " ")
+            file_pred.write(str(objpred['confidence']) + " ")
+            file_pred.write(str(objpred['xmin']) + " ")
+            file_pred.write(str(objpred['ymin']) + " ")
+            file_pred.write(str(objpred['xmax']) + " ")
+            file_pred.write(str(objpred['ymax']))
+            file_pred.write('\n')
+
+            if args_visual:
+                cv2.rectangle(
+                    frame, (int(objpred['xmin']) - 2, int(objpred['ymin']) - 2),
+                    (int(objpred['xmax']) + 2, int(objpred['ymax']) + 2), (0, 0, 198), 1)
+                str_conf = "{:.1f}".format(objpred['confidence'])
+                cv2.putText(frame, str_conf,  (int(objpred['xmax']),int(objpred['ymax'])), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.8, (200,200,250), 1);
+    return frame

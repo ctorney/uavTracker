@@ -408,7 +408,7 @@ def get_tracker_model():
     return model
 
 
-def load_yolos(im_size_w, im_size_h, num_class, args_tracker, trained_detector_weights, trained_linker_weights):
+def load_yolos(num_class, args_tracker, trained_detector_weights, trained_linker_weights):
     ##################################################
     print("Loading YOLO models")
     print("We will use the following model for testing of detection: ")
