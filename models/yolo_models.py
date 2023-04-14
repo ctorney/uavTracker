@@ -293,6 +293,7 @@ def get_yolo_model(num_class=80,
     output_layers = convert_output_layers(inner_out_layers, input_image, out_size, num_class)
 
     model = Model(input_image, output_layers)
+    print(model.summary(line_length=120))
 
     return model
 
@@ -312,8 +313,8 @@ def get_train_base(weights_file,
     inner_out_layers = get_layers(
         input_image, num_class, out_size, trainable,
         headtrainable=False, rawfeatures=True)
-
-    detection_model = Model(input_image, inner_out_layers)
+    out_layers = [a[0] for a in inner_out_layers[:3]] + inner_out_layers[3:]
+    detection_model = Model(input_image, out_layers)
 
     print('#############')
     print('Detection model')
