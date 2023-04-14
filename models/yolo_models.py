@@ -314,11 +314,8 @@ def get_train_base(weights_file,
     print('#############')
     print('Detection model')
     print('#############')
-    print(len(out_layers))
-    print(out_layers)
-    print(detection_model.input)
+    print(detection_model.summary(line_length=120))
 
-    # print(detection_model.summary(line_length=120))
     detection_model.load_weights(weights_file, by_name=True)
 
     input_sequence = Input(shape=(3, None, None, 3))
@@ -336,9 +333,9 @@ def get_train_base(weights_file,
     model = Model(input_sequence, [seq_large, seq_med, seq_small])
 
     print('#############')
-    print('Tracker model')
+    print('Train base model')
     print('#############')
-    print(model.summary())
+    print(model.summary(line_length=150))
     return model
 
 def rescale():
