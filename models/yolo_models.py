@@ -239,19 +239,15 @@ def convert_output_layers(inner_out_layers, input_image, out_size, num_class):
         anchor+=1
 
         # object confidence, aga scores
-        obj = crop(4,out_size-3)(finashaped)
+        obj = crop(4,5)(finashaped)
         obj = Activation('sigmoid')(obj)
-
-        #features map
-        feats = crop(out_size-3,out_size)(finashaped)
-        feats = Activation('tanh')(feats)
 
         # class scores
         #cls = crop(out_size,out_size+num_class)(finashaped)
         cls = Activation('softmax')(finashaped_class)
 
         # combine results
-        out = Concatenate()([offs, szs, obj, feats])
+        out = Concatenate()([offs, szs, cls, obj])
         output.append(out)
 
     if len(inner_out_layers) > 3:
@@ -283,8 +279,8 @@ def get_yolo_model(num_class=80,
                    trainable=False,
                    headtrainable=False,
                    rawfeatures=False):
-    # for each box we have num_class outputs, 4 bbox coordinates, and 1 object confidence value (and 3 linker features?!)
-    out_size = num_class + 8
+    # for each box we have num_class outputs, 4 bbox coordinates, and 1 object confidence value
+    out_size = num_class + 4 + 1 #out_size = 6
     input_image = Input(shape=(None, None, 3))
     inner_out_layers = get_layers(
             input_image, num_class, out_size, trainable,
@@ -303,11 +299,10 @@ def get_train_base(weights_file,
                    trainable=False):
 
     # for each box we have num_class outputs,
-    # 3 linker features, - ?!
     # 4 bbox coordinates, and
     # 1 object confidence value
-    out_size = num_class + 8
-    # out_size = 5 #HACK
+    # out_size = num_class + 8
+    out_size = num_class + 4 + 1 # out_size = 6
     input_image = Input(shape=(None, None, 3))
 
     inner_out_layers = get_layers(
@@ -319,8 +314,11 @@ def get_train_base(weights_file,
     print('#############')
     print('Detection model')
     print('#############')
+    print(len(out_layers))
+    print(out_layers)
+    print(detection_model.input)
 
-    print(detection_model.summary(line_length=120))
+    # print(detection_model.summary(line_length=120))
     detection_model.load_weights(weights_file, by_name=True)
 
     input_sequence = Input(shape=(3, None, None, 3))
