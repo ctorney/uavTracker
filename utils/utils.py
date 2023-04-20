@@ -1,10 +1,39 @@
-import cv2
+import hashlib, math, yaml, glob, cv2, sys, os
 import numpy as np
-import sys
-import os
 from scipy.special import expit
-import hashlib, math, yaml, glob
 
+"""
+A little function to provide all of the parameters passed as arguments
+"""
+def init_config(
+        args={'config': ['../experiments/toys.yml'],
+              'debug': True,
+              'visual': True,
+              'tracker': False,
+              'annotated': False,
+              'test_run': False,
+              'output': ['tmp.txt']
+              }):
+    #convert this stupid Namespace object to a normal cuddly dictionary
+    if not type(args)==dict:
+        args = vars(args)
+
+    print('Opening file' + args['config'][0])
+    with open(args['config'][0], 'r') as configfile:
+        config = yaml.safe_load(configfile)
+
+    #supplement config with arguments provided in the commandline, for ease of use
+    config['args_debug'] = args['debug']
+    config['args_annotated'] = args['annotated'][0] if args['annotated'] else False
+    config['args_visual'] = args['visual']
+    config['args_tracker'] = args['tracker']
+    config['args_output'] = args['output'][0] if args['output'] else False
+    config['args_test_run'] = args['test_run']
+
+    if config['args_debug']:
+        print(config)
+
+    return config
 
 
 """

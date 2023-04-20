@@ -233,7 +233,8 @@ def main(args):
     all_seq = []
 
     fourCC = cv2.VideoWriter_fourcc('X', 'V', 'I', 'D')
-    out = cv2.VideoWriter(os.path.join(video_dir,'test.avi'), fourCC, 5, (side,side), True)
+    out_test = cv2.VideoWriter(os.path.join(video_dir,'test.avi'), fourCC, 5, (side,side), True)
+    out_train = cv2.VideoWriter(os.path.join(video_dir,'train.avi'), fourCC, 5, (side,side), True)
 
     borders = Borders(1,1,side-1,side-1)
 
@@ -387,9 +388,10 @@ def main(args):
 
         if (training_datapoint):
             cv2.imwrite(train_dir + '/' + save_name,plane_cur)
+            out_train.write(plane_cur)
         else:
             cv2.imwrite(test_dir + '/' + save_name,plane_cur)
-            out.write(plane_cur)
+            out_test.write(plane_cur)
 
         all_imgs += [img_data]
 
