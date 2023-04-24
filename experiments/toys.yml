@@ -1,5 +1,3 @@
-#set this up to get funny behaviour quickly. Like training for 1 epoch
-TEST_RUN: 1
 # This is a template config file that is first used to create a toy dataset by running
 # python toy_data_generator.py -c ../experiments/toys.yml
 # in `utils` directory, with an optional flag `-v` for visual to see data being generated
@@ -50,7 +48,7 @@ models:
     nms_thresh: 0.1
     phase_one:
       BATCH_SIZE: 16
-      EPOCHS: 1
+      EPOCHS: 20
       LR: 0.5e-3
       B1: 0.9
       B2: 0.999
@@ -59,7 +57,7 @@ models:
       PATIENCE: 2
     phase_two:
       BATCH_SIZE: 4
-      EPOCHS: 2
+      EPOCHS: 10
       LR: 0.1e-3
       B1: 0.9
       B2: 0.999

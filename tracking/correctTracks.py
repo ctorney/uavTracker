@@ -11,6 +11,8 @@ import yaml
 import numpy as np
 import time
 import pandas as pd
+sys.path.append('..')
+from utils.utils import init_config
 
 """
 Simple video buffer to be able to go back a few frames when watching the track
@@ -96,10 +98,8 @@ def putOnAShow(track,full_warp,frame1,i,corrected=False):
 
 def main(args):
     #Load data
-    print('Opening file' + args.config[0])
-    with open(args.config[0], 'r') as configfile:
-        config = yaml.safe_load(configfile)
-    args_visual = True
+    config = init_config(args)
+    args_visual = config['args_visual']
 
     data_dir = config['project_directory']
     tracking_setup = config["tracking_setup"]

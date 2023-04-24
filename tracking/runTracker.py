@@ -9,7 +9,7 @@ sys.path.append('..')
 import time
 from utils.yolo_detector import yoloDetector
 from yolo_tracker import yoloTracker
-from utils.utils import md5check
+from utils.utils import md5check, init_config
 
 def showThoseDetections(detections, frame, full_warp, save_output):
     for detect in detections:
@@ -41,13 +41,12 @@ def showThoseDetections(detections, frame, full_warp, save_output):
 
 def main(args):
     #Load data
-    print('Opening file' + args.config[0])
-    with open(args.config[0], 'r') as configfile:
-        config = yaml.safe_load(configfile)
-    args_visual = args.visual
+    config = init_config(args)
+
+    args_visual = config['args_visual']
     data_dir = config['project_directory']
     tracking_setup = config["tracking_setup"]
-    args_step = args.step
+    args_step = config['args_step']
 
     key = ord('c') #by default, continue
     if args_step:
