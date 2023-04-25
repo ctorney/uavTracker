@@ -26,13 +26,13 @@ def init_config(
 
     #supplement config with arguments provided in the commandline, for ease of use
     config['args_debug'] = args['debug']
-    config['args_annotated'] = args['annotated'][0] if ('annotated' in args.keys()) else False
+    config['args_annotated'] = args['annotated'][0] if ('annotated' in args.keys() and type(args['annotated'])==list) else False
     config['args_visual'] = args['visual'] if ('visual' in args.keys()) else False
     config['args_resume'] = args['resume'] if ('resume' in args.keys()) else False
     config['args_from_scratch'] = args['from_scratch'] if ('from_scratch' in args.keys()) else False
     config['args_tracker'] = args['tracker'] if ('tracker' in args.keys()) else False
     config['args_step'] = args['step'] if ('step' in args.keys()) else False
-    config['args_output'] = args['output'][0] if ('output' in args.keys()) else False
+    config['args_output'] = args['output'][0] if ('output' in args.keys() and type(args['output'])==list) else False
     config['args_test_run'] = args['test_run'] if ('test_run' in args.keys()) else False
 
     if config['args_debug']:
