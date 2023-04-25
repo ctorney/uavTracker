@@ -22,7 +22,7 @@ import os.path
 import scipy
 import numpy as np
 sys.path.append('..')
-from utils.linear_assignment_ import linear_assignment
+from utils.linear_assignment import linear_assignment
 from scipy.optimize import linear_sum_assignment
 import glob
 import time
@@ -30,7 +30,7 @@ import argparse
 from filterpy.kalman import KalmanFilter
 from filterpy.stats import mahalanobis
 import filterpy
-from utils.decoder import do_nms, bbox_iou, _interval_overlap
+from utils.decoder import do_nms, bbox_iou, interval_overlap
 
 def convert_bbox_to_kfx(bbox):
     """

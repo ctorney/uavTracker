@@ -4,7 +4,7 @@ import time, math
 sys.path.append("..")
 from models.yolo_models import get_yolo_model
 from utils.utils import makeYoloCompatible
-from utils.decoder import bbox_iou, _interval_overlap
+from utils.decoder import bbox_iou, interval_overlap
 
 def _sigmoid(x):
     return 1. / (1. + np.exp(-x))

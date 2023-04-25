@@ -9,7 +9,7 @@ import yaml
 import pickle
 sys.path.append('..')
 from models.yolo_models import get_yolo_model
-from utils.decoder import decode, _interval_overlap, bbox_iou, get_prediction_results, get_AP
+from utils.decoder import decode, interval_overlap, bbox_iou, get_prediction_results, get_AP
 from utils.utils import md5check, read_tsets
 
 def main(args):

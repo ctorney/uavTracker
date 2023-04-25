@@ -3,7 +3,7 @@ import pandas as pd
 import os,sys
 import cv2
 
-def _interval_overlap(interval_a, interval_b):
+def interval_overlap(interval_a, interval_b):
     x1, x2 = interval_a
     x3, x4 = interval_b
 
