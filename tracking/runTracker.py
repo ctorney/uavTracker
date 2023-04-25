@@ -7,37 +7,10 @@ import numpy as np
 
 sys.path.append('..')
 import time
-from utils.yolo_detector import yoloDetector
+from utils.yolo_detector import yoloDetector, showDetections
 from yolo_tracker import yoloTracker
 from utils.utils import md5check, init_config
 
-def showThoseDetections(detections, frame, full_warp, save_output):
-    for detect in detections:
-        bbox = detect[0:4]
-        class_prob = detect[4]
-        if save_output:
-            iwarp = (full_warp)
-            corner1 = np.expand_dims(
-                [bbox[0], bbox[1]], axis=0)
-            corner1 = np.expand_dims(corner1, axis=0)
-            corner1 = cv2.perspectiveTransform(corner1,
-                                               iwarp)[0, 0, :]
-            minx = corner1[0]
-            miny = corner1[1]
-            corner2 = np.expand_dims(
-                [bbox[2], bbox[3]], axis=0)
-            corner2 = np.expand_dims(corner2, axis=0)
-            corner2 = cv2.perspectiveTransform(corner2,
-                                               iwarp)[0, 0, :]
-            maxx = corner2[0]
-            maxy = corner2[1]
-
-            cv2.rectangle(
-                frame, (int(minx) - 2, int(miny) - 2),
-                (int(maxx) + 2, int(maxy) + 2), (0, 0, 220*class_prob**2), (1+round(class_prob)))
-
-            cv2.putText(frame, str(int(class_prob*100)),  (int(maxx + 5),int(maxy + 2)), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.8, (200,200,230), 1);
-    return frame
 
 def main(args):
     #Load data
@@ -232,7 +205,7 @@ def main(args):
                 tracks = tracker.update(np.asarray(detections))
 
                 if show_detections:
-                    frame = showThoseDetections(detections, frame, full_warp, save_output)
+                    frame = showDetections(detections, frame, full_warp, save_output)
 
                 cv2.putText(frame, str(i),  (30,60), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2);
 

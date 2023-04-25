@@ -94,8 +94,8 @@ track_setup_1:
   # weights: 'yolo-v3-coco.h5'
   weights_md5: ''
   num_class: 1
-  obj_thresh: 0.7
-  nms_thresh: 0.03
+  obj_thresh: 0.9
+  nms_thresh: 0.1
   max_age: 6 #how
   track_thresh: 0.75 #only return tracks with average confidence above this value
   init_thresh: 0.9
@@ -122,7 +122,7 @@ deepBeastLinking:
   #checked annotations are used for training:
   checked_annotations_fname: 'seq_data.yml'
   seq_fname: 'seq_data.txt'
-  detection_net_weights: 'trained-alfs-shapeshift-nov22-p2.h5'
+  detection_net_weights: 'toys_model_1_phase_two_2023Mar11.h5'
   linking_net_weights: 'toys_link.h5'
 
   #training parameters
