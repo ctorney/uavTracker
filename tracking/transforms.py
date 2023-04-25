@@ -5,7 +5,8 @@ import yaml
 import numpy as np
 from pathlib import Path
 import time
-
+sys.path.append('..')
+from utils.utils import init_config
 
 
 def main(args):
@@ -15,9 +16,7 @@ def main(args):
     shift_display = shift_display.reshape((3,3))
 
     #Load data
-    print('Opening file' + args.config[0])
-    with open(args.config[0], 'r') as configfile:
-        config = yaml.safe_load(configfile)
+    config = init_config(args)
 
     data_dir = config['project_directory']
     tracks_dir = os.path.join(data_dir,config['tracks_dir'])

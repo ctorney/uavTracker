@@ -238,7 +238,7 @@ def convert_output_layers(inner_out_layers, input_image, out_size, num_class):
         szs = anchors(anchor)(szs)
         anchor+=1
 
-        # object confidence, aga scores
+        # object confidence, AKA scores
         obj = crop(4,5)(finashaped)
         obj = Activation('sigmoid')(obj)
 
@@ -247,7 +247,7 @@ def convert_output_layers(inner_out_layers, input_image, out_size, num_class):
         cls = Activation('softmax')(finashaped_class)
 
         # combine results
-        out = Concatenate()([offs, szs, cls, obj])
+        out = Concatenate()([offs, szs, obj, cls])
         output.append(out)
 
     if len(inner_out_layers) > 3:
@@ -275,10 +275,12 @@ def get_layers(input_image, num_class, out_size, trainable, headtrainable, rawfe
 
     return inner_out_layers
 
-def get_yolo_model(num_class=80,
-                   trainable=False,
-                   headtrainable=False,
-                   rawfeatures=False):
+def get_yolo_model(num_class = 80,
+                   trainable = False,
+                   headtrainable = False,
+                   rawfeatures = False,
+                   debug_info = False
+                   ):
     # for each box we have num_class outputs, 4 bbox coordinates, and 1 object confidence value
     out_size = num_class + 4 + 1 #out_size = 6
     input_image = Input(shape=(None, None, 3))
@@ -289,7 +291,8 @@ def get_yolo_model(num_class=80,
     output_layers = convert_output_layers(inner_out_layers, input_image, out_size, num_class)
 
     model = Model(input_image, output_layers)
-    print(model.summary(line_length=120))
+    if debug_info:
+        print(model.summary(line_length=120))
 
     return model
 

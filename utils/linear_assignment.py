@@ -6,6 +6,12 @@ Hungarian algorithm (also known as Munkres algorithm).
 # Based on original code by Brain Clapper, adapted to NumPy by Gael Varoquaux.
 # Heavily refactored by Lars Buitinck.
 
+#The linear_assignment function was deprecated in scipy 0.21
+#and was removed from 0.23.
+#scipy.optimize.linear_sum_assignment is suggested instead but isn't a perfect replacement.
+#This file is a copy of the original code for hungarian matching before depreciation",
+
+
 # Copyright (c) 2008 Brian M. Clapper <bmc@clapper.org>, Gael Varoquaux
 # Author: Brian M. Clapper, Gael Varoquaux
 # LICENSE: BSD
@@ -112,11 +118,6 @@ def _hungarian(cost_matrix):
         The pairs of (row, col) indices in the original array giving
         the original ordering.
     """
-    warnings.warn(
-        "The linear_assignment function was deprecated in scipy 0.21 "
-        "and was be removed from 0.23. "
-        "scipy.optimize.linear_sum_assignment is suggested instead but isn't a perfect replacement. This file is a copy of the original code for hungarina matching (mix)",
-        FutureWarning)
 
     state = _HungarianState(cost_matrix)
 

@@ -10,7 +10,7 @@ from generator import BatchGenerator
 from operator import itemgetter
 import random
 sys.path.append('..')
-from utils.utils import md5check, read_tsets
+from utils.utils import md5check, read_tsets, init_config
 import datetime as dt
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' ##TODO what does that do?
@@ -60,6 +60,8 @@ def run_full_training(model_name, config, data_dir, c_date, DEBUG, TEST_RUN):
         PATIENCE = c_model[training_phase]['PATIENCE']
 
         if TEST_RUN:
+            print('B E H O L D !!!!!!!!')
+            print('Running a test run!!! It means the model will only be trained for one short epoch just to test that the program works')
             EPOCHS = 1
             BATCH_SIZE = 4
 
@@ -70,7 +72,7 @@ def run_full_training(model_name, config, data_dir, c_date, DEBUG, TEST_RUN):
             pretrained_weights = weights_dir + c_model['pretrained_weights']
             md5check(c_model['pretrained_weights_md5'], pretrained_weights)
             model = get_yolo_model(
-                num_class=len(LABELS), headtrainable=True)
+                num_class=len(LABELS), headtrainable=True, trainable = False, debug_info = DEBUG)
             print("Loading weights %s", pretrained_weights)
             model.load_weights(pretrained_weights, by_name=True)
         else:
@@ -79,7 +81,7 @@ def run_full_training(model_name, config, data_dir, c_date, DEBUG, TEST_RUN):
             )
             pretrained_weights = trained_weights['phase_one']
             model = get_yolo_model(
-                num_class=len(LABELS), headtrainable=True, trainable=False)
+                num_class=len(LABELS), headtrainable=True, trainable = True, debug_info = DEBUG)
             print("Loading weights %s", pretrained_weights)
             model.load_weights(pretrained_weights)
 
@@ -208,15 +210,13 @@ def main(args):
     train_start_date = dt.datetime.now().strftime('%Y%b%d_%H%M')
 
     #Load data
-    print('Opening file' + args.config[0])
-    with open(args.config[0], 'r') as configfile:
-        config = yaml.safe_load(configfile)
+    config = init_config(args)
 
     data_dir = config['project_directory']
 
     #logging and debugging setup
-    DEBUG = args.debug
-    TEST_RUN = args.test_run
+    DEBUG = config['args_debug']
+    TEST_RUN = config['args_test_run']
     n_models_to_train = len(config['models'].keys())
     print(f'Will train {n_models_to_train} different models for this experiment now')
 

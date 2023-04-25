@@ -6,7 +6,7 @@ import yaml  #replacing pickle with yaml
 import datetime  #useful for debugging in notebooks
 sys.path.append('../..')
 sys.path.append('..')
-from utils.utils import md5check, filter_out_annotations, getmd5, read_subsets
+from utils.utils import md5check, filter_out_annotations, getmd5, read_subsets, init_config
 
 # Defining helper functions
 
@@ -120,14 +120,11 @@ def check_boxes(img_clean, bbox_list):
 
 def main(args):
     #Load data
-    print('Opening file' + args.config[0])
-    with open(args.config[0], 'r') as configfile:
-        config = yaml.safe_load(configfile)
-
+    config = init_config(args)
     data_dir = config['project_directory']
 
-    resume = args.resume
-    from_scratch = args.from_scratch
+    resume = config['args_resume']
+    from_scratch = config['args_from_scratch']
 
     checked_annotations = os.path.join(config['project_directory'],config['annotations_dir'],config['checked_annotations_fname'])
     autogen_annotations = os.path.join(config['project_directory'],config['annotations_dir'],config['autogen_annotations_fname'])

@@ -26,6 +26,9 @@ and now follow the normal procedure
 cd train
 python prepTrain.py -c ../experiments/toys.yml
 python annotate.py -c ../experiments/toys.yml
+```
+If you don't need a sort-of trained classifier, add `--test-run` flag to the `train.py` and it will train for one epoch only:
+```
 python train.py --config ../experiments/toys.yml
 python postTrainTest.py --config ../experiments/toys.yml
 cd ..

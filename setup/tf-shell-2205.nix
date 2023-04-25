@@ -30,6 +30,7 @@ mkShell {
     opencv4
     numpy
     scikitlearn
+    scikitimage
     pyaml
     pandas
     tensorflowWithCuda

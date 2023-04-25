@@ -14,7 +14,7 @@ sys.path.append('../..')
 sys.path.append('..')
 from models.yolo_models import get_yolo_model
 from utils.decoder import decode
-from utils.utils import md5check, makeYoloCompatible, pleaseCheckMyDirectories, read_subsets, filter_out_annotations, getmd5
+from utils.utils import md5check, makeYoloCompatible, pleaseCheckMyDirectories, read_subsets, filter_out_annotations, getmd5, init_config
 
 """
 Get a list of files that are not in checked (manual), or pre-annotated (auto) annotations file.
@@ -45,14 +45,11 @@ def read_for_annotation(config):
 
 def main(args):
     #Load data
-    print('Opening file' + args.config[0])
-    with open(args.config[0], 'r') as configfile:
-        config = yaml.safe_load(configfile)
-
+    config = init_config(args)
 
     #logging and debugging setup
-    DEBUG = args.debug
-    TEST_RUN = args.test_run
+    DEBUG = config['args_debug']
+    TEST_RUN = config['args_test_run']
 
     data_dir = config['project_directory']
     pleaseCheckMyDirectories(config, data_dir)

@@ -12,10 +12,12 @@ def init_config(
               'tracker': False,
               'annotated': False,
               'test_run': False,
-              'output': ['tmp.txt']
+              'output': ['tmp.txt'],
+              'resume': False,
+              'from_scratch': False,
               }):
     #convert this stupid Namespace object to a normal cuddly dictionary
-    if not type(args)==dict:
+    if type(args)!=dict:
         args = vars(args)
 
     print('Opening file' + args['config'][0])
@@ -23,12 +25,15 @@ def init_config(
         config = yaml.safe_load(configfile)
 
     #supplement config with arguments provided in the commandline, for ease of use
-    config['args_debug'] = args['debug']
-    config['args_annotated'] = args['annotated'][0] if args['annotated'] else False
-    config['args_visual'] = args['visual']
-    config['args_tracker'] = args['tracker']
-    config['args_output'] = args['output'][0] if args['output'] else False
-    config['args_test_run'] = args['test_run']
+    config['args_debug'] = args['debug'] if ('debug' in args.keys()) else False
+    config['args_annotated'] = args['annotated'][0] if ('annotated' in args.keys() and type(args['annotated'])==list) else False
+    config['args_visual'] = args['visual'] if ('visual' in args.keys()) else False
+    config['args_resume'] = args['resume'] if ('resume' in args.keys()) else False
+    config['args_from_scratch'] = args['from_scratch'] if ('from_scratch' in args.keys()) else False
+    config['args_tracker'] = args['tracker'] if ('tracker' in args.keys()) else False
+    config['args_step'] = args['step'] if ('step' in args.keys()) else False
+    config['args_output'] = args['output'][0] if ('output' in args.keys() and type(args['output'])==list) else False
+    config['args_test_run'] = args['test_run'] if ('test_run' in args.keys()) else False
 
     if config['args_debug']:
         print(config)
