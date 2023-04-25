@@ -120,7 +120,7 @@ def check_boxes(img_clean, bbox_list):
 
 def main(args):
     #Load data
-    config = init_config()
+    config = init_config(args)
     data_dir = config['project_directory']
 
     resume = config['args_resume']

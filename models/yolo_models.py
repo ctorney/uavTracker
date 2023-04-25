@@ -238,7 +238,7 @@ def convert_output_layers(inner_out_layers, input_image, out_size, num_class):
         szs = anchors(anchor)(szs)
         anchor+=1
 
-        # object confidence, aga scores
+        # object confidence, AKA scores
         obj = crop(4,5)(finashaped)
         obj = Activation('sigmoid')(obj)
 
@@ -247,7 +247,7 @@ def convert_output_layers(inner_out_layers, input_image, out_size, num_class):
         cls = Activation('softmax')(finashaped_class)
 
         # combine results
-        out = Concatenate()([offs, szs, cls, obj])
+        out = Concatenate()([offs, szs, obj, cls])
         output.append(out)
 
     if len(inner_out_layers) > 3:

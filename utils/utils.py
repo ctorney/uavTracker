@@ -25,7 +25,7 @@ def init_config(
         config = yaml.safe_load(configfile)
 
     #supplement config with arguments provided in the commandline, for ease of use
-    config['args_debug'] = args['debug']
+    config['args_debug'] = args['debug'] if ('debug' in args.keys()) else False
     config['args_annotated'] = args['annotated'][0] if ('annotated' in args.keys() and type(args['annotated'])==list) else False
     config['args_visual'] = args['visual'] if ('visual' in args.keys()) else False
     config['args_resume'] = args['resume'] if ('resume' in args.keys()) else False
