@@ -109,7 +109,26 @@ class yoloDetector(object):
 
 
         return detection_list
-
+'''
+Given the transformation provide new coordinates of the bounding box
+'''
+def unwarp_corners(bbox, full_warp):
+    iwarp = (full_warp)
+    corner1 = np.expand_dims(
+        [bbox[0], bbox[1]], axis=0)
+    corner1 = np.expand_dims(corner1, axis=0)
+    corner1 = cv2.perspectiveTransform(corner1,
+                                        iwarp)[0, 0, :]
+    minx = corner1[0]
+    miny = corner1[1]
+    corner2 = np.expand_dims(
+        [bbox[2], bbox[3]], axis=0)
+    corner2 = np.expand_dims(corner2, axis=0)
+    corner2 = cv2.perspectiveTransform(corner2,
+                                        iwarp)[0, 0, :]
+    maxx = corner2[0]
+    maxy = corner2[1]
+    return minx, miny, maxx, maxy
 '''
 Show detections on a frame
 '''
@@ -119,22 +138,7 @@ def showDetections(detections,
     for detect in detections:
         bbox = detect[0:4]
         class_prob = detect[4]
-        iwarp = (full_warp)
-        corner1 = np.expand_dims(
-            [bbox[0], bbox[1]], axis=0)
-        corner1 = np.expand_dims(corner1, axis=0)
-        corner1 = cv2.perspectiveTransform(corner1,
-                                            iwarp)[0, 0, :]
-        minx = corner1[0]
-        miny = corner1[1]
-        corner2 = np.expand_dims(
-            [bbox[2], bbox[3]], axis=0)
-        corner2 = np.expand_dims(corner2, axis=0)
-        corner2 = cv2.perspectiveTransform(corner2,
-                                            iwarp)[0, 0, :]
-        maxx = corner2[0]
-        maxy = corner2[1]
-
+        minx, miny, maxx, maxy = unwarp_corners(bbox, full_warp)
         cv2.rectangle(
             frame, (int(minx) - 2, int(miny) - 2),
             (int(maxx) + 2, int(maxy) + 2), (0, 0, 220*class_prob**2), (1+round(class_prob)))

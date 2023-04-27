@@ -127,8 +127,8 @@ deepBeastLinking:
 
   #training parameters
   FINE_TUNE: 1
-  IMAGE_H: 480
-  IMAGE_W: 480
+  IMAGE_H: 192
+  IMAGE_W: 192
   BATCH_SIZE: 16
   EPOCHS: 20
   LR: 0.5e-4
