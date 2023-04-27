@@ -13,6 +13,7 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Conv2D, Input, BatchNormalization, LeakyReLU, ZeroPadding2D, UpSampling2D, Dense, Flatten, Activation, Reshape, Lambda, TimeDistributed, Permute, Conv3D
 from tensorflow.keras.layers import Add, Concatenate
 import tensorflow as tf
+import numpy as np
 
 from tensorflow.keras import backend as K
 
@@ -55,29 +56,25 @@ def anchors(i):
         return tf.exp(x) * anc
     return Lambda(func)
 
-def positions():
+def positions(i):
     def func(z):
         x = z[0]
-        y = z[1]
+        scaling_factor = z[1]
         # compute grid factor and net factor
         grid_h      = tf.shape(x)[1]
         grid_w      = tf.shape(x)[2]
 
-        im_h      = tf.shape(y)[1]
-        im_w      = tf.shape(y)[2]
-
         grid_factor = tf.reshape(tf.cast([grid_w, grid_h], tf.float32), [1,1,1,1,2])
-        net_factor  = tf.reshape(tf.cast([im_w, im_h], tf.float32), [1,1,1,1,2])
 
         cell_x = tf.cast(tf.reshape(tf.tile(tf.range(tf.maximum(grid_h,grid_w)), [tf.maximum(grid_h,grid_w)]), (1, tf.maximum(grid_h,grid_w), tf.maximum(grid_h,grid_w), 1, 1)),dtype=tf.float32)
 
         cell_y = tf.transpose(cell_x, (0,2,1,3,4))
         cell_grid = tf.tile(tf.concat([cell_x,cell_y],-1), [1, 1, 1, 3, 1])
         pred_box_xy = (cell_grid[:,:grid_h,:grid_w,:,:] + x)
-        pred_box_xy = pred_box_xy * net_factor/grid_factor
+        pred_box_xy = pred_box_xy * scaling_factor#/grid_factor
 
         return pred_box_xy
-    return Lambda(func)
+    return Lambda(func, name='positions_' + str(i))
 
 def reshape_last_layer(out_size):
     def func(x):
@@ -223,6 +220,7 @@ as in previous version of uavTracker
 def convert_output_layers(inner_out_layers, input_image, out_size, num_class):
     output = []
     anchor = 0
+    scale_factor = np.float32(8)
 
     for fl in inner_out_layers[:3]:
 
@@ -231,8 +229,8 @@ def convert_output_layers(inner_out_layers, input_image, out_size, num_class):
         # process centre points for grid offsets and convert to image coordinates
         offs = crop(0,2)(finashaped)
         offs = Activation('sigmoid')(offs)
-        offs = positions()([offs, input_image])
-
+        offs = positions(scale_factor)([offs, scale_factor])
+        scale_factor *= 2
         # process anchor boxes
         szs = crop(2,4)(finashaped)
         szs = anchors(anchor)(szs)
@@ -347,33 +345,23 @@ def rescale():
 
     return Lambda(func)
 
-def convert_tracker(final_large, final_med, final_small):
+def convert_tracker(finals):
+    # finals = [final_large, final_med, final_small]
+    scale_factor = np.float32(8)
+    outs = []
 
-    s_offs = crop(0, 2)(final_small)
-    s_szs = crop(2, 4)(final_small)
-    s_szs = anchors(2)(s_szs)
-    s_offs = Activation('sigmoid')(s_offs)
-    s_offs = rescale()(s_offs)
-    s_offs = positions()(s_offs)
-    s_out = Concatenate()([s_offs, s_szs])
+    for final_layer in finals:
+        offs = crop(0, 2)(final_layer)
+        szs = crop(2, 4)(final_layer)
+        szs = anchors(2)(szs)
+        offs = Activation('sigmoid')(offs)
+        offs = rescale()(offs)
+        offs = positions(scale_factor)([offs, scale_factor])
+        scale_factor *= 2
+        out = Concatenate()([offs, szs])
+        outs.append(out)
 
-    m_offs = crop(0, 2)(final_med)
-    m_szs = crop(2, 4)(final_med)
-    m_szs = anchors(1)(m_szs)
-    m_offs = Activation('sigmoid')(m_offs)
-    m_offs = rescale()(m_offs)
-    m_offs = positions()(m_offs)
-    m_out = Concatenate()([m_offs, m_szs])
-
-    l_offs = crop(0, 2)(final_large)
-    l_szs = crop(2, 4)(final_large)
-    l_szs = anchors(0)(l_szs)
-    l_offs = Activation('sigmoid')(l_offs)
-    l_offs = rescale()(l_offs)
-    l_offs = positions()(l_offs)
-    l_out = Concatenate()([l_offs, l_szs])
-
-    return [l_out, m_out, s_out]
+    return outs
 
 def get_tracker_model():
 
@@ -401,7 +389,7 @@ def get_tracker_model():
     seq_small = LeakyReLU(alpha=0.1, name='leaky_seq_small')(seq_small)
     seq_small = Conv3D(4, 1, padding='same')(seq_small)
 
-    outputs = convert_tracker(seq_large, seq_med, seq_small)
+    outputs = convert_tracker([seq_large, seq_med, seq_small])
 
     model = Model([in_large, in_med, in_small], outputs)  #equence, raw_output)
     return model

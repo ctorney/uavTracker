@@ -3,7 +3,7 @@ Animal tracking from overhead using YOLO
 
 The code is based on https://github.com/experiencor/keras-yolo3 and https://github.com/abewley/sort
 
-Try the following example
+Try the following example:
 ## Toy example
 
 ```
@@ -42,6 +42,12 @@ python correctTracks.py -c ../experiments/toys.yml
 ```
 
 
+## DeepBeastLinker
+To initialise our custom deep learning linking run
+```
+git submodule update --init
+ ```
+ it is a private repository.
 ## Steps to create the tracker are
 ### Training/testing sets
 You can specify any number of training and testing sets that will be used as described in the experiment config file. Just take a look at the provided example.
