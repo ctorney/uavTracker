@@ -220,7 +220,7 @@ as in previous version of uavTracker
 def convert_output_layers(inner_out_layers, input_image, out_size, num_class):
     output = []
     anchor = 0
-    scale_factor = np.float32(8)
+    scale_factor = np.float32(32)
 
     for fl in inner_out_layers[:3]:
 
@@ -230,7 +230,7 @@ def convert_output_layers(inner_out_layers, input_image, out_size, num_class):
         offs = crop(0,2)(finashaped)
         offs = Activation('sigmoid')(offs)
         offs = positions(scale_factor)([offs, scale_factor])
-        scale_factor *= 2
+        scale_factor *= 0.5
         # process anchor boxes
         szs = crop(2,4)(finashaped)
         szs = anchors(anchor)(szs)
@@ -347,7 +347,7 @@ def rescale():
 
 def convert_tracker(finals):
     # finals = [final_large, final_med, final_small]
-    scale_factor = np.float32(8)
+    scale_factor = np.float32(32)
     outs = []
 
     for final_layer in finals:
@@ -357,7 +357,7 @@ def convert_tracker(finals):
         offs = Activation('sigmoid')(offs)
         offs = rescale()(offs)
         offs = positions(scale_factor)([offs, scale_factor])
-        scale_factor *= 2
+        scale_factor *= 0.5
         out = Concatenate()([offs, szs])
         outs.append(out)
 
