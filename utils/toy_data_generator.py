@@ -11,6 +11,7 @@ import cv2
 from collections import deque
 from scipy.special import softmax
 import colorsys
+from utils import init_config
 
 
 """
@@ -107,7 +108,7 @@ Our animal can have different colour or the same
 """
 
 class Zwierzak:
-    def __init__(self, zwkid, track_id, x_init,y_init, mm, hue=0, sat=1):
+    def __init__(self, zwkid, track_id, x_init,y_init, mm, genmodel, hue=0, sat=1):
         self.mm = mm #movememnt mode, each animus has its own now
         self.id = zwkid
         self.track_id = track_id #this changes whenever the animal disappears from view
@@ -121,6 +122,8 @@ class Zwierzak:
         self.iswide = 10
         self.speed = 2 #shouldn't that be mu_s?
         self.rng = np.random.default_rng()
+
+        self.genmodel = genmodel
         self.state = 0 #we will use state to define our little accelreated moments.
         self.state_time = 0
         self.external_coefficient_of_noise_term = 1
@@ -146,16 +149,20 @@ class Zwierzak:
     every now and then our ALF shrinks and gets a 10x boost of the noise term of the speed that should be visible in the rapid change of position in the next frame
     """
     def updateState(self):
+        #for simple model we do not mess with the state
+        if self.genmodel == 'simple':
+            return 0
+
         if self.state == 0:
             if self.rng.uniform() > 0.95: #prob of going into special state
                 self.state = 1
                 self.islong = 10
-                self.external_coefficient_of_noise_term = 50
+                self.external_coefficient_of_noise_term = 30
                 return 0
 
         if self.state == 1:
             self.state=0
-            self.islong=30
+            self.islong=20
             self.external_coefficient_of_noise_term = 1
             return 0
 
@@ -191,25 +198,106 @@ class Borders:
         self.y_max=yma
 
 
+def set_alfs(generator_config, setting, mr, side):
+    mu_s = generator_config[setting]['mu_s']
+    sigma_speed = generator_config[setting]['sigma_speed']
+    sigma_angular_velocity = generator_config[setting]['sigma_angular_velocity']
+    theta_speed = generator_config[setting]['theta_speed']
+    theta_angular_velocity = generator_config[setting]['theta_angular_velocity']
+    no_alfs = generator_config[setting]['no_alfs']
+    genmodel = generator_config[setting]['model']
+
+    alfs = []
+    for a in range(no_alfs):
+        x_init, y_init = map(int,map(round,mr.uniform(0, side-1, 2)))
+        mm = Mooveemodel(x_init,y_init,
+                            mu_s,
+                            sigma_speed,
+                            sigma_angular_velocity,
+                            theta_speed,
+                            theta_angular_velocity
+                            )
+        curalf = Zwierzak(f'alf{a}',
+                            a,
+                            x_init,
+                            y_init,
+                            mm,
+                            genmodel,
+                            hue=mr.uniform(0,1),
+                            sat=1)
+        alfs.append(curalf)
+    next_track_id = no_alfs
+    return alfs, next_track_id
+
+def updateAndDrawAlfs(alf, alfs, side, plane_cur, recthosealfs, img_data, it, next_track_id):
+    alf, is_same_panel = updateZwkPosition(alf,alfs,side)
+    if not is_same_panel:
+        alf.track_id = next_track_id
+        next_track_id += 1
+    cv2.ellipse(plane_cur,(alf.x_pos,alf.y_pos),(alf.islong,alf.iswide),alf.angle,0,360,colorsys.hsv_to_rgb(alf.hsv[0], alf.hsv[1],255),-1)
+    (head, r1,r2) = getRoI(alf)
+
+    cv2.circle(plane_cur,head,3,(0,255,255))
+
+    roiNotOnBorder = True #or beyond....
+    if \
+    r1[0]<=0 or \
+    r1[0]>=side or \
+    r2[0]<=0 or \
+    r2[0]>=side or \
+    r1[1]<=0 or \
+    r1[1]>=side or \
+    r2[1]<=0 or \
+    r2[1]>=side:
+        roiNotOnBorder = False
+
+    recthosealfs.append(alf.observationPointSwitch((is_same_panel and roiNotOnBorder)))
+
+    #uncomment the following line to see bounding boxez
+    # DEBUG cv2.rectangle(plane_cur,r1,r2,(123,20,255),2) # show bounding box
+
+    alf.topleft = (float(min(r1[0],r2[0])),float(min(r1[1],r2[1])))
+    alf.bottomright = (float(max(r1[0],r2[0])),float(max(r1[1],r2[1])))
+
+    obj = dict()
+    obj['name'] = 'toy'
+    obj['xmin'] = alf.topleft[0]
+    obj['ymin'] = alf.topleft[1]
+    obj['xmax'] = alf.bottomright[0]
+    obj['ymax'] = alf.bottomright[1]
+    obj['id'] = alf.id
+    obj['time']=it
+    img_data['object'] += [obj]
+
+    return recthosealfs, img_data, next_track_id
+
+def set_name(oname, setting, it):
+    return f'{oname}im_{setting}_{it:05d}'
+
 def main(args):
 
-    show_img = args.visual
-    #read from commandline
-    config_file = args.config[0]
-    with open(config_file, 'r') as configfile:
-        config = yaml.safe_load(configfile)
+    generator_config_file = args.gen[0]
+    with open(generator_config_file, 'r') as configfile:
+        generator_config = yaml.safe_load(configfile)
+    show_img = generator_config['visual']
+    side = (int(generator_config['size'])//32)*32 #The generator provides images with annotations so they have to be yolo-compatible size already
 
-    ddir = config['project_directory']
+    #read from command line
+    config = init_config(args)
+
+    ddir  = config['project_directory']
+    os.makedirs(ddir, exist_ok=True)
     oname = config['project_name']
-    side = (int(args.size[0])//32)*32 #The generator provides images with annotations so they have to be yolo-compatible size already
 
     print(f'Only square images work for now!')
 
+    # Prepare a list of when different things happen
     dp_train = config['subsets']['train']['number_of_images']
     dp_test = config['subsets']['test']['number_of_images']
     dp = dp_train + dp_test
-
-    os.makedirs(ddir, exist_ok=True)
+    dp_ratio = dp_train / dp
+    number_of_uavtracker_sets = len(generator_config['settings_for_uavtracker'])
+    dp_per_uavtracker_set = math.ceil(dp / number_of_uavtracker_sets)
 
     #Those are *not* raw images as we forcing them to be yolo-compatible size as they are _already_ annotated!
     #test_dir = os.path.join(ddir,config['raw_imgs_dir'],config['subsets']['test']['directory'])
@@ -238,179 +326,125 @@ def main(args):
 
     borders = Borders(1,1,side-1,side-1)
 
-
     hdplane = np.zeros((side,side,3),np.uint8)
-
-
     mr = np.random.default_rng()
+
     x_init, y_init = [side//2,side//2]
 
-    mu_s = 3
-    sigma_speed = 20
-    sigma_angular_velocity = 0.2
-    theta_speed = 0.5
-    theta_angular_velocity = 0.5
 
-    no_alfs = 3
-    alfs = []
-    for a in range(no_alfs):
-        x_init, y_init = map(int,map(round,mr.uniform(0, side-1, 2)))
-        mm = Mooveemodel(x_init,y_init,
-                         mr.integers(0,5), #mu_s,
-                         mr.integers(0,30),#sigma_speed,
-                         mr.uniform(0,0.4),#sigma_angular_velocity,
-                         mr.uniform(0,0.8),#theta_speed,
-                         mr.uniform(0,0.7),#theta_angular_velocity
-                         )
-        curalf = Zwierzak(f'alf{a}',
-                          a,
-                          x_init,
-                          y_init,
-                          mm,
-                          hue=mr.uniform(0,1),
-                          sat=1)
-        alfs.append(curalf)
-    next_track_id = no_alfs
-    #centre, axes W, H, angle, startagnel, endangle, colour, thinkcness
-    # cv2.ellipse(hdplane,(100,100),(50,10),30,0,360,(255,255,0),-1)
+    for setting in generator_config['settings']:
 
-    for it in range(dp):
-        plane_cur = hdplane.copy()
-        recthosealfs = [] #all animals must be visible and moving within current panel to be useful for training
-
-        #saving all the output:
-        save_name_seed = oname + 'im' + '{:05d}'.format(it)
-        save_name = save_name_seed + '.jpg'
-        fnames_gt = os.path.join(gt_dir, f'{save_name_seed}.txt')
-        one_fname_gt = os.path.join(an_dir, config['seq_fname'])
-
-        one_file_gt = open(one_fname_gt, 'a')
-        files_gt = open(fnames_gt, 'w')
-        img_data = {'object':[]}
-        img_data['filename'] = save_name
-        img_data['width'] = side
-        img_data['height'] = side
-
-        training_datapoint = it < dp_train
-
-        for alf in alfs:
-            alf, is_same_panel = updateZwkPosition(alf,alfs,side)
-            if not is_same_panel:
-                alf.track_id = next_track_id
-                next_track_id += 1
-            cv2.ellipse(plane_cur,(alf.x_pos,alf.y_pos),(alf.islong,alf.iswide),alf.angle,0,360,colorsys.hsv_to_rgb(alf.hsv[0], alf.hsv[1],255),-1)
-            (head, r1,r2) = getRoI(alf)
-
-            cv2.circle(plane_cur,head,3,(0,255,255))
-
-            roiNotOnBorder = True #or beyond....
-            if \
-            r1[0]<=0 or \
-            r1[0]>=side or \
-            r2[0]<=0 or \
-            r2[0]>=side or \
-            r1[1]<=0 or \
-            r1[1]>=side or \
-            r2[1]<=0 or \
-            r2[1]>=side:
-                roiNotOnBorder = False
-
-            recthosealfs.append(alf.observationPointSwitch((is_same_panel and roiNotOnBorder)))
-
-            #uncomment the following line to see bounding boxez
-            # DEBUG cv2.rectangle(plane_cur,r1,r2,(123,20,255),2) # show bounding box
-
-            alf.topleft = (float(min(r1[0],r2[0])),float(min(r1[1],r2[1])))
-            alf.bottomright = (float(max(r1[0],r2[0])),float(max(r1[1],r2[1])))
-            obj = dict()
-            obj['name'] = 'toy'
-            obj['xmin'] = alf.topleft[0]
-            obj['ymin'] = alf.topleft[1]
-            obj['xmax'] = alf.bottomright[0]
-            obj['ymax'] = alf.bottomright[1]
-            obj['id'] = alf.id
-            obj['time']=it
-            img_data['object'] += [obj]
-
-            # print("New TL again: {}".format(alf.topleft[0]))
-            # print("Old TL: {}".format(alf.topleft_prev[0]))
-
-        #only record the sequence for training images
-        recthosealfs.append(training_datapoint)
-        # print(recthosealfs)
-        record_the_seq = np.all(recthosealfs)
-
-        if record_the_seq:
-            #DEBUG cv2.putText(plane_cur, "R",  (30,30), cv2. FONT_HERSHEY_COMPLEX_SMALL, 1.0, (0,0,250), 2);
-            seq_data = {'object':[]}
-            seq_data['filename'] = save_name
-            seq_data['p1_filename'] = oname + 'im' + '{:05d}'.format(it-1) + '.jpg'
-            seq_data['p2_filename'] = oname + 'im' + '{:05d}'.format(it-2) + '.jpg'
-            seq_data['width'] = side
-            seq_data['height'] = side
-
-        for alf in alfs:
-            if record_the_seq:
-                obj = {}
-                obj['name'] = 'toy'
-                obj['xmin'] = alf.topleft[0]
-                obj['ymin'] = alf.topleft[1]
-                obj['xmax'] = alf.bottomright[0]
-                obj['ymax'] = alf.bottomright[1]
-                obj['pxmin'] = alf.topleft_prev[0]
-                obj['pymin'] = alf.topleft_prev[1]
-                obj['pxmax'] = alf.bottomright_prev[0]
-                obj['pymax'] = alf.bottomright_prev[1]
-                seq_data['object'] += [obj]
-
-            one_file_gt.write(save_name + " ")
-            one_file_gt.write(str(alf.track_id) + " ")
-            one_file_gt.write(str(alf.topleft[0]) + " ")
-            one_file_gt.write(str(alf.topleft[1]) + " ")
-            one_file_gt.write(str(alf.bottomright[0]) + " ")
-            one_file_gt.write(str(alf.bottomright[1]))
-            one_file_gt.write('\n')
-
-            files_gt.write('toy' + " ")
-            files_gt.write(str(alf.topleft[0]) + " ")
-            files_gt.write(str(alf.topleft[1]) + " ")
-            files_gt.write(str(alf.bottomright[0]) + " ")
-            files_gt.write(str(alf.bottomright[1]))
-            files_gt.write('\n')
-
-            alf.topleft_prev = alf.topleft
-            alf.bottomright_prev = alf.bottomright
-
-        files_gt.close()
-
-        if record_the_seq:
-            all_seq += [seq_data]
-
-        if (training_datapoint):
-            cv2.imwrite(train_dir + '/' + save_name,plane_cur)
-            out_train.write(plane_cur)
+        if setting in generator_config['settings_for_uavtracker']:
+            setting_for_uavtracker = True
         else:
-            cv2.imwrite(test_dir + '/' + save_name,plane_cur)
-            out_test.write(plane_cur)
+            setting_for_uavtracker = False
 
-        all_imgs += [img_data]
+        print(f'Preparing data with setting {setting} with, setting_for_uavtracker={setting_for_uavtracker}')
 
-        if show_img:# and record_the_seq:
-            cv2.imshow("hdplane",plane_cur)
-            key = cv2.waitKey(0)
-            if key==ord('q'):
-                break
+        alfs, next_track_id = set_alfs(generator_config, setting, mr, side)
+        one_fname_gt = os.path.join(an_dir, f'{setting}.txt')
+        video_gt = cv2.VideoWriter(os.path.join(video_dir,f'{setting}.avi'), fourCC, 5, (side,side), True)
+        one_file_gt = open(one_fname_gt, 'a')
 
+        for it in range(dp_per_uavtracker_set):
+            plane_cur = hdplane.copy()
+            recthosealfs = [] #all animals must be visible and moving within current panel to be useful for training
+            save_name_seed = set_name(oname, setting, it)
+            save_name = f'{save_name_seed}.jpg'
+            img_data = {'object':[]}
+            img_data['filename'] = save_name
+            img_data['width'] = side
+            img_data['height'] = side
+
+            for alf in alfs:
+                recthosealfs, img_data, next_track_id = updateAndDrawAlfs(alf, alfs, side, plane_cur, recthosealfs, img_data, it, next_track_id)
+
+            #saving all the output:
+            fnames_gt = os.path.join(gt_dir, f'{save_name_seed}.txt')
+            files_gt = open(fnames_gt, 'w')
+
+            training_datapoint = it < (dp_ratio * dp_per_uavtracker_set)
+
+            #only record the sequence for training images
+            recthosealfs.append(training_datapoint)
+            #only record sequence for those images that are used for training
+            recthosealfs.append(setting_for_uavtracker)
+            # print(recthosealfs)
+            record_the_seq = np.all(recthosealfs)
+
+            #recording this sequence for linker training/testing
+            if record_the_seq:
+                #DEBUG cv2.putText(plane_cur, "R",  (30,30), cv2. FONT_HERSHEY_COMPLEX_SMALL, 1.0, (0,0,250), 2);
+                seq_data = {'object':[]}
+                seq_data['filename'] = save_name
+                p1_fname = set_name(oname, setting, it-1)
+                p2_fname = set_name(oname, setting, it-2)
+                seq_data['p1_filename'] = f'{p1_fname}.jpg'
+                seq_data['p2_filename'] = f'{p2_fname}.jpg'
+
+            for alf in alfs:
+                if record_the_seq:
+                    obj = {}
+                    obj['name'] = 'toy'
+                    obj['xmin'] = alf.topleft[0]
+                    obj['ymin'] = alf.topleft[1]
+                    obj['xmax'] = alf.bottomright[0]
+                    obj['ymax'] = alf.bottomright[1]
+                    obj['pxmin'] = alf.topleft_prev[0]
+                    obj['pymin'] = alf.topleft_prev[1]
+                    obj['pxmax'] = alf.bottomright_prev[0]
+                    obj['pymax'] = alf.bottomright_prev[1]
+                    seq_data['object'] += [obj]
+
+                one_file_gt.write(save_name + " ")
+                one_file_gt.write(str(alf.track_id) + " ")
+                one_file_gt.write(str(alf.topleft[0]) + " ")
+                one_file_gt.write(str(alf.topleft[1]) + " ")
+                one_file_gt.write(str(alf.bottomright[0]) + " ")
+                one_file_gt.write(str(alf.bottomright[1]))
+                one_file_gt.write('\n')
+
+                files_gt.write('toy' + " ")
+                files_gt.write(str(alf.topleft[0]) + " ")
+                files_gt.write(str(alf.topleft[1]) + " ")
+                files_gt.write(str(alf.bottomright[0]) + " ")
+                files_gt.write(str(alf.bottomright[1]))
+                files_gt.write('\n')
+
+                alf.topleft_prev = alf.topleft
+                alf.bottomright_prev = alf.bottomright
+
+            files_gt.close()
+
+            video_gt.write(plane_cur)
+            if record_the_seq:
+                all_seq += [seq_data]
+
+            if setting_for_uavtracker:
+                all_imgs += [img_data]
+                if (training_datapoint):
+                    cv2.imwrite(train_dir + '/' + save_name,plane_cur)
+                    out_train.write(plane_cur)
+                else:
+                    cv2.imwrite(test_dir + '/' + save_name,plane_cur)
+                    out_test.write(plane_cur)
+
+            if show_img:
+                cv2.imshow("hdplane",plane_cur)
+                key = cv2.waitKey(0)
+                if key==ord('q'):
+                    break
+
+        video_gt.release()
+        setting_for_uavtracker = False
+        one_file_gt.close()
 
     with open(annotations_file, 'w') as handle:
         yaml.dump(all_imgs, handle)
     with open(sequence_file, 'w') as handle:
         yaml.dump(all_seq, handle)
 
-    # hdplane = showTrace(hsv_plane,alf,side,ch)
-    # cv2.imshow("hdplane",hdplane)
-    # cv2.waitKey(0)
-    print('done and done!')
+    print('Done and done!')
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
@@ -421,10 +455,8 @@ if __name__ == '__main__':
         epilog=
         'Any issues and clarifications: github.com/mixmixmix/moovemoo/issues')
     parser.add_argument('--config', '-c', required=True, nargs=1, help='Your yml config file')
-    parser.add_argument('--visual', '-v', default=False, action='store_true',
-                        help='Show the process')
-    parser.add_argument('--size', '-s', required=True, default=False, nargs=1,
-                        help='Size of the image')
+    parser.add_argument('--gen', '-g', required=True, nargs=1,
+                        help='Additional parameters for the generator')
 
 
     args = parser.parse_args()
