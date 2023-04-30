@@ -1,0 +1,73 @@
+visual: False
+size: 400 #if not multiple of 32 it will be made to!
+
+settings: ['alpha', 'beta' , 'A', 'B', 'C', 'D']
+settings_for_uavtracker: ['alpha']
+
+alpha:
+  mu_s: 3
+  sigma_speed: 20
+  sigma_angular_velocity: 0.2
+  theta_speed: 0.5
+  theta_angular_velocity: 0.5
+  no_alfs: 3
+  model: 'simple'
+
+beta:
+  mu_s: 3
+  sigma_speed: 20
+  sigma_angular_velocity: 0.2
+  theta_speed: 0.5
+  theta_angular_velocity: 0.5
+  no_alfs: 1
+  model: 'complex_1'
+
+#continuous speed straight line
+A:
+  mu_s: 15
+  sigma_speed: 0
+  sigma_angular_velocity: 0
+  theta_speed: 0
+  theta_angular_velocity: 0
+  no_alfs: 1
+  model: 'simple'
+
+#straight line OU speed
+B:
+  mu_s: 7
+  sigma_speed: 15
+  sigma_angular_velocity: 0.1
+  theta_speed: 0
+  theta_angular_velocity: 0
+  no_alfs: 1
+  model: 'simple'
+
+#slow acceleration OU
+C:
+  mu_s: 10
+  sigma_speed: 0.3
+  sigma_angular_velocity: 0
+  theta_speed: 0.05
+  theta_angular_velocity: 0.5
+  no_alfs: 1
+  model: 'simple'
+
+#OU process
+C:
+  mu_s: 8
+  sigma_speed: 10
+  sigma_angular_velocity: 0.1
+  theta_speed: 0.1
+  theta_angular_velocity: 0.3
+  no_alfs: 1
+  model: 'simple'
+
+#OU process
+D:
+  mu_s: 15
+  sigma_speed: 3
+  sigma_angular_velocity: 1.8
+  theta_speed: 0.1
+  theta_angular_velocity: 0.5
+  no_alfs: 1
+  model: 'simple'
