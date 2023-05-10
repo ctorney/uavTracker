@@ -276,3 +276,37 @@ def save_pascal_pred_detect_file(boxes_predict,i,fname_pred,args_visual,frame,ma
                 str_conf = "{:.1f}".format(objpred['confidence'])
                 cv2.putText(frame, str_conf,  (int(objpred['xmax']),int(objpred['ymax'])), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.8, (200,200,250), 1);
     return frame
+
+
+"""
+For simplicity all of the frames are the same size
+"""
+def showOnMosaic(namelist, framelist, waittime, rowlength, resized_width=None):
+    nframes = len(framelist)
+    nrows = math.ceil(nframes/rowlength)
+    fwidth = framelist[0].shape[0]
+    fheight = framelist[0].shape[1]
+    ftype = framelist[0].dtype
+
+    width = int(rowlength*fwidth)
+    height = int(fheight * nrows)
+
+    full_display = np.zeros((height,width,3),frame.dtype)
+
+    #fill in
+    for iii in range(nframes):
+        tx = iii//rowlength * fwidth
+        ty = iii%rowlength * fheight
+        full_display[tx:(tx + fwidth),
+                     ty:(ty + fheight),
+                     :] = framelist[iii]
+
+    #TODO add captions under imgs
+
+    #resizeing - mind that it doesn't allow for image to be larger than certain size possibly related to the screen resolution
+    if resized_width:
+        full_display = cv2.resize(full_display, (resized_width, int(resized_width * full_display.shape[1]/full_display.shape[0])), interpolation=cv2.INTER_CUBIC)
+    cv2.imshow("Mosaic", full_display)
+
+    key = cv2.waitKey(waittime)
+    return key
