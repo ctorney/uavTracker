@@ -6,5 +6,5 @@ python toy_data_generator.py -c ../experiments/toys.yml -g ../experiments/toys_g
 cd ../data/toys
 ln -s ../../weights .
 cd ../../train
-python train.py -c ../experiments/toys.yml 
+python train.py -c ../experiments/toys.yml --test-run
 python postTrainTest.py -c ../experiments/toys.yml
