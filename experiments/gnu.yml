@@ -1,0 +1,71 @@
+project_name: 'gnu'
+project_directory: '../data/gnu'
+c_date: '2023May15'
+
+weights_dir: 'weights/'
+annotations_dir: 'annotations/'
+
+raw_imgs_dir: 'raw_imgs/'
+tracks_dir: 'extracted_tracks/'
+bbox_images_dir: 'extracted_tracks/'
+groundtruths_dir: 'results/groundtruths/'
+predictions_dir: 'results/predictions/'
+results_dir: 'results/'
+
+autogen_annotations_fname: 'annotations-checked.yml'
+autogen_annotations_md5 : 'dc25eb4a6e0a92f601706bdf5f3c6740'
+checked_annotations_fname: 'annotations-checked.yml'
+checked_annotations_md5 : 'dc25eb4a6e0a92f601706bdf5f3c6740'
+
+results_config_name: 'wildesults_file.yml'
+
+models:
+  modelbeest:
+    pretrained_weights: 'yolo-v3-coco.h5'
+    pretrained_weights_md5: "26cf8e8b5ba9d9d4a3778f9747e3407a" #leave empty if you are retraining
+    training_sets: ['train']
+    phases: 2
+    num_class: 1
+    obj_thresh: 0.8
+    nms_thresh: 0.1
+    phase_one:
+      BATCH_SIZE: 16
+      EPOCHS: 500
+      LR: 0.5e-3
+      B1: 0.9
+      B2: 0.999
+      EPS: 0.1e-7
+      MIN_DELTA: 0
+      PATIENCE: 20
+    phase_two:
+      BATCH_SIZE: 2
+      EPOCHS: 100
+      LR: 0.1e-4
+      B1: 0.9
+      B2: 0.999
+      EPS: 0.1e-7
+      MIN_DELTA: 0
+      PATIENCE: 20
+
+testing_sets: ['train']
+
+subsets:
+  train:
+    directory: 'subsets/train/'
+    number_of_images: 20000
+    description: ''
+    filelist: ''
+    regex: '*.JPG'
+
+common:
+  LABELS: ['wildebeest']
+  MAX_L: 100
+  MIN_L: 4
+  OBJECT_SCALE: 5.0
+  NO_OBJECT_SCALE: 1.0
+  COORD_SCALE: 2.0
+  CLASS_SCALE: 1.0
+  display: 1
+  save_output: 1
+  show_detections: 1 # flag to show all detections in image
+  corrections_buffer_size: 200 #number of frames kept in the memory for rewinding back the tracks

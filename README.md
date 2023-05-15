@@ -334,3 +334,16 @@ The transitions file is applied first so "switches" are applied after that corre
 After a full run the program produces a `_corrected` file with positions in the same format as the original output with your corrections incorporated
 
 `python correctTracks.py -c ../experiments/alfs23_tracking.yml`
+
+### Ticks and trips
+
+If you want to view the checked annotations you can provide their filename in the config as `autogen` annotations. As long as `checked` file is new/empty, `annotate.py` program will be displaying every image with boundingboxes for you to correct.
+``` config.yml
+autogen_annotations_fname: 'annotations-checked.yml'
+autogen_annotations_md5 : 'dc25eb4a6e0a92f601706bdf5f3c6740'
+checked_annotations_fname: 'annotations-triple-checked.yml' #do not exist yet
+checked_annotations_md5 : ''
+```
+```
+python annotate.py -c ../experiments/gnu.yml
+```
