@@ -395,23 +395,6 @@ def get_tracker_model():
     return model
 
 
-def load_yolos(num_class, args_tracker, trained_detector_weights, trained_linker_weights):
-    ##################################################
-    print("Loading YOLO models")
-    print("We will use the following model for testing of detection: ")
-    print(trained_detector_weights)
-    yolov3 = get_yolo_model(num_class, trainable=False, rawfeatures = args_tracker)
-    yolov3.load_weights(
-        trained_detector_weights, by_name=False)
-    print("We will use the following model for testing of linking: ")
-    print(trained_linker_weights)
-    yolov3link = get_tracker_model()
-    yolov3link.load_weights(
-        trained_linker_weights, by_name=False)
-    print("YOLO models loaded, my dear.")
-    ########################################
-    return yolov3, yolov3link
-
 class yolo_model():
 
     def __init__(self, labelclassMap, state, alltrain=False):
