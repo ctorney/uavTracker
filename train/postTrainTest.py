@@ -10,17 +10,16 @@ import pickle
 sys.path.append('..')
 from models.yolo_models import get_yolo_model
 from utils.decoder import decode, interval_overlap, bbox_iou, get_prediction_results, get_AP
-from utils.utils import md5check, read_tsets
+from utils.utils import md5check, read_tsets, init_config
 
 def main(args):
-    args_visual = args.visual
-    step_by_step = args.step_by_step
+
+    config = init_config(args)
+
+    step_by_step = config['args_step_by_step']
+    args_visual = config['args_visual']
     if step_by_step:
         args_visual = True
-    #Load data
-    print('Opening file' + args.config[0])
-    with open(args.config[0], 'r') as configfile:
-        config = yaml.safe_load(configfile)
 
     #loading args ends here, so it is easier to run section by section in interpreter shell
     data_dir = config['project_directory']

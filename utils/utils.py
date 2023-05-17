@@ -15,6 +15,7 @@ def init_config(
               'output': ['tmp.txt'],
               'resume': False,
               'from_scratch': False,
+              'step_by_step': False
               }):
     #convert this stupid Namespace object to a normal cuddly dictionary
     if type(args)!=dict:
@@ -30,6 +31,7 @@ def init_config(
     config['args_visual'] = args['visual'] if ('visual' in args.keys()) else False
     config['args_resume'] = args['resume'] if ('resume' in args.keys()) else False
     config['args_from_scratch'] = args['from_scratch'] if ('from_scratch' in args.keys()) else False
+    config['args_step_by_step'] = args['step_by_step'] if ('step_by_step' in args.keys()) else False
     config['args_tracker'] = args['tracker'] if ('tracker' in args.keys()) else False
     config['args_step'] = args['step'] if ('step' in args.keys()) else False
     config['args_output'] = args['output'][0] if ('output' in args.keys() and type(args['output'])==list) else False
