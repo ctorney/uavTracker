@@ -16,7 +16,7 @@ def main(args):
 
     config = init_config(args)
 
-    step_by_step = config['args_step_by_step']
+    step_by_step = config['args_step']
     args_visual = config['args_visual']
     if step_by_step:
         args_visual = True
@@ -293,7 +293,7 @@ if __name__ == '__main__':
         '--config', '-c', required=True, nargs=1, help='Your yml config file')
     parser.add_argument('--visual', '-v', default=False, action='store_true',
                         help='Display tracking progress')
-    parser.add_argument('--step-by-step', '-s', default=False, action='store_true',
+    parser.add_argument('--step', '-s', default=False, action='store_true',
                         help='step by step!')
 
     args = parser.parse_args()

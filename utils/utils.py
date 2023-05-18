@@ -31,7 +31,7 @@ def init_config(
     config['args_visual'] = args['visual'] if ('visual' in args.keys()) else False
     config['args_resume'] = args['resume'] if ('resume' in args.keys()) else False
     config['args_from_scratch'] = args['from_scratch'] if ('from_scratch' in args.keys()) else False
-    config['args_step_by_step'] = args['step_by_step'] if ('step_by_step' in args.keys()) else False
+    config['args_step'] = args['step'] if ('step' in args.keys()) else False
     config['args_tracker'] = args['tracker'] if ('tracker' in args.keys()) else False
     config['args_step'] = args['step'] if ('step' in args.keys()) else False
     config['args_output'] = args['output'][0] if ('output' in args.keys() and type(args['output'])==list) else False
@@ -283,7 +283,13 @@ def save_pascal_pred_detect_file(boxes_predict,i,fname_pred,args_visual,frame,ma
 """
 For simplicity all of the frames are the same size
 """
-def showOnMosaic(namelist, framelist, waittime, rowlength, resized_width=None):
+def showOnMosaic(namelist,
+                 framelist,
+                 waittime,
+                 rowlength,
+                 resized_width=None,
+                 display = True,
+                 output_stream = None):
     margin = 10
     space_for_label = 10
 
@@ -311,7 +317,11 @@ def showOnMosaic(namelist, framelist, waittime, rowlength, resized_width=None):
     #resizing - mind that it doesn't allow for image to be larger than certain size possibly related to the screen resolution
     if resized_width:
         full_display = cv2.resize(full_display, (resized_width, int(resized_width * full_display.shape[1]/full_display.shape[0])), interpolation=cv2.INTER_CUBIC)
-    cv2.imshow("Mosaic", full_display)
+    if display:
+        cv2.imshow("Mosaic", full_display)
+
+    if output_stream:
+        output_stream.write(full_display)
 
     key = cv2.waitKey(waittime)
     return key
