@@ -109,6 +109,7 @@ class KalmanBoxSortTracker(object):
     self.hit_streak = 0
     self.age = 0
     self.score = bbox[4]
+    self.long_score = bbox[4]/2 #when creating track the long_score is halved to indicate our uncertainty over one high-confidence detection
 
   def update(self,bbox):
     """
@@ -119,6 +120,7 @@ class KalmanBoxSortTracker(object):
     self.hits += 1
     self.hit_streak += 1
     self.score = (self.score*(self.hits-1.0)/float(self.hits)) + (bbox[4]/float(self.hits))
+    self.long_score = (self.long_score*(self.age-1.0)/float(self.age)) + (bbox[4]/float(self.age)) #average of the entire track
     self.kf.update(convert_bbox_to_z(bbox))
 
   def predict(self):
@@ -131,6 +133,7 @@ class KalmanBoxSortTracker(object):
     self.age += 1
     if(self.time_since_update>0):
       self.hit_streak = 0
+      self.long_score = (self.long_score*(self.age-1.0)/float(self.age)) #We are back-filling the score for the missed detection from the previous update
     self.time_since_update += 1
     self.history.append(convert_x_to_bbox(self.kf.x))
     return self.history[-1]
@@ -259,7 +262,7 @@ def associate_detections_to_trackers(detections,trackers,iou_threshold = 0.3):
 
 
 class yoloTracker(object):
-    def __init__(self,max_age=1,track_threshold=0.5, init_threshold=0.9, init_nms=0.0,link_iou=0.3, hold_without=3 ):
+    def __init__(self,max_age=1,track_threshold=0.5, init_threshold=0.9, init_nms=0.0,link_iou=0.3, hold_without=3, kalman_type='torney' ):
         """
         Sets key parameters for YOLOtrack
         """
@@ -271,8 +274,11 @@ class yoloTracker(object):
         self.init_threshold = init_threshold # threshold confidence to initialise a track, note this is much higher than the detection threshold
         self.init_nms = init_nms # threshold overlap to initialise a track - set to 0 to only initialise if not overlapping another tracked detection
         self.link_iou = link_iou # only link tracks if the predicted box overlaps detection by this amount
-        KalmanBoxTracker.count = 0
-
+        self.kalman_type = kalman_type
+        if self.kalman_type == 'sort':
+            KalmanBoxSortTracker.count = 0
+        else:
+            KalmanBoxTracker.count = 0
     def update(self,dets):
         """
         Params:
@@ -320,7 +326,10 @@ class yoloTracker(object):
             dets= dets[dets[:,4]>0]
 
         for det in dets:
-            trk = KalmanBoxTracker(det[:])
+            if self.kalman_type == 'sort':
+                trk = KalmanBoxSortTracker(det[:])
+            else:
+                trk = KalmanBoxTracker(det[:])
             self.trackers.append(trk)
 
         i = len(self.trackers)
