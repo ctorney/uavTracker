@@ -279,24 +279,27 @@ class yoloTracker(object):
             KalmanBoxSortTracker.count = 0
         else:
             KalmanBoxTracker.count = 0
-    def update(self,dets):
-        """
-        Params:
-          dets - a numpy array of detections in the format [[x1,y1,x2,y2,score],[x1,y1,x2,y2,score],...]
-        Requires: this method must be called once for each frame even with empty detections.
-        Returns a similar array, where the last column is the object ID.
-
-        NOTE: The number of objects returned may differ from the number of detections provided.
-        """
+    def update_0_predict(self):
         self.frame_count += 1
         #get predicted locations from existing trackers.
-        trks = np.zeros((len(self.trackers),5))
-
-        ret = []
         for t,trk in enumerate(self.trackers):
             self.trackers[t].predict()
 
+        ret = []
+        for trk in (self.trackers):
+            if trk.kalman_type == 'torney':
+                d = convert_kfx_to_bbox(trk.kf.x)[0]
+            else:
+                d = convert_x_to_bbox(trk.kf.x)[0]
+            ret.append(np.concatenate((d,[trk.id,trk.long_score,trk.score])).reshape(1,-1))
 
+        #The following lines are very important because python secretly cares about data types very much.
+        if(len(ret)>0):
+            return np.concatenate(ret)
+        return np.empty((0,5))
+
+    def update_1_update(self, dets):
+        ret = []
         matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(dets,self.trackers, self.link_iou)
         #update matched trackers with assigned detections
         for t,trk in enumerate(self.trackers):
@@ -352,3 +355,17 @@ class yoloTracker(object):
         if(len(ret)>0):
             return np.concatenate(ret)
         return np.empty((0,5))
+
+    def update(self,dets):
+        """
+        Params:
+          dets - a numpy array of detections in the format [[x1,y1,x2,y2,score],[x1,y1,x2,y2,score],...]
+        Requires: this method must be called once for each frame even with empty detections.
+        Returns a similar array, where the last column is the object ID.
+
+        NOTE: The number of objects returned may differ from the number of detections provided.
+
+        #This function is broken down into two steps so it can be run separately if needed
+        """
+        self.update_0_predict()
+        return self.update_1_update(dets)
