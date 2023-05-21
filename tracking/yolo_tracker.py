@@ -84,6 +84,7 @@ class KalmanBoxSortTracker(object):
   """
   This class represents the internal state of individual tracked objects observed as bbox.
   """
+  kalman_type='sort'
   count = 0
   def __init__(self,bbox):
     """
@@ -102,12 +103,11 @@ class KalmanBoxSortTracker(object):
 
     self.kf.x[:4] = convert_bbox_to_z(bbox)
     self.time_since_update = 0
-    self.id = KalmanBoxTracker.count
-    KalmanBoxTracker.count += 1
-    self.history = []
+    self.id = KalmanBoxSortTracker.count
+    KalmanBoxSortTracker.count += 1
     self.hits = 0
     self.hit_streak = 0
-    self.age = 0
+    self.age = 1
     self.score = bbox[4]
     self.long_score = bbox[4]/2 #when creating track the long_score is halved to indicate our uncertainty over one high-confidence detection
 
@@ -116,7 +116,6 @@ class KalmanBoxSortTracker(object):
     Updates the state vector with observed bbox.
     """
     self.time_since_update = 0
-    self.history = []
     self.hits += 1
     self.hit_streak += 1
     self.score = (self.score*(self.hits-1.0)/float(self.hits)) + (bbox[4]/float(self.hits))
@@ -135,8 +134,6 @@ class KalmanBoxSortTracker(object):
       self.hit_streak = 0
       self.long_score = (self.long_score*(self.age-1.0)/float(self.age)) #We are back-filling the score for the missed detection from the previous update
     self.time_since_update += 1
-    self.history.append(convert_x_to_bbox(self.kf.x))
-    return self.history[-1]
 
   def get_state(self):
     """
@@ -149,6 +146,7 @@ class KalmanBoxTracker(object):
     This class represents the internel state of individual tracked objects observed as bbox.
     """
     count = 0
+    kalman_type='torney'
     def __init__(self,bbox):
         """
         Initialises a tracker using initial bounding box.
@@ -227,10 +225,12 @@ def associate_detections_to_trackers(detections,trackers,iou_threshold = 0.3):
 
     for d,det in enumerate(detections):
         for t,trk in enumerate(trackers):
-            trackBox = convert_kfx_to_bbox(trk.kf.x[:4])[0]
+            if trk.kalman_type == 'torney':
+                trackBox = convert_kfx_to_bbox(trk.kf.x[:4])[0]
+            else:
+                trackBox = convert_x_to_bbox(trk.kf.x[:4])[0]
             iou_matrix[d,t] = bbox_iou(trackBox, det)
             id_matrix[d,t] = scale_id*det[4]
-
     matched_indices = linear_assignment(-iou_matrix-id_matrix)
 
     unmatched_detections = []
@@ -298,7 +298,6 @@ class yoloTracker(object):
 
 
         matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(dets,self.trackers, self.link_iou)
-
         #update matched trackers with assigned detections
         for t,trk in enumerate(self.trackers):
             if(t not in unmatched_trks):
@@ -310,7 +309,10 @@ class yoloTracker(object):
         for t,trk in enumerate(self.trackers):
             if(t in unmatched_trks):
 
-                d = convert_kfx_to_bbox(trk.kf.x)[0]
+                if trk.kalman_type == 'torney':
+                    d = convert_kfx_to_bbox(trk.kf.x)[0]
+                else:
+                    d = convert_x_to_bbox(trk.kf.x)[0]
                 d = np.append(d,np.array([2]), axis=0)
                 d = np.expand_dims(d,0)
 
@@ -340,7 +342,10 @@ class yoloTracker(object):
                 self.trackers.pop(i)
 
         for trk in (self.trackers):
-            d = convert_kfx_to_bbox(trk.kf.x)[0]
+            if trk.kalman_type == 'torney':
+                d = convert_kfx_to_bbox(trk.kf.x)[0]
+            else:
+                d = convert_x_to_bbox(trk.kf.x)[0]
             if ((trk.time_since_update < self.hold_without) and (trk.long_score>self.track_threshold)):
                 ret.append(np.concatenate((d,[trk.id,trk.long_score,trk.score])).reshape(1,-1))
 
