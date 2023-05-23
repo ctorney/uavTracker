@@ -8,4 +8,4 @@ allfiles =glob.glob(f'{all_folder}/*.JPG')
 
 rng = default_rng()
 for iii in rng.choice(len(allfiles),imgs_to_pull, replace=False):
-    shutil.move(allfiles[iii], os.path.join(output_folder,os.path.basename(allfiles[0])))
+    shutil.move(allfiles[iii], os.path.join(output_folder,os.path.basename(allfiles[iii])))
