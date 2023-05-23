@@ -154,10 +154,27 @@ subsets:
     filelist: ''
     regex: '*.png'
 
+tracking_setup: 'koala'
+
+koala:
+  videos_name_regex: "behaviour/*.mp4" #for use by transform.py which also preps the following yml file
+  videos_fps: 10
+  link_iou: 0.1
+  step_frames: 1 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
+  videos_list: "my_videos.yml" #after transforms.py was run this is where video list live
+  weights: 'any_light_smolts_drondo_phase_two_2023Feb01.h5'
+  weights_md5: "8816a826ac98be3ef0e479cfe85363c7"
+  num_class: 1
+  obj_thresh: 0.5
+  nms_thresh: 0.3
+  max_age: 6 #how
+  track_thresh: 0.75 #only return tracks with average confidence above this value
+  init_thresh: 0.8
+  init_nms: 0.5
+  hold_without: 6 #how long to show track alive without detections (at max age it will be killed anyway
+
 common:
   LABELS: ['aoi']
-  IMAGE_W: 1280 # or must be a multiplier of 32 in current version
-  IMAGE_H: 704 #must match whatever yolo model was trained on
   MAX_L: 300
   MIN_L: 20
 
@@ -165,3 +182,7 @@ common:
   OBJECT_SCALE: 5.0
   COORD_SCALE: 2.0
   CLASS_SCALE: 1.0
+  display: 1
+  save_output: 1
+  show_detections: 1 # flag to show all detections in image
+  corrections_buffer_size: 200 #number of frames kept in the memory for rewinding back the tracks

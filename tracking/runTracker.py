@@ -205,7 +205,7 @@ def main(args):
                 tracks = tracker.update(np.asarray(detections))
 
                 if show_detections:
-                    frame = showDetections(detections, frame, full_warp, save_output)
+                    frame = showDetections(detections, frame, full_warp)
 
                 cv2.putText(frame, str(i),  (30,60), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2);
 
