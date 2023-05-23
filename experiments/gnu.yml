@@ -29,7 +29,7 @@ models:
   modelbeest:
     pretrained_weights: 'yolo-v3-coco.h5'
     pretrained_weights_md5: "26cf8e8b5ba9d9d4a3778f9747e3407a" #leave empty if you are retraining
-    training_sets: ['train']
+    training_sets: ['train_old']
     phases: 2
     num_class: 1
     obj_thresh: 0.8
