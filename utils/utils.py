@@ -14,6 +14,7 @@ def init_config(
               'test_run': False,
               'output': ['tmp.txt'],
               'resume': False,
+              'read_only': False,
               'from_scratch': False,
               'step_by_step': False
               }):
@@ -31,6 +32,7 @@ def init_config(
     config['args_visual'] = args['visual'] if ('visual' in args.keys()) else False
     config['args_resume'] = args['resume'] if ('resume' in args.keys()) else False
     config['args_from_scratch'] = args['from_scratch'] if ('from_scratch' in args.keys()) else False
+    config['args_read_only'] = args['read_only'] if ('read_only' in args.keys()) else False
     config['args_step'] = args['step'] if ('step' in args.keys()) else False
     config['args_tracker'] = args['tracker'] if ('tracker' in args.keys()) else False
     config['args_step'] = args['step'] if ('step' in args.keys()) else False

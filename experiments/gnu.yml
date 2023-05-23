@@ -13,15 +13,15 @@ predictions_dir: 'results/predictions/'
 results_dir: 'results/'
 
 autogen_model:
-  pretrained_weights: 'gnu_trainedwithouttestset.h5'
-  pretrained_weights_md5: "ea064ba7544f23cfbb2aca724332b85b" #leave empty if you are retraining
+  pretrained_weights: 'gnu_trainedwithouttestset_phaseone.h5'
+  pretrained_weights_md5: "0413e6a0a8cf9d815fb42e1956103479" #leave empty if you are retraining
   num_class: 1
-  obj_thresh: 0.9
-  nms_thresh: 0.05
-autogen_annotations_fname: 'annotations-checked.yml'
-autogen_annotations_md5 : 'dc25eb4a6e0a92f601706bdf5f3c6740'
-checked_annotations_fname: 'annotations-checked.yml'
-checked_annotations_md5 : 'dc25eb4a6e0a92f601706bdf5f3c6740'
+  obj_thresh: 0.75
+  nms_thresh: 0.2
+autogen_annotations_fname: 'annotations-autogen_incl23_1.yml'
+autogen_annotations_md5 : '044e9518ecef5eba99d062b97b4966c8'
+checked_annotations_fname: 'annotations-checked_incl23_1.yml'
+checked_annotations_md5 : '5dbf041f81d4f306c6b93252b6934d5c'
 
 results_config_name: 'wildesults_file.yml'
 
@@ -53,7 +53,7 @@ models:
       MIN_DELTA: 0
       PATIENCE: 20
 
-testing_sets: ['test_old']
+testing_sets: ['test_old','test_spring23']
 
 subsets:
   train_old:
@@ -68,10 +68,16 @@ subsets:
     description: ''
     filelist: ''
     regex: '*.JPG'
+  test_spring23:
+    directory: 'subsets/test_spring23/'
+    number_of_images: 12
+    description: ''
+    filelist: ''
+    regex: '*.jpg'
 
 common:
   LABELS: ['wildebeest']
-  MAX_L: 100
+  MAX_L: 200
   MIN_L: 4
   OBJECT_SCALE: 5.0
   NO_OBJECT_SCALE: 1.0
