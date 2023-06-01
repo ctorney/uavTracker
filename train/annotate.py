@@ -222,7 +222,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Annotate or correct annotations from non-domain specific model. To remove annotation double left click. To add one, Middle Click and move. \'c\' accepts changes and goes to the next image, \'q\' ends the session and saves files done so far (resume option is used to continue this work).',epilog='Any issues and clarifications: github.com/ctorney/uavtracker/issues')
     parser.add_argument('--config', '-c', required=True, nargs=1, help='Your yml config file')
-    parser.add_argument('--read-only', '-o', required=True, nargs=1, help='Ignores all the other flags and shows you checked annotations file')
+    parser.add_argument('--read-only', '-o', required=False, nargs=1, help='Ignores all the other flags and shows you checked annotations file')
     parser.add_argument('--resume', '-r', default=False, action='store_true',
                         help='Continue a session of annotation (it will access output file and re-start when you left off)')
     parser.add_argument('--from-scratch', '-f', default=False, action='store_true',

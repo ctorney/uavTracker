@@ -16,12 +16,12 @@ autogen_model:
   pretrained_weights: 'gnu_trainedwithouttestset_phaseone.h5'
   pretrained_weights_md5: "0413e6a0a8cf9d815fb42e1956103479" #leave empty if you are retraining
   num_class: 1
-  obj_thresh: 0.75
-  nms_thresh: 0.2
+  obj_thresh: 0.70
+  nms_thresh: 0.3
 autogen_annotations_fname: 'annotations-autogen_incl23_1.yml'
-autogen_annotations_md5 : '044e9518ecef5eba99d062b97b4966c8'
-checked_annotations_fname: 'annotations-checked_incl23_1.yml'
-checked_annotations_md5 : '5dbf041f81d4f306c6b93252b6934d5c'
+autogen_annotations_md5 : 'aeffbda71d4cb26f05aae74ad82d6d3b'
+checked_annotations_fname: 'annotations-checked_incl23_2.yml'
+checked_annotations_md5 : 'b66e132c473c20bc64a198facfe9f029'
 
 results_config_name: 'wildesults_file.yml'
 
@@ -53,27 +53,54 @@ models:
       MIN_DELTA: 0
       PATIENCE: 20
 
-testing_sets: ['test_old','test_spring23']
+testing_sets: ['test_old','test_spring23', 'test_spring23_2']
 
 subsets:
   train_old:
     directory: 'subsets/train_old/'
     number_of_images: 18000
-    description: ''
+    description: 'original dataset for wildebeest from Colin split into test/train'
     filelist: ''
     regex: '*.JPG'
   test_old:
     directory: 'subsets/test_old/'
     number_of_images: 2000
-    description: ''
+    description: 'original dataset for wildebeest from Colin split into test/train'
     filelist: ''
     regex: '*.JPG'
   test_spring23:
     directory: 'subsets/test_spring23/'
     number_of_images: 12
-    description: ''
+    description: 'Badly annotated by Mix, 12 images from DJI_0095.MP4
+ and DJI_0098.MP4 videos from Spring 23 flights'
     filelist: ''
     regex: '*.jpg'
+  test_spring23_2:
+    directory: 'subsets/test_spring23_2/'
+    number_of_images: 13
+    description: 'Well annotated by Mix 13 images from DJI_0095.MP4
+ and DJI_0098.MP4 videos from Spring 23 flights'
+    filelist: ''
+    regex: '*.jpg'
+
+tracking_setup: 'ngorongoro'
+
+ngorongoro:
+  videos_name_regex: "videos/*.MP4" #for use by transform.py which also preps the following yml file
+  videos_fps: 30
+  link_iou: 0.1
+  step_frames: 1 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
+  videos_list: "wilde_vide.yml" #after transforms.py was run this is where video list live
+  weights: 'gnu_modelbeest_phase_one_2023May15.h5'
+  weights_md5: "18e2460dfb029a7a7960cab288c35008"
+  num_class: 1
+  obj_thresh: 0.5
+  nms_thresh: 0.9
+  max_age: 6 #how
+  track_thresh: 0.70 #only return tracks with average confidence above this value
+  init_thresh: 0.75
+  init_nms: 0.2
+  hold_without: 2 #how long to show track alive without detections (at max age it will be killed anyway
 
 common:
   LABELS: ['wildebeest']
