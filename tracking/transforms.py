@@ -8,6 +8,24 @@ import time
 sys.path.append('..')
 from utils.utils import init_config
 
+dx=0
+dy=0
+pa = (0,0)
+pb = (0,0)
+
+def onmouse(event, x, y, flags, param):
+    global pa, pb, dx, dy
+
+    if(event == cv.EVENT_LBUTTONDOWN):
+        pa = (x,y)
+        dx = pb[0]-pa[0]
+        dy = pb[1]-pa[1]
+        print(f'pa is {pa}')
+    if(event == cv.EVENT_RBUTTONDOWN):
+        pb = (x,y)
+        dx = pb[0]-pa[0]
+        dy = pb[1]-pa[1]
+        print(f'pb is {pb}')
 
 def main(args):
 
@@ -17,12 +35,21 @@ def main(args):
 
     #Load data
     config = init_config(args)
+    args_static = config['args_static']
+    args_visual = config['args_visual']
+
+    args_manual = config['args_manual']
+
+    if args_manual:
+        args_static = True
+        args_visual = True
 
     data_dir = config['project_directory']
     tracks_dir = os.path.join(data_dir,config['tracks_dir'])
     os.makedirs(tracks_dir, exist_ok=True)
     tracking_setup = config["tracking_setup"]
     np.set_printoptions(suppress=True)
+    key = ord('c')
 
     videos_name_regex_short = config[tracking_setup]['videos_name_regex']
     videos_list = os.path.join(data_dir,config[tracking_setup]['videos_list'])
@@ -52,6 +79,8 @@ def main(args):
         fps = round(cap.get(cv2.CAP_PROP_FPS))
         nframes = round(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
+        (h, w) = frame.shape[:2]
+        (cX, cY) = (w // 2, h // 2)
         ##########################################################################
         ##          corrections for camera motion
         ##########################################################################
@@ -81,12 +110,30 @@ def main(args):
         vid_info['transforms'] = tr_file_short
 
         frame_idx = 0
-        if args.visual:
-            cv2.namedWindow('image transformed', cv2.WINDOW_GUI_EXPANDED)
-            cv2.moveWindow('image transformed', 20,20)
+        if args_visual:
+            cv2.namedWindow('image_transformed', cv2.WINDOW_GUI_EXPANDED)
+            cv2.moveWindow('image_transformed', 20,20)
+            if args_manual:
+                cv2.setMouseCallback("image_transformed", onmouse, param = None)
+
         for i in range(nframes):
-            if args.static: #non-moving camera.
+            if args_static: #non-moving camera.
                 warp_matrix = np.eye(2, 3, dtype=np.float32)
+                #or: correct a non-moving camera
+                if args_manual:
+                    ret, frame = cap.read()
+                    if not ret:
+                        continue
+                    while key != ord('q'):
+                        cv2.imshow('image_transformed',frame)
+                        key = cv2.waitKey(0)
+                        print(f'dx and dy is {dx} and {dy}')
+                        degrot = - np.degrees(np.arctan2(dx,dy))
+                        M = cv2.getRotationMatrix2D((cX, cY), degrot, 1.0)
+                        rotated = cv.warpAffine(frame, M, (w, h))
+                        cv2.imshow('image_transformed',rotated)
+                        key = cv2.waitKey(0)
+
                 full_warp = np.dot(full_warp, np.vstack((warp_matrix, [0, 0, 1])))
                 save_warp[i, :, :] = full_warp
                 continue
@@ -129,7 +176,7 @@ def main(args):
             full_warp = np.dot(full_warp, np.vstack((warp_matrix, [0, 0, 1])))
             save_warp[i, :, :] = full_warp
 
-            if args.visual:
+            if args_visual:
                 inv_warp = np.linalg.inv(full_warp)
                 shifted = shift_display.dot(inv_warp)
                 warped_frame = cv2.warpPerspective(frame, shifted,(padding+frame.shape[1],padding+frame.shape[0]))
@@ -165,6 +212,8 @@ if __name__ == '__main__':
                         help='Static camera. The program will create videos file for you but will set all transformations to identity. It will be quick, I promise.')
     parser.add_argument('--visual', '-v', default=False, action='store_true',
                         help='Show camera transformations (for debugging)')
+    parser.add_argument('--manual', '-m', default=False, action='store_true',
+                        help='Provide a manual correction for a statically misaligned camera')
 
     args = parser.parse_args()
     main(args)
