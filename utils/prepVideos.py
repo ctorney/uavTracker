@@ -109,14 +109,11 @@ def main(args):
             cv2.setMouseCallback("frame", onmouse, param = None)
             for iii, landmark in enumerate(landmarks_list):
                 cv2.circle(frame_disp, landmark,5,(0,0,230), -1)
-            if len(landmarks_list) == 4:
+            if len(landmarks_list) == 2:
                 cv2.rectangle(
                     frame_disp, landmarks_list[0],
                     landmarks_list[1], (200, 0, 0), 1)
-                cv2.rectangle(
-                    frame_disp, landmarks_list[2],
-                    landmarks_list[3], (0, 200, 0), 1)
-            if len(landmarks_list) > 4:
+            if len(landmarks_list) > 2:
                 landmarks_list = []
                 frame_disp = frame.copy()
             key = cv2.waitKey(100)  #& 0xFF
@@ -124,15 +121,10 @@ def main(args):
         timebox = frame[landmarks_list[0][1]:landmarks_list[1][1],
                         landmarks_list[0][0]:landmarks_list[1][0],
                         :]
-        datebox = frame[landmarks_list[2][1]:landmarks_list[3][1],
-                        landmarks_list[2][0]:landmarks_list[3][0],
-                        :]
 
-        # mytime = pytesseract.image_to_string(timebox,config="-c tessedit_char_whitelist=123456789 --psm 6") # only digits
         mytime = pytesseract.image_to_string(timebox,config="--psm 6")
-        mydate = pytesseract.image_to_string(datebox,config="--psm 6")
 
-        current_date_str = f'{mydate} {mytime}'.replace('\n','')
+        current_date_str = mytime.replace('\n','')
         current_date = datetime.datetime.strptime(current_date_str, "%d-%b-%Y %H:%M:%S")
         print(current_date)
 
@@ -154,7 +146,8 @@ def main(args):
         #Saving the landmarks
 
         #open a file
-        landmarks_dict = {'camera': camera_name}
+        landmarks_dict = {'camera': camera_name,
+                          'datetime': current_date_str}
         landmarks_list_named = []
         for iii, landmark in enumerate(landmarks_list):
             landmarks_list_named.append((chr(65+iii),landmark[0],landmark[1]))
@@ -167,7 +160,7 @@ def main(args):
             yaml.dump(landmarks_dict, handle)
 
         #Run through the video and provide the time for each frame.
-        #TODO
+        #TODO read/check existing frames
         #now we will read a second frame...
         ret, frame = cap.read() #we have to keep reading frames
 
