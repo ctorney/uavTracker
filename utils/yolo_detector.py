@@ -129,18 +129,14 @@ def unwarp_corners(bbox, full_warp):
     maxx = corner2[0]
     maxy = corner2[1]
     return minx, miny, maxx, maxy
+
 '''
 Show detections on a frame
 '''
 def showDetections(detections,
                    frame,
                    full_warp = np.linalg.inv(np.eye(3, 3, dtype=np.float32))):
-    padding = 1000
-    shift_display = np.array([1,0,padding/2,0,1,padding/2,0,0,1])
-    shift_display = shift_display.reshape((3,3))
-    inv_warp = np.linalg.inv(full_warp)
-    shifted = shift_display.dot(inv_warp)
-    frame = cv2.warpPerspective(frame, shifted,(padding+frame.shape[1],padding+frame.shape[0]))
+    frame = cv2.warpPerspective(frame, full_warp, (frame.shape[1],frame.shape[0]))
     for detect in detections:
         bbox = detect[0:4]
         class_prob = detect[4]
