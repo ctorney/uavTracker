@@ -21,6 +21,7 @@ def onmouse(event, x, y, flags, param):
         landmarks_list.append(pa)
 
 def main(args):
+    global landmarks_list
     #Load data
     config = init_config(args)
 
@@ -82,6 +83,7 @@ def main(args):
         cv2.moveWindow('tracker', 20,20)
 
         ret, frame = cap.read() #we have to keep reading frames
+        i = 0
         if saved_warp is None:
             full_warp = np.eye(3, 3, dtype=np.float32)
         else:
@@ -99,13 +101,35 @@ def main(args):
         cv2.putText(frame, str(i),  (30,60), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2);
 
         frame = cv2.resize(frame, S)
-        cv2.imshow('tracker', frame)
-        camera_name = input("what is this camera name?\n")
-
+        cv2.imshow('frame', frame)
+        frame_disp = frame.copy()
         #First ask to provide a rectangle for time reading.
+        while key != ord('q'):
+            cv2.imshow('frame', frame_disp)
+            cv2.setMouseCallback("frame", onmouse, param = None)
+            for iii, landmark in enumerate(landmarks_list):
+                cv2.circle(frame_disp, landmark,5,(0,0,230), -1)
+            if len(landmarks_list) == 4:
+                cv2.rectangle(
+                    frame_disp, landmarks_list[0],
+                    landmarks_list[1], (200, 0, 0), 1)
+                cv2.rectangle(
+                    frame_disp, landmarks_list[2],
+                    landmarks_list[3], (0, 200, 0), 1)
+            if len(landmarks_list) > 4:
+                landmarks_list = []
+                frame_disp = frame.copy()
+            key = cv2.waitKey(100)  #& 0xFF
         #TODO
         #Second ask to provide a rectangle for date reading.
 
+        ####
+        ## Landmarks
+        ####
+
+        camera_name = input("what is this camera name?\n")
+        key = ord('c')
+        landmarks_list = [] # clear landmark list after getting date/time rectangles
         while key != ord('q'):
             for iii, landmark in enumerate(landmarks_list):
                 cv2.circle(im_aligned, landmark,5,(0,0,230), -1)
