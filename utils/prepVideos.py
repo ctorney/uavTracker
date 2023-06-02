@@ -1,12 +1,12 @@
 import os, sys, glob, argparse
 import csv
-
+import pytesseract
 import cv2
 import yaml
 import numpy as np
 
 sys.path.append('..')
-import time
+import time, datetime
 from utils import md5check, init_config
 
 pa = (0,0)
@@ -120,8 +120,21 @@ def main(args):
                 landmarks_list = []
                 frame_disp = frame.copy()
             key = cv2.waitKey(100)  #& 0xFF
-        #TODO
-        #Second ask to provide a rectangle for date reading.
+
+        timebox = frame[landmarks_list[0][1]:landmarks_list[1][1],
+                        landmarks_list[0][0]:landmarks_list[1][0],
+                        :]
+        datebox = frame[landmarks_list[2][1]:landmarks_list[3][1],
+                        landmarks_list[2][0]:landmarks_list[3][0],
+                        :]
+
+        # mytime = pytesseract.image_to_string(timebox,config="-c tessedit_char_whitelist=123456789 --psm 6") # only digits
+        mytime = pytesseract.image_to_string(timebox,config="--psm 6")
+        mydate = pytesseract.image_to_string(datebox,config="--psm 6")
+
+        current_date_str = f'{mydate} {mytime}'.replace('\n','')
+        current_date = datetime.datetime.strptime(current_date_str, "%d-%b-%Y %H:%M:%S")
+        print(current_date)
 
         ####
         ## Landmarks
