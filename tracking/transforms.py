@@ -115,11 +115,17 @@ def main(args):
                 cv2.setMouseCallback("image_transformed", onmouse, param = None)
 
         for i in range(nframes):
+            # if i >0:
+            #     print(save_warp[i-1,:,:])
+            ret, frame = cap.read()
+            sys.stdout.write('\r')
+            sys.stdout.write("[%-20s] %d%% %d/%d" %
+                             ('=' * int(20 * i / float(nframes)),
+                              int(100.0 * i / float(nframes)), i, nframes))
+            sys.stdout.flush()
             if args_static: #non-moving camera.
-                warp_matrix = np.eye(2, 3, dtype=np.float32)
                 #or: correct a non-moving camera
                 if args_manual:
-                    ret, frame = cap.read()
                     if i == 0:
                         (h, w) = frame.shape[:2]
                         (cX, cY) = (w // 2, h // 2)
@@ -132,18 +138,14 @@ def main(args):
                             rotated = cv2.warpAffine(frame, warp_matrix, (w, h))
                             cv2.imshow('image_transformed',rotated)
                             key = cv2.waitKey(0)
+                else: #automatically set static without anny corrections
+                    warp_matrix = np.eye(2, 3, dtype=np.float32)
 
                 #full_warp = np.dot(full_warp, np.vstack((warp_matrix, [0, 0, 1])))
                 full_warp = np.vstack((warp_matrix, [0, 0, 1]))
                 save_warp[i, :, :] = full_warp
                 continue
 
-            ret, frame = cap.read()
-            sys.stdout.write('\r')
-            sys.stdout.write("[%-20s] %d%% %d/%d" %
-                             ('=' * int(20 * i / float(nframes)),
-                              int(100.0 * i / float(nframes)), i, nframes))
-            sys.stdout.flush()
 
             if not ret:
                 continue
