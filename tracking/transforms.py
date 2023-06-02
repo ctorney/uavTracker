@@ -16,12 +16,12 @@ pb = (0,0)
 def onmouse(event, x, y, flags, param):
     global pa, pb, dx, dy
 
-    if(event == cv.EVENT_LBUTTONDOWN):
+    if(event == cv2.EVENT_LBUTTONDOWN):
         pa = (x,y)
         dx = pb[0]-pa[0]
         dy = pb[1]-pa[1]
         print(f'pa is {pa}')
-    if(event == cv.EVENT_RBUTTONDOWN):
+    if(event == cv2.EVENT_RBUTTONDOWN):
         pb = (x,y)
         dx = pb[0]-pa[0]
         dy = pb[1]-pa[1]
@@ -49,7 +49,6 @@ def main(args):
     os.makedirs(tracks_dir, exist_ok=True)
     tracking_setup = config["tracking_setup"]
     np.set_printoptions(suppress=True)
-    key = ord('c')
 
     videos_name_regex_short = config[tracking_setup]['videos_name_regex']
     videos_list = os.path.join(data_dir,config[tracking_setup]['videos_list'])
@@ -60,6 +59,7 @@ def main(args):
     scalefact = 4.0
 
     for input_file in filelist:
+        key = ord('c')
 
         full_i_path = Path(input_file)
         input_file_short = str(full_i_path.relative_to(data_dir))
@@ -79,8 +79,6 @@ def main(args):
         fps = round(cap.get(cv2.CAP_PROP_FPS))
         nframes = round(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-        (h, w) = frame.shape[:2]
-        (cX, cY) = (w // 2, h // 2)
         ##########################################################################
         ##          corrections for camera motion
         ##########################################################################
@@ -122,19 +120,21 @@ def main(args):
                 #or: correct a non-moving camera
                 if args_manual:
                     ret, frame = cap.read()
-                    if not ret:
-                        continue
-                    while key != ord('q'):
-                        cv2.imshow('image_transformed',frame)
-                        key = cv2.waitKey(0)
-                        print(f'dx and dy is {dx} and {dy}')
-                        degrot = - np.degrees(np.arctan2(dx,dy))
-                        M = cv2.getRotationMatrix2D((cX, cY), degrot, 1.0)
-                        rotated = cv.warpAffine(frame, M, (w, h))
-                        cv2.imshow('image_transformed',rotated)
-                        key = cv2.waitKey(0)
+                    if i == 0:
+                        (h, w) = frame.shape[:2]
+                        (cX, cY) = (w // 2, h // 2)
+                        while key != ord('q'):
+                            cv2.imshow('image_transformed',frame)
+                            key = cv2.waitKey(0)
+                            print(f'dx and dy is {dx} and {dy}')
+                            degrot = np.degrees(np.arctan2(dy,dx))
+                            warp_matrix = cv2.getRotationMatrix2D((cX, cY), degrot, 1.0)
+                            rotated = cv2.warpAffine(frame, warp_matrix, (w, h))
+                            cv2.imshow('image_transformed',rotated)
+                            key = cv2.waitKey(0)
 
-                full_warp = np.dot(full_warp, np.vstack((warp_matrix, [0, 0, 1])))
+                #full_warp = np.dot(full_warp, np.vstack((warp_matrix, [0, 0, 1])))
+                full_warp = np.vstack((warp_matrix, [0, 0, 1]))
                 save_warp[i, :, :] = full_warp
                 continue
 
