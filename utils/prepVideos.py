@@ -81,10 +81,6 @@ def main(args):
         cv2.namedWindow('tracker', cv2.WINDOW_GUI_EXPANDED)
         cv2.moveWindow('tracker', 20,20)
 
-        #skip first 20 frames in case camera is warming up
-        for i in range(20):
-            ret, frame = cap.read() #we have to keep reading frames
-
         ret, frame = cap.read() #we have to keep reading frames
         if saved_warp is None:
             full_warp = np.eye(3, 3, dtype=np.float32)
@@ -135,6 +131,8 @@ def main(args):
 
         #Run through the video and provide the time for each frame.
         #TODO
+        #now we will read a second frame...
+        ret, frame = cap.read() #we have to keep reading frames
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
