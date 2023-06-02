@@ -9,6 +9,16 @@ sys.path.append('..')
 import time
 from utils import md5check, init_config
 
+pa = (0,0)
+landmarks_list = []
+
+def onmouse(event, x, y, flags, param):
+    global landmarks_list
+
+    if(event == cv2.EVENT_LBUTTONDOWN):
+        pa = (x,y)
+        print(f'Added point {pa}')
+        landmarks_list.append(pa)
 
 def main(args):
     #Load data
@@ -88,13 +98,43 @@ def main(args):
             print('Couldn\'t invert matrix, not transforming this frame')
             inv_warp = np.linalg.inv(np.eye(3, 3, dtype=np.float32))
 
-        im_aligned = cv2.warpPerspective(frame, full_warp, (S[0],S[1]), borderMode=cv2.BORDER_TRANSPARENT, flags=cv2.WARP_INVERSE_MAP)
+        im_aligned = cv2.warpPerspective(frame, full_warp, (S[0],S[1]))
+        # im_aligned = cv2.warpPerspective(frame, full_warp, (S[0],S[1]), borderMode=cv2.BORDER_TRANSPARENT, flags=cv2.WARP_INVERSE_MAP)
         cv2.putText(frame, str(i),  (30,60), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2);
 
         frame = cv2.resize(frame, S)
         cv2.imshow('tracker', frame)
-        cv2.imshow('aligned', im_aligned)
-        key = cv2.waitKey(0)  #& 0xFF
+        camera_name = input("what is this camera name?\n")
+
+        #First ask to provide a rectangle for time reading.
+        #TODO
+        #Second ask to provide a rectangle for date reading.
+
+        while key != ord('q'):
+            for iii, landmark in enumerate(landmarks_list):
+                cv2.circle(im_aligned, landmark,5,(0,0,230), -1)
+                cv2.putText(im_aligned, chr(65+iii),  landmark, cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2)
+            cv2.imshow('aligned', im_aligned)
+            cv2.setMouseCallback("aligned", onmouse, param = None)
+            key = cv2.waitKey(100)  #& 0xFF
+
+        #Saving the landmarks
+
+        #open a file
+        landmarks_dict = {'camera': camera_name}
+        landmarks_list_named = []
+        for iii, landmark in enumerate(landmarks_list):
+            landmarks_list_named.append((chr(65+iii),landmark[0],landmark[1]))
+
+        landmarks_dict['landmarks'] = landmarks_list_named
+
+        landmarks_file = os.path.join(tracks_dir, noext + '_landmarks.yml')
+        print(landmarks_dict)
+        with open(landmarks_file, 'w') as handle:
+            yaml.dump(landmarks_dict, handle)
+
+        #Run through the video and provide the time for each frame.
+        #TODO
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
