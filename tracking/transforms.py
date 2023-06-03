@@ -215,7 +215,7 @@ if __name__ == '__main__':
     parser.add_argument('--visual', '-v', default=False, action='store_true',
                         help='Show camera transformations (for debugging)')
     parser.add_argument('--manual', '-m', default=False, action='store_true',
-                        help='Provide a manual correction for a statically misaligned camera')
+                        help='Provide a manual correction for a statically misaligned camera. You need to draw what is meant to be a horizontal line with left side LMB to RMB.')
 
     args = parser.parse_args()
     main(args)

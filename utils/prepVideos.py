@@ -109,11 +109,14 @@ def main(args):
             cv2.setMouseCallback("frame", onmouse, param = None)
             for iii, landmark in enumerate(landmarks_list):
                 cv2.circle(frame_disp, landmark,5,(0,0,230), -1)
-            if len(landmarks_list) == 2:
+            if len(landmarks_list) == 4:
                 cv2.rectangle(
                     frame_disp, landmarks_list[0],
                     landmarks_list[1], (200, 0, 0), 1)
-            if len(landmarks_list) > 2:
+                cv2.rectangle(
+                    frame_disp, landmarks_list[2],
+                    landmarks_list[3], (0, 200, 0), 1)
+            if len(landmarks_list) > 4:
                 landmarks_list = []
                 frame_disp = frame.copy()
             key = cv2.waitKey(100)  #& 0xFF
@@ -121,10 +124,14 @@ def main(args):
         timebox = frame[landmarks_list[0][1]:landmarks_list[1][1],
                         landmarks_list[0][0]:landmarks_list[1][0],
                         :]
+        datebox = frame[landmarks_list[2][1]:landmarks_list[3][1],
+                        landmarks_list[2][0]:landmarks_list[3][0],
+                        :]
 
-        mytime = pytesseract.image_to_string(timebox,config="--psm 6")
+        mytime = pytesseract.image_to_string(timebox,config="-c tessedit_char_whitelist=123456789: --psm 6") # only digits
+        mydate = pytesseract.image_to_string(datebox,config="--psm 6")
 
-        current_date_str = mytime.replace('\n','')
+        current_date_str = f'{mydate} {mytime}'.replace('\n','')
         current_date = datetime.datetime.strptime(current_date_str, "%d-%b-%Y %H:%M:%S")
         print(current_date)
 
@@ -155,9 +162,20 @@ def main(args):
         landmarks_dict['landmarks'] = landmarks_list_named
 
         landmarks_file = os.path.join(tracks_dir, noext + '_landmarks.yml')
-        print(landmarks_dict)
         with open(landmarks_file, 'w') as handle:
             yaml.dump(landmarks_dict, handle)
+
+        #read in timestamps file
+        noextwithdir, _ = os.path.splitext(input_file)
+        timestamps_file = os.path.join(noextwithdir + '.txt')
+        print(timestamps_file)
+
+        with open(timestamps_file) as f:
+            timestamps = [(int(line.split(', ')[0]),
+                           line.split(', ')[1].replace('\n',''))
+                          for line in f]
+        print(timestamps[:10])
+        # print(datetime.datetime.strptime(x,"%H%M%S%f").strftime('%Y-%m-%d %H:%M:%S'))
 
         #Run through the video and provide the time for each frame.
         #TODO read/check existing frames
