@@ -52,6 +52,32 @@ models:
       EPS: 0.1e-7
       MIN_DELTA: 0
       PATIENCE: 20
+  nyamongo:
+    pretrained_weights: 'yolo-v3-coco.h5'
+    pretrained_weights_md5: "26cf8e8b5ba9d9d4a3778f9747e3407a" #leave empty if you are retraining
+    training_sets: ['train_old']
+    phases: 2
+    num_class: 1
+    obj_thresh: 0.8
+    nms_thresh: 0.1
+    phase_one:
+      BATCH_SIZE: 16
+      EPOCHS: 500
+      LR: 0.5e-3
+      B1: 0.9
+      B2: 0.999
+      EPS: 0.1e-7
+      MIN_DELTA: 0
+      PATIENCE: 20
+    phase_two:
+      BATCH_SIZE: 8
+      EPOCHS: 100
+      LR: 0.5e-4
+      B1: 0.9
+      B2: 0.999
+      EPS: 0.1e-7
+      MIN_DELTA: 0
+      PATIENCE: 20
 
 testing_sets: ['test_old','test_spring23', 'test_spring23_2']
 
