@@ -174,13 +174,28 @@ def main(args):
             timestamps = [(int(line.split(', ')[0]),
                            line.split(', ')[1].replace('\n',''))
                           for line in f]
-        print(timestamps[:10])
+        timestamps_out_file = os.path.join(tracks_dir, noext + '_timestamps.txt')
         # print(datetime.datetime.strptime(x,"%H%M%S%f").strftime('%Y-%m-%d %H:%M:%S'))
+        #check if the hour of the timestamp matches that one read from the image.
+        #rewrite all the datetime as the correct time
+        timestamps_out = []
+        nextDay = False #that happens only once as my recordings are never more than 24hrs
+        for iii, tt in enumerate(timestamps):
+            if iii != tt[0]:
+                raise ValueError(f'a frame {iii} is skipped in the timestamp list!')
+            cdt = datetime.datetime.strptime(tt[1],"%H%M%S%f")
+            if (cdt.hour == 0) and (not nextDay):
+                current_date = current_date.replace(day=current_date.day+1)
+                nextDay = True
+            cdt = cdt.replace(year=current_date.year, month=current_date.month, day = current_date.day)
+            timestamps_out.append(cdt.strftime("%d-%b-%Y %H:%M:%S.%f") + '\n')
+
+        with open(timestamps_out_file, "w") as output:
+            output.writelines(timestamps_out)
 
         #Run through the video and provide the time for each frame.
-        #TODO read/check existing frames
         #now we will read a second frame...
-        ret, frame = cap.read() #we have to keep reading frames
+        # ret, frame = cap.read() #we have to keep reading frames
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
