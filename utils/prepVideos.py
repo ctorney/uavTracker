@@ -121,6 +121,7 @@ def main(args):
                 frame_disp = frame.copy()
             key = cv2.waitKey(100)  #& 0xFF
 
+        cv2.destroyWindow('frame')
         timebox = frame[landmarks_list[0][1]:landmarks_list[1][1],
                         landmarks_list[0][0]:landmarks_list[1][0],
                         :]
@@ -200,15 +201,11 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description=
-        'Run tracker. It uses specified yml file whic defines beginnings and ends of files to analyse',
+        'This is a script for extracting additional information from Miks\' salmon phd videos. Before running this script, run transforms.py with --manual flag to straighten my videos. In this scripts we perform following steps: 1. click on top-left and bottom right corner of time on the image displayed, 2. click tp and br on the date information. If it doesnt look right click again. Press `q` to continue. 3. Enter the name of the camera alpha/beta/gamma which will be used to match the landmarks. 4. On the aligned video frame click on the landmarks in alphabetical order. Press `q` to quonfirm',
         epilog=
         'Any issues and clarifications: github.com/ctorney/uavtracker/issues')
     parser.add_argument(
         '--config', '-c', required=True, nargs=1, help='Your yml config file')
-    parser.add_argument('--visual', '-v', default=False, action='store_true',
-                        help='Display tracking progress')
-    parser.add_argument('--step', '-s', default=False, action='store_true',
-                        help='Do it step by step')
 
 
     args = parser.parse_args()
