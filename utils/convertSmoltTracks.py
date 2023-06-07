@@ -4,6 +4,7 @@ import pytesseract
 import cv2
 import yaml
 import numpy as np
+import pandas as pd
 
 sys.path.append('..')
 import time, datetime
@@ -13,6 +14,7 @@ def main(args):
     #Load data
     config = init_config(args)
 
+    args_visual = config['args_visual']
     data_dir = config['project_directory']
 
     np.set_printoptions(suppress=True)
@@ -29,6 +31,23 @@ def main(args):
     for input_file_dict in filelist:
 
         input_file = os.path.join(data_dir, input_file_dict["filename"])
+        cap = cv2.VideoCapture(input_file)
+        #checking fps, mostly because we're curious
+        fps = round(cap.get(cv2.CAP_PROP_FPS))
+        videos_fps = config[tracking_setup]['videos_fps']
+        step_frames = config[tracking_setup]['step_frames']
+        if fps != videos_fps:
+            print(f'WARNING! frame rate of videos set in config file ({videos_fps}) doesn\'t much one read by opencv CAP_PROP_FPS property ({fps}). That happens but you should be aware we use whatever config file specified!')
+            fps = videos_fps
+
+        width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+        height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+        S = (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
+                int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+
+        if width == 0:
+            print('WIDTH is 0. It is safe to assume that the file doesn\'t exist or is corrupted. Hope the next one isn\'t... Skipping - obviously. ')
+            break
 
         direct, ext = os.path.split(input_file)
         noext, _ = os.path.splitext(ext)
@@ -43,6 +62,12 @@ def main(args):
         landmarks_dict = dict()
         with open(landmarks_file, 'r') as input:
             landmarks_dict = yaml.full_load(input)
+
+        nframes = round(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        if args_visual:
+            cv2.namedWindow('tracker', cv2.WINDOW_GUI_EXPANDED)
+            cv2.moveWindow('tracker', 20,20)
+        #we are starting from the second frame as we want to see two frames at once
 
         print("Loading " + str(len(input_file_dict["periods"])) +
               " predefined periods for tracking...")
@@ -69,8 +94,50 @@ def main(args):
                 saved_warp = None
                 print(":: oh dear! :: No transformations found.")
 
-            ####TODO
-            ## To Be Continued ....
+            corrected_tracks = pd.read_csv(data_file_corrected,header=None)
+            corrected_tracks.columns = ['frame_number','track_id','c0','c1','c2','c3']
+
+            #Ok, now display everything with all the calculated data.
+            #We will assume a real-life location of 0.0 for landmark A of gamma (a bit of a bottom left corner
+            for i in range(nframes):
+                ret, frame = cap.read()
+                sys.stdout.write('\r')
+                sys.stdout.write("[%-20s] %d%% %d/%d" %
+                                 ('=' * int(20 * i / float(nframes)),
+                                  int(100.0 * i / float(nframes)), i, nframes))
+                sys.stdout.flush()
+
+                #jump frames
+                if (i > period["stop"] and period["stop"] != 0) or not ret:
+                    sys.stdout.write('\n')
+                    sys.stdout.flush()
+                    print("::Hey, hey! :: The end of the defined period, skipping to the next file or period (or maybe the file was shorter than you think")
+                    print("nothing read from file: ")
+                    sys.stdout.write('It is ')
+                    sys.stdout.write(str( not ret))
+                    sys.stdout.write(' that it is the end of the file :)')
+                    sys.stdout.flush()
+                    cap.release()
+                    break
+                if i < period["start"]:
+                    continue
+                if ((i - period["start"]) % step_frames):
+                    continue
+
+                if saved_warp is None:
+                    full_warp = np.eye(3, 3, dtype=np.float32)
+                else:
+                    full_warp = saved_warp[i]
+                try:
+                    inv_warp = np.linalg.inv(full_warp)
+                except:
+                    print('Couldn\'t invert matrix, not transforming this frame')
+                    inv_warp = np.linalg.inv(np.eye(3, 3, dtype=np.float32))
+
+                cv2.imshow('tracker',frame)
+                key = cv2.waitKey(0)  #& 0xFF
+
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -80,6 +147,8 @@ if __name__ == '__main__':
         'Any issues and clarifications: github.com/ctorney/uavtracker/issues')
     parser.add_argument(
         '--config', '-c', required=True, nargs=1, help='Your yml config file')
+    parser.add_argument('--visual', '-v', default=False, action='store_true',
+                        help='Display tracking progress')
 
     args = parser.parse_args()
     main(args)
