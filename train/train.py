@@ -151,7 +151,8 @@ def run_full_training(model_name, config, data_dir, c_date, DEBUG, TEST_RUN):
             loss_cls = tf.reduce_sum(tf.square(class_delta), list(range(1, 5)))
 
             loss = loss_xy + loss_wh + loss_obj + lossnobj + loss_cls
-            loss = tf.clip_by_value(loss, -1e12, 1e12)
+            loss = tf.where(tf.math.is_nan(loss), tf.zeros_like(loss), loss)
+            # loss = tf.clip_by_value(loss, -1e12, 1e12)
             return loss
 
         #Read image width and height. For training it has to be
