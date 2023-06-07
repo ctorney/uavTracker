@@ -241,7 +241,6 @@ def main(args):
                 corrected_tracks['corrected_track_id'][corrected_tracks['frame_number']>=frame_start] =  corrected_tracks['corrected_track_id'].replace({track_wrong:track_right, track_right:track_wrong})
 
             while i < nframes:
-
                 if key == ord('q'):
                     break
 
@@ -355,11 +354,13 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description=
-        'Run tracker. It uses specified yml file whic defines beginnings and ends of files to analyse',
+        'Validates the tracks from runTracker. It uses specified yml file whic defines beginnings and ends of files to analyse',
         epilog=
         'Any issues and clarifications: github.com/ctorney/uavtracker/issues')
     parser.add_argument(
         '--config', '-c', required=True, nargs=1, help='Your yml config file')
+    parser.add_argument('--visual', '-v', default=False, action='store_true',
+                        help='Display tracking progress')
 
     args = parser.parse_args()
     main(args)
