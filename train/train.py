@@ -3,7 +3,7 @@ from tensorflow.keras.optimizers import SGD, Adam, RMSprop
 from tqdm.keras import TqdmCallback
 import tensorflow as tf
 import numpy as np
-import yaml, math
+import yaml
 import os, sys, cv2, argparse, glob
 import time
 from generator import BatchGenerator
@@ -151,7 +151,6 @@ def run_full_training(model_name, config, data_dir, c_date, DEBUG, TEST_RUN):
             loss_cls = tf.reduce_sum(tf.square(class_delta), list(range(1, 5)))
 
             loss = loss_xy + loss_wh + loss_obj + lossnobj + loss_cls
-            loss = tf.where(tf.math.is_nan(loss), 9999999 * tf.ones_like(loss), loss)
             return loss
 
         #Read image width and height. For training it has to be
