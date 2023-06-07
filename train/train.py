@@ -151,6 +151,8 @@ def run_full_training(model_name, config, data_dir, c_date, DEBUG, TEST_RUN):
             loss_cls = tf.reduce_sum(tf.square(class_delta), list(range(1, 5)))
 
             loss = loss_xy + loss_wh + loss_obj + lossnobj + loss_cls
+            if math.isnan(loss): #HACK we are suffering from a NaN loss, can such a simple hack help us?
+                loss = 9999999999
             return loss
 
         #Read image width and height. For training it has to be
