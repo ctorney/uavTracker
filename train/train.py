@@ -3,7 +3,7 @@ from tensorflow.keras.optimizers import SGD, Adam, RMSprop
 from tqdm.keras import TqdmCallback
 import tensorflow as tf
 import numpy as np
-import yaml
+import yaml, math
 import os, sys, cv2, argparse, glob
 import time
 from generator import BatchGenerator

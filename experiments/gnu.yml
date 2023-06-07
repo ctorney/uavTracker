@@ -70,7 +70,7 @@ models:
       MIN_DELTA: 0
       PATIENCE: 20
     phase_two:
-      BATCH_SIZE: 8
+      BATCH_SIZE: 4
       EPOCHS: 100
       LR: 0.5e-4
       B1: 0.9
