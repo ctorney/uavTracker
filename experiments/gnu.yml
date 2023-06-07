@@ -72,7 +72,7 @@ models:
     phase_two:
       BATCH_SIZE: 4
       EPOCHS: 100
-      LR: 0.5e-4
+      LR: 0.5e-3
       B1: 0.9
       B2: 0.999
       EPS: 0.1e-7
