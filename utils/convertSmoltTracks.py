@@ -42,7 +42,7 @@ def main(args):
 
         landmarks_dict = dict()
         with open(landmarks_file, 'r') as input:
-            landmarks_dict = yaml.safe_load(input)
+            landmarks_dict = yaml.full_load(input)
 
         print("Loading " + str(len(input_file_dict["periods"])) +
               " predefined periods for tracking...")
@@ -70,7 +70,7 @@ def main(args):
                 print(":: oh dear! :: No transformations found.")
 
             ####TODO
-            ## To Be Continued
+            ## To Be Continued ....
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
