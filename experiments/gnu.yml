@@ -70,8 +70,8 @@ models:
       MIN_DELTA: 0
       PATIENCE: 20
     phase_two:
-      BATCH_SIZE: 4
-      EPOCHS: 100
+      BATCH_SIZE: 8 #this is for eculid only
+      EPOCHS: 200
       LR: 0.5e-5
       B1: 0.9
       B2: 0.999
