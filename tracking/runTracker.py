@@ -55,6 +55,7 @@ def main(args):
     min_l = config['common']['MIN_L']
 
     save_output = config['common']['save_output']
+    transform_before_track = config[tracking_setup]['transform_before_track']
     show_detections = config['common']['show_detections']
 
     with open(videos_list, 'r') as video_config_file_h:
@@ -191,13 +192,19 @@ def main(args):
                 else:
                     full_warp = saved_warp[i]
 
-
                 #avoid crash when matrix is singular (det is 0 and cannot invert, crashes instead, joy!
                 try:
                     inv_warp = np.linalg.inv(full_warp)
                 except:
                     print('Couldn\'t invert matrix, not transforming this frame')
                     inv_warp = np.linalg.inv(np.eye(3, 3, dtype=np.float32))
+
+                #For simplicity in smolt tracking we can first convert the frame and track in the converted image.
+                if transform_before_track:
+                    frame = cv2.warpPerspective(frame, full_warp, (frame.shape[1],frame.shape[0]))
+                    full_warp = None
+                    inv_warp = None
+
 
                 # Run detector
                 detections = detector.create_detections(
@@ -212,32 +219,38 @@ def main(args):
                 for track in tracks:
                     bbox = track[0:4]
                     if save_output:
-                        iwarp = (full_warp)
+                        if full_warp == None:
+                            minx = bbox[0]
+                            miny = bbox[1]
+                            maxx = bbox[2]
+                            maxy = bbox[3]
+                        else:
+                            iwarp = (full_warp)
 
-                        corner1 = np.expand_dims([bbox[0], bbox[1]], axis=0)
-                        corner1 = np.expand_dims(corner1, axis=0)
-                        corner1 = cv2.perspectiveTransform(corner1,
-                                                           iwarp)[0, 0, :]
-                        corner2 = np.expand_dims([bbox[2], bbox[3]], axis=0)
-                        corner2 = np.expand_dims(corner2, axis=0)
-                        corner2 = cv2.perspectiveTransform(corner2,
-                                                           iwarp)[0, 0, :]
-                        corner3 = np.expand_dims([[bbox[0], bbox[3]]], axis=0)
-                        #               corner3 = np.expand_dims(corner3,axis=0)
-                        corner3 = cv2.perspectiveTransform(corner3,
-                                                           iwarp)[0, 0, :]
-                        corner4 = np.expand_dims([bbox[2], bbox[1]], axis=0)
-                        corner4 = np.expand_dims(corner4, axis=0)
-                        corner4 = cv2.perspectiveTransform(corner4,
-                                                           iwarp)[0, 0, :]
-                        maxx = max(corner1[0], corner2[0], corner3[0],
-                                   corner4[0])
-                        minx = min(corner1[0], corner2[0], corner3[0],
-                                   corner4[0])
-                        maxy = max(corner1[1], corner2[1], corner3[1],
-                                   corner4[1])
-                        miny = min(corner1[1], corner2[1], corner3[1],
-                                   corner4[1])
+                            corner1 = np.expand_dims([bbox[0], bbox[1]], axis=0)
+                            corner1 = np.expand_dims(corner1, axis=0)
+                            corner1 = cv2.perspectiveTransform(corner1,
+                                                            iwarp)[0, 0, :]
+                            corner2 = np.expand_dims([bbox[2], bbox[3]], axis=0)
+                            corner2 = np.expand_dims(corner2, axis=0)
+                            corner2 = cv2.perspectiveTransform(corner2,
+                                                            iwarp)[0, 0, :]
+                            corner3 = np.expand_dims([[bbox[0], bbox[3]]], axis=0)
+                            #               corner3 = np.expand_dims(corner3,axis=0)
+                            corner3 = cv2.perspectiveTransform(corner3,
+                                                            iwarp)[0, 0, :]
+                            corner4 = np.expand_dims([bbox[2], bbox[1]], axis=0)
+                            corner4 = np.expand_dims(corner4, axis=0)
+                            corner4 = cv2.perspectiveTransform(corner4,
+                                                            iwarp)[0, 0, :]
+                            maxx = max(corner1[0], corner2[0], corner3[0],
+                                    corner4[0])
+                            minx = min(corner1[0], corner2[0], corner3[0],
+                                    corner4[0])
+                            maxy = max(corner1[1], corner2[1], corner3[1],
+                                    corner4[1])
+                            miny = min(corner1[1], corner2[1], corner3[1],
+                                    corner4[1])
 
                         np.random.seed(
                             int(track[4])

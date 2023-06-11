@@ -173,6 +173,7 @@ koala:
   init_thresh: 0.8
   init_nms: 0.5
   hold_without: 6 #how long to show track alive without detections (at max age it will be killed anyway
+  transform_before_track: 1
 
 common:
   LABELS: ['aoi']

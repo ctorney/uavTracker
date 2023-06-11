@@ -135,12 +135,19 @@ Show detections on a frame
 '''
 def showDetections(detections,
                    frame,
-                   full_warp = np.linalg.inv(np.eye(3, 3, dtype=np.float32))):
-    frame = cv2.warpPerspective(frame, full_warp, (frame.shape[1],frame.shape[0]))
+                   full_warp = None):
     for detect in detections:
         bbox = detect[0:4]
         class_prob = detect[4]
-        minx, miny, maxx, maxy = unwarp_corners(bbox, full_warp)
+
+        if full_warp == None:
+            minx = bbox[0]
+            miny = bbox[1]
+            maxx = bbox[2]
+            maxy = bbox[3]
+        else:
+            minx, miny, maxx, maxy = unwarp_corners(bbox, full_warp)
+
         cv2.rectangle(
             frame, (int(minx) - 2, int(miny) - 2),
             (int(maxx) + 2, int(maxy) + 2), (0, 0, 220*class_prob**2), (1+round(class_prob)))
