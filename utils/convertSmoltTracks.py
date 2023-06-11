@@ -136,7 +136,6 @@ def main(args):
                     print('Couldn\'t invert matrix, not transforming this frame')
                     inv_warp = np.linalg.inv(np.eye(3, 3, dtype=np.float32))
 
-                #TODO
                 #transform frame
                 if transform_before_track:
                     frame = cv2.warpPerspective(frame, full_warp, (S[0],S[1]))
@@ -144,8 +143,16 @@ def main(args):
                     inv_warp = None
 
                 #display tracks
+                #TODO
+                #calculate distances from pixels to landmarks positions, assuming
+                #A/B being top-left to bottom right for this camera
+
                 for _, track in corrected_tracks[corrected_tracks['frame_number']==i].iterrows():
+                    #calculate distance in pixel for each track
+                    #for each track calculate coordinates of the centre
+                    #for each track calculate length of fish from aspect ratio and longer length
                     frame =showTracks(track,frame,i,full_warp, corrected=True)
+
                 #display landmarks
                 landmarks_list = landmarks_dict['landmarks']
                 for iii, landmark in enumerate(landmarks_list):
@@ -163,6 +170,7 @@ def main(args):
                 key = cv2.waitKey(0)  #& 0xFF
                 if key == ord('q'):
                     break
+
 
 
 
