@@ -9,6 +9,7 @@ import pandas as pd
 sys.path.append('..')
 import time, datetime
 from utils import md5check, init_config
+from yolo_detector import showTracks
 
 def main(args):
     #Load data
@@ -19,6 +20,7 @@ def main(args):
 
     np.set_printoptions(suppress=True)
     tracking_setup = config['tracking_setup']
+    transform_before_track = config[tracking_setup]['transform_before_track']
     videos_list = os.path.join(data_dir, config[tracking_setup]['videos_list'])
     tracks_dir = os.path.join(data_dir,config['tracks_dir'])
 
@@ -95,7 +97,7 @@ def main(args):
                 print(":: oh dear! :: No transformations found.")
 
             corrected_tracks = pd.read_csv(data_file_corrected,header=None)
-            corrected_tracks.columns = ['frame_number','track_id','c0','c1','c2','c3']
+            corrected_tracks.columns = ['frame_number','corrected_track_id','c0','c1','c2','c3']
 
             #Ok, now display everything with all the calculated data.
             #We will assume a real-life location of 0.0 for landmark A of gamma (a bit of a bottom left corner
@@ -134,8 +136,33 @@ def main(args):
                     print('Couldn\'t invert matrix, not transforming this frame')
                     inv_warp = np.linalg.inv(np.eye(3, 3, dtype=np.float32))
 
+                #TODO
+                #transform frame
+                if transform_before_track:
+                    frame = cv2.warpPerspective(frame, full_warp, (S[0],S[1]))
+                    full_warp = None
+                    inv_warp = None
+
+                #display tracks
+                for _, track in corrected_tracks[corrected_tracks['frame_number']==i].iterrows():
+                    frame =showTracks(track,frame,i,full_warp, corrected=True)
+                #display landmarks
+                landmarks_list = landmarks_dict['landmarks']
+                for iii, landmark in enumerate(landmarks_list):
+                    cv2.circle(frame, (landmark[1],landmark[2]),5,(0,0,230), -1)
+                    cv2.putText(frame, landmark[0],  (landmark[1],landmark[2]), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2)
+
+                #display cameraname
+                cameraname = landmarks_dict['camera']
+                timestamp = timestamps[i]
+                cameraname_timestamp = f'{cameraname}: {timestamp}'
+                #display timestamp
+                cv2.putText(frame, cameraname_timestamp, (120,50), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2)
+
                 cv2.imshow('tracker',frame)
                 key = cv2.waitKey(0)  #& 0xFF
+                if key == ord('q'):
+                    break
 
 
 

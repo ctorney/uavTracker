@@ -13,6 +13,7 @@ import time
 import pandas as pd
 sys.path.append('..')
 from utils.utils import init_config
+from utils.yolo_detector import showTracks
 
 """
 Simple video buffer to be able to go back a few frames when watching the track
@@ -41,66 +42,6 @@ class Vidbu:
             self.filo_frames.append(frame)
 
         return True, self.filo_frames[j].copy()
-
-def putOnAShow(track,frame1,i,full_warp=None,corrected=False):
-    bbox = [track['c0'],
-            track['c1'],
-            track['c2'],
-            track['c3']]
-    if corrected:
-        t_id = int(track['corrected_track_id'])
-    else:
-        t_id = int(track['track_id'])
-
-    if full_warp == None:
-        minx = bbox[0]
-        miny = bbox[1]
-        maxx = bbox[2]
-        maxy = bbox[3]
-    else:
-        iwarp = (full_warp)
-
-        corner1 = np.expand_dims([bbox[0], bbox[1]], axis=0)
-        corner1 = np.expand_dims(corner1, axis=0)
-        corner1 = cv2.perspectiveTransform(corner1,
-                                        iwarp)[0, 0, :]
-        corner2 = np.expand_dims([bbox[2], bbox[3]], axis=0)
-        corner2 = np.expand_dims(corner2, axis=0)
-        corner2 = cv2.perspectiveTransform(corner2,
-                                        iwarp)[0, 0, :]
-        corner3 = np.expand_dims([[bbox[0], bbox[3]]], axis=0)
-        #               corner3 = np.expand_dims(corner3,axis=0)
-        corner3 = cv2.perspectiveTransform(corner3,
-                                        iwarp)[0, 0, :]
-        corner4 = np.expand_dims([bbox[2], bbox[1]], axis=0)
-        corner4 = np.expand_dims(corner4, axis=0)
-        corner4 = cv2.perspectiveTransform(corner4,
-                                        iwarp)[0, 0, :]
-        maxx = max(corner1[0], corner2[0], corner3[0],
-                corner4[0])
-        minx = min(corner1[0], corner2[0], corner3[0],
-                corner4[0])
-        maxy = max(corner1[1], corner2[1], corner3[1],
-                corner4[1])
-        miny = min(corner1[1], corner2[1], corner3[1],
-                corner4[1])
-
-    np.random.seed(t_id)  # show each track as its own colour - note can't use np random number generator in this code
-
-    r = np.random.randint(256)
-    g = np.random.randint(256)
-    b = np.random.randint(256)
-
-    cv2.rectangle(frame1, (int(minx), int(miny)),
-                  (int(maxx), int(maxy)), (r, g, b), 4)
-
-    cv2.putText(frame1, str(t_id),
-                (int(minx) - 5, int(miny) - 5), 0,
-                5e-3 * 200, (r, g, b), 2)
-    cv2.putText(frame1, str(i),  (30,60), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2);
-
-    return frame1
-
 
 def main(args):
     #Load data
@@ -331,17 +272,17 @@ def main(args):
                 frame1c= frame1.copy()
                 if avaf1: #only draw on available frames
                     for _, track in messy_tracks[messy_tracks['frame_number']==i].iterrows():
-                        frame1 =putOnAShow(track,frame1,i,full_warp)
+                        frame1 =showTracks(track,frame1,i,full_warp)
 
                     for _, track in corrected_tracks[corrected_tracks['frame_number']==i].iterrows():
-                        frame1c =putOnAShow(track,frame1c,i,full_warp, corrected=True)
+                        frame1c =showTracks(track,frame1c,i,full_warp, corrected=True)
 
                 if avaf0: #only draw on available frames
                     for _, track in messy_tracks[messy_tracks['frame_number']==(i-1)].iterrows():
-                        frame0 = putOnAShow(track,frame0,i-1,full_warp,corrected=False)
+                        frame0 = showTracks(track,frame0,i-1,full_warp,corrected=False)
 
                     for _, track in corrected_tracks[corrected_tracks['frame_number']==i].iterrows():
-                        frame0c =putOnAShow(track,frame0c,i-1,full_warp, corrected=True)
+                        frame0c =showTracks(track,frame0c,i-1,full_warp, corrected=True)
 
                 if save_output:
                     #       cv2.imshow('', frame)
