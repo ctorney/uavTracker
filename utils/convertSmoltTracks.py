@@ -86,11 +86,14 @@ def main(args):
             sys.stdout.flush()
             print(period["clipname"], period["start"], period["stop"])
             data_file_corrected = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_POS_corrected.txt')
+            data_file_reallife = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_POS_reallife.txt')
             if not os.path.isfile(data_file_corrected):
                 print(
                     "This file has not been yet tracked **and validated/corrected**, there is nothing to convert :/ run runTracker and correctTracks first. Skipping!!!"
                 )
                 continue
+            reallife_tracks = pd.DataFrame(columns = ['frame_number','track_id', 'dx','dy','w','h'])
+            nloc = 0 #for a new df
 
             #######################################################################
             ##          corrections for camera motion
@@ -123,6 +126,7 @@ def main(args):
 
             #Ok, now display everything with all the calculated data.
             #We will assume a real-life location of 0.0 for landmark A of gamma (a bit of a bottom left corner
+            key = ord('c')
             for i in range(nframes):
                 ret, frame = cap.read()
                 sys.stdout.write('\r')
@@ -178,9 +182,21 @@ def main(args):
                     my = track['c1'] + (track['c3'] - track['c1'])/2
                     dx = (mx - ax) * px_to_cm
                     dy = - (my - ay) * px_to_cm
+                    w = (track['c2'] - track['c0']) * px_to_cm
+                    h = (track['c3'] - track['c1']) * px_to_cm
 
                     position = f'[{dx:.0f},{dy:.0f}]'
-                    frame =showTracks(track,frame,i,full_warp, True, position)
+                    reallife_tracks.loc[nloc] = {
+                            'frame_number':i,
+                            'track_id':int(track['corrected_track_id']),
+                            'dx':dx,
+                            'dy':dy,
+                            'w':w,
+                            'h':h
+                            }
+                    nloc += 1
+                    if args_visual:
+                        frame =showTracks(track,frame,i,full_warp, True, position)
 
                 for iii, landmark in enumerate(landmarks_list):
                     lx = landmark[1]
@@ -195,10 +211,14 @@ def main(args):
                 #display timestamp
                 cv2.putText(frame, cameraname_timestamp, (120,50), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2)
 
-                cv2.imshow('tracker',frame)
-                key = cv2.waitKey(0)  #& 0xFF
+                if args_visual:
+                    cv2.imshow('tracker',frame)
+                    key = cv2.waitKey(0)  #& 0xFF
+
                 if key == ord('q'):
                     break
+
+            reallife_tracks.to_csv(data_file_reallife,header=True,index=False)
 
 
 
