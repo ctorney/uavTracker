@@ -13,6 +13,7 @@ import time
 import pandas as pd
 sys.path.append('..')
 from utils.utils import init_config
+from utils.yolo_detector import showTracks
 
 """
 Simple video buffer to be able to go back a few frames when watching the track
@@ -41,60 +42,6 @@ class Vidbu:
             self.filo_frames.append(frame)
 
         return True, self.filo_frames[j].copy()
-
-def putOnAShow(track,full_warp,frame1,i,corrected=False):
-    bbox = [track['c0'],
-            track['c1'],
-            track['c2'],
-            track['c3']]
-    if corrected:
-        t_id = int(track['corrected_track_id'])
-    else:
-        t_id = int(track['track_id'])
-
-    iwarp = (full_warp)
-
-    corner1 = np.expand_dims([bbox[0], bbox[1]], axis=0)
-    corner1 = np.expand_dims(corner1, axis=0)
-    corner1 = cv2.perspectiveTransform(corner1,
-                                       iwarp)[0, 0, :]
-    corner2 = np.expand_dims([bbox[2], bbox[3]], axis=0)
-    corner2 = np.expand_dims(corner2, axis=0)
-    corner2 = cv2.perspectiveTransform(corner2,
-                                       iwarp)[0, 0, :]
-    corner3 = np.expand_dims([[bbox[0], bbox[3]]], axis=0)
-    #               corner3 = np.expand_dims(corner3,axis=0)
-    corner3 = cv2.perspectiveTransform(corner3,
-                                       iwarp)[0, 0, :]
-    corner4 = np.expand_dims([bbox[2], bbox[1]], axis=0)
-    corner4 = np.expand_dims(corner4, axis=0)
-    corner4 = cv2.perspectiveTransform(corner4,
-                                       iwarp)[0, 0, :]
-    maxx = max(corner1[0], corner2[0], corner3[0],
-               corner4[0])
-    minx = min(corner1[0], corner2[0], corner3[0],
-               corner4[0])
-    maxy = max(corner1[1], corner2[1], corner3[1],
-               corner4[1])
-    miny = min(corner1[1], corner2[1], corner3[1],
-               corner4[1])
-
-    np.random.seed(t_id)  # show each track as its own colour - note can't use np random number generator in this code
-
-    r = np.random.randint(256)
-    g = np.random.randint(256)
-    b = np.random.randint(256)
-
-    cv2.rectangle(frame1, (int(minx), int(miny)),
-                  (int(maxx), int(maxy)), (r, g, b), 4)
-
-    cv2.putText(frame1, str(t_id),
-                (int(minx) - 5, int(miny) - 5), 0,
-                5e-3 * 200, (r, g, b), 2)
-    cv2.putText(frame1, str(i),  (30,60), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2);
-
-    return frame1
-
 
 def main(args):
     #Load data
@@ -127,6 +74,7 @@ def main(args):
     max_l = config['common']['MAX_L']  #maximal object size in pixels
     min_l = config['common']['MIN_L']
 
+    transform_before_track = config[tracking_setup]['transform_before_track']
     save_output = True #corrections of tracks need to be visual and save output...
     showDetections = config['common']['show_detections']
 
@@ -241,7 +189,6 @@ def main(args):
                 corrected_tracks['corrected_track_id'][corrected_tracks['frame_number']>=frame_start] =  corrected_tracks['corrected_track_id'].replace({track_wrong:track_right, track_right:track_wrong})
 
             while i < nframes:
-
                 if key == ord('q'):
                     break
 
@@ -307,6 +254,7 @@ def main(args):
                 else:
                     full_warp = saved_warp[i]
 
+
                 #avoid crash when matrix is singular (det is 0 and cannot invert, crashes instead, joy!
                 try:
                     inv_warp = np.linalg.inv(full_warp)
@@ -314,21 +262,27 @@ def main(args):
                     print('Couldn\'t invert matrix, not transforming this frame')
                     inv_warp = np.linalg.inv(np.eye(3, 3, dtype=np.float32))
 
+                if transform_before_track:
+                    frame0 = cv2.warpPerspective(frame0, full_warp, (frame0.shape[1],frame0.shape[0]))
+                    frame1 = cv2.warpPerspective(frame1, full_warp, (frame1.shape[1],frame1.shape[0]))
+                    full_warp = None
+                    inv_warp = None
+
                 frame0c= frame0.copy()
                 frame1c= frame1.copy()
                 if avaf1: #only draw on available frames
                     for _, track in messy_tracks[messy_tracks['frame_number']==i].iterrows():
-                        frame1 =putOnAShow(track,full_warp,frame1,i)
+                        frame1 =showTracks(track,frame1,i,full_warp)
 
                     for _, track in corrected_tracks[corrected_tracks['frame_number']==i].iterrows():
-                        frame1c =putOnAShow(track,full_warp,frame1c,i,corrected=True)
+                        frame1c =showTracks(track,frame1c,i,full_warp, corrected=True)
 
                 if avaf0: #only draw on available frames
                     for _, track in messy_tracks[messy_tracks['frame_number']==(i-1)].iterrows():
-                        frame0 = putOnAShow(track,full_warp,frame0,i-1,corrected=False)
+                        frame0 = showTracks(track,frame0,i-1,full_warp,corrected=False)
 
                     for _, track in corrected_tracks[corrected_tracks['frame_number']==i].iterrows():
-                        frame0c =putOnAShow(track,full_warp,frame0c,i-1,corrected=True)
+                        frame0c =showTracks(track,frame0c,i-1,full_warp, corrected=True)
 
                 if save_output:
                     #       cv2.imshow('', frame)
@@ -355,11 +309,13 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description=
-        'Run tracker. It uses specified yml file whic defines beginnings and ends of files to analyse',
+        'Validates the tracks from runTracker. It uses specified yml file whic defines beginnings and ends of files to analyse',
         epilog=
         'Any issues and clarifications: github.com/ctorney/uavtracker/issues')
     parser.add_argument(
         '--config', '-c', required=True, nargs=1, help='Your yml config file')
+    parser.add_argument('--visual', '-v', default=False, action='store_true',
+                        help='Display tracking progress')
 
     args = parser.parse_args()
     main(args)

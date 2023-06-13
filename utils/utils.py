@@ -9,6 +9,8 @@ def init_config(
         args={'config': ['../experiments/toys.yml'],
               'debug': True,
               'visual': True,
+              'manual': True,
+              'static': True,
               'tracker': False,
               'annotated': False,
               'test_run': False,
@@ -30,6 +32,8 @@ def init_config(
     config['args_debug'] = args['debug'] if ('debug' in args.keys()) else False
     config['args_annotated'] = args['annotated'][0] if ('annotated' in args.keys() and type(args['annotated'])==list) else False
     config['args_visual'] = args['visual'] if ('visual' in args.keys()) else False
+    config['args_static'] = args['static'] if ('static' in args.keys()) else False
+    config['args_manual'] = args['manual'] if ('manual' in args.keys()) else False
     config['args_resume'] = args['resume'] if ('resume' in args.keys()) else False
     config['args_from_scratch'] = args['from_scratch'] if ('from_scratch' in args.keys()) else False
     config['args_read_only'] = args['read_only'] if ('read_only' in args.keys()) else False

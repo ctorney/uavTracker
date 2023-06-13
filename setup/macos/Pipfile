@@ -17,6 +17,7 @@ scipy = "*"
 scikit-image = "*"
 filterpy = "*"
 jupyterlab = "*"
+pytesseract = "*"
 
 [dev-packages]
 

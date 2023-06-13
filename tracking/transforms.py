@@ -8,6 +8,24 @@ import time
 sys.path.append('..')
 from utils.utils import init_config
 
+dx=0
+dy=0
+pa = (0,0)
+pb = (0,0)
+
+def onmouse(event, x, y, flags, param):
+    global pa, pb, dx, dy
+
+    if(event == cv2.EVENT_LBUTTONDOWN):
+        pa = (x,y)
+        dx = pb[0]-pa[0]
+        dy = pb[1]-pa[1]
+        print(f'pa is {pa}')
+    if(event == cv2.EVENT_RBUTTONDOWN):
+        pb = (x,y)
+        dx = pb[0]-pa[0]
+        dy = pb[1]-pa[1]
+        print(f'pb is {pb}')
 
 def main(args):
 
@@ -17,6 +35,14 @@ def main(args):
 
     #Load data
     config = init_config(args)
+    args_static = config['args_static']
+    args_visual = config['args_visual']
+
+    args_manual = config['args_manual']
+
+    if args_manual:
+        args_static = True
+        args_visual = True
 
     data_dir = config['project_directory']
     tracks_dir = os.path.join(data_dir,config['tracks_dir'])
@@ -33,6 +59,7 @@ def main(args):
     scalefact = 4.0
 
     for input_file in filelist:
+        key = ord('c')
 
         full_i_path = Path(input_file)
         input_file_short = str(full_i_path.relative_to(data_dir))
@@ -81,22 +108,44 @@ def main(args):
         vid_info['transforms'] = tr_file_short
 
         frame_idx = 0
-        if args.visual:
-            cv2.namedWindow('image transformed', cv2.WINDOW_GUI_EXPANDED)
-            cv2.moveWindow('image transformed', 20,20)
-        for i in range(nframes):
-            if args.static: #non-moving camera.
-                warp_matrix = np.eye(2, 3, dtype=np.float32)
-                full_warp = np.dot(full_warp, np.vstack((warp_matrix, [0, 0, 1])))
-                save_warp[i, :, :] = full_warp
-                continue
+        if args_visual:
+            cv2.namedWindow('image_transformed', cv2.WINDOW_GUI_EXPANDED)
+            cv2.moveWindow('image_transformed', 20,20)
+            if args_manual:
+                cv2.setMouseCallback("image_transformed", onmouse, param = None)
 
+        for i in range(nframes):
+            # if i >0:
+            #     print(save_warp[i-1,:,:])
             ret, frame = cap.read()
             sys.stdout.write('\r')
             sys.stdout.write("[%-20s] %d%% %d/%d" %
                              ('=' * int(20 * i / float(nframes)),
                               int(100.0 * i / float(nframes)), i, nframes))
             sys.stdout.flush()
+            if args_static: #non-moving camera.
+                #or: correct a non-moving camera
+                if args_manual:
+                    if i == 0:
+                        (h, w) = frame.shape[:2]
+                        (cX, cY) = (w // 2, h // 2)
+                        while key != ord('q'):
+                            cv2.imshow('image_transformed',frame)
+                            key = cv2.waitKey(0)
+                            print(f'dx and dy is {dx} and {dy}')
+                            degrot = np.degrees(np.arctan2(dy,dx))
+                            warp_matrix = cv2.getRotationMatrix2D((cX, cY), degrot, 1.0)
+                            rotated = cv2.warpAffine(frame, warp_matrix, (w, h))
+                            cv2.imshow('image_transformed',rotated)
+                            key = cv2.waitKey(0)
+                else: #automatically set static without anny corrections
+                    warp_matrix = np.eye(2, 3, dtype=np.float32)
+
+                #full_warp = np.dot(full_warp, np.vstack((warp_matrix, [0, 0, 1])))
+                full_warp = np.vstack((warp_matrix, [0, 0, 1]))
+                save_warp[i, :, :] = full_warp
+                continue
+
 
             if not ret:
                 continue
@@ -129,7 +178,7 @@ def main(args):
             full_warp = np.dot(full_warp, np.vstack((warp_matrix, [0, 0, 1])))
             save_warp[i, :, :] = full_warp
 
-            if args.visual:
+            if args_visual:
                 inv_warp = np.linalg.inv(full_warp)
                 shifted = shift_display.dot(inv_warp)
                 warped_frame = cv2.warpPerspective(frame, shifted,(padding+frame.shape[1],padding+frame.shape[0]))
@@ -165,6 +214,8 @@ if __name__ == '__main__':
                         help='Static camera. The program will create videos file for you but will set all transformations to identity. It will be quick, I promise.')
     parser.add_argument('--visual', '-v', default=False, action='store_true',
                         help='Show camera transformations (for debugging)')
+    parser.add_argument('--manual', '-m', default=False, action='store_true',
+                        help='Provide a manual correction for a statically misaligned camera. You need to draw what is meant to be a horizontal line with left side LMB to RMB.')
 
     args = parser.parse_args()
     main(args)

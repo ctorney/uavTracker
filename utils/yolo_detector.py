@@ -3,8 +3,8 @@ import os, cv2, sys
 import time, math
 sys.path.append("..")
 from models.yolo_models import get_yolo_model
-from utils.utils import makeYoloCompatible
-from utils.decoder import bbox_iou, interval_overlap
+from utils import makeYoloCompatible
+from decoder import bbox_iou, interval_overlap
 
 def _sigmoid(x):
     return 1. / (1. + np.exp(-x))
@@ -129,19 +129,98 @@ def unwarp_corners(bbox, full_warp):
     maxx = corner2[0]
     maxy = corner2[1]
     return minx, miny, maxx, maxy
+
 '''
 Show detections on a frame
 '''
 def showDetections(detections,
                    frame,
-                   full_warp = np.linalg.inv(np.eye(3, 3, dtype=np.float32))):
+                   full_warp = None):
     for detect in detections:
         bbox = detect[0:4]
         class_prob = detect[4]
-        minx, miny, maxx, maxy = unwarp_corners(bbox, full_warp)
+
+        if full_warp == None:
+            minx = bbox[0]
+            miny = bbox[1]
+            maxx = bbox[2]
+            maxy = bbox[3]
+        else:
+            minx, miny, maxx, maxy = unwarp_corners(bbox, full_warp)
+
         cv2.rectangle(
             frame, (int(minx) - 2, int(miny) - 2),
             (int(maxx) + 2, int(maxy) + 2), (0, 0, 220*class_prob**2), (1+round(class_prob)))
 
         cv2.putText(frame, str(int(class_prob*100)),  (int(maxx + 5),int(maxy + 2)), cv2.FONT_HERSHEY_COMPLEX_SMALL, 0.8, (200,200,230), 1);
     return frame
+
+'''
+Show tracks on a frame
+'''
+def showTracks(track,
+               frame1,
+               i,
+               full_warp=None,
+               corrected=False,
+               position=''):
+    bbox = [track['c0'],
+            track['c1'],
+            track['c2'],
+            track['c3']]
+    if corrected:
+        t_id = int(track['corrected_track_id'])
+    else:
+        t_id = int(track['track_id'])
+
+    if full_warp == None:
+        minx = bbox[0]
+        miny = bbox[1]
+        maxx = bbox[2]
+        maxy = bbox[3]
+    else:
+        iwarp = (full_warp)
+
+        corner1 = np.expand_dims([bbox[0], bbox[1]], axis=0)
+        corner1 = np.expand_dims(corner1, axis=0)
+        corner1 = cv2.perspectiveTransform(corner1,
+                                        iwarp)[0, 0, :]
+        corner2 = np.expand_dims([bbox[2], bbox[3]], axis=0)
+        corner2 = np.expand_dims(corner2, axis=0)
+        corner2 = cv2.perspectiveTransform(corner2,
+                                        iwarp)[0, 0, :]
+        corner3 = np.expand_dims([[bbox[0], bbox[3]]], axis=0)
+        #               corner3 = np.expand_dims(corner3,axis=0)
+        corner3 = cv2.perspectiveTransform(corner3,
+                                        iwarp)[0, 0, :]
+        corner4 = np.expand_dims([bbox[2], bbox[1]], axis=0)
+        corner4 = np.expand_dims(corner4, axis=0)
+        corner4 = cv2.perspectiveTransform(corner4,
+                                        iwarp)[0, 0, :]
+        maxx = max(corner1[0], corner2[0], corner3[0],
+                corner4[0])
+        minx = min(corner1[0], corner2[0], corner3[0],
+                corner4[0])
+        maxy = max(corner1[1], corner2[1], corner3[1],
+                corner4[1])
+        miny = min(corner1[1], corner2[1], corner3[1],
+                corner4[1])
+
+    np.random.seed(t_id)  # show each track as its own colour - note can't use np random number generator in this code
+
+    r = np.random.randint(256)
+    g = np.random.randint(256)
+    b = np.random.randint(256)
+
+    cv2.rectangle(frame1, (int(minx), int(miny)),
+                  (int(maxx), int(maxy)), (r, g, b), 4)
+
+    disp_info = f'{t_id}, {position}'
+    cv2.putText(frame1, disp_info,
+                (int(minx) - 5, int(miny) - 5), 0,
+                5e-3 * 200, (r, g, b), 2)
+
+
+    cv2.putText(frame1, str(i),  (30,60), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2);
+
+    return frame1
