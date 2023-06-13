@@ -43,7 +43,7 @@ def main(args):
     print(yaml.dump(filelist))
 
     for input_file_dict in filelist:
-
+        old_smolt = False
         if key==ord('q'):
             break
         input_file = os.path.join(data_dir, input_file_dict["filename"])
@@ -148,6 +148,12 @@ def main(args):
             print(f'can\'t read it! If it is just a date that is incorrect, write it down. If you need to read time from the screen and it is incorrent maybe correct the box?')
             print(f'I read \"{current_date_str}\" - does it look good?')
             current_date_str = input("What is the datetime in the format %d-%b-%Y %H:%M:%S?\n")
+            #HACK - for reading files without any displayed image
+            if current_date_str == 'old':
+                print(f'A ha! Goth ya! I guess you have an old video with a 10fps without any additional timestamp information :) SPECIAL mode is ON!')
+                old_smolt = True
+                current_date_str = input("What is the datetime in the format %d-%b-%Y %H:%M:%S?\n")
+
             current_date = datetime.datetime.strptime(current_date_str, "%d-%b-%Y %H:%M:%S")
 
         print(current_date)
@@ -213,10 +219,13 @@ def main(args):
             cdt = cdt.replace(year=current_date.year, month=current_date.month, day = current_date.day)
             timestamps_out.append(cdt.strftime("%d-%b-%Y %H:%M:%S.%f") + '\n')
 
-        if not use_timestamp_file:
-            #now go through the video
-            #keep reading the timeframe
-            #keep adding corrected /nth frame as a timestamp
+
+
+
+        #
+        # Our fantastico algorithm for supplementing on-screen date with frames calculation
+        #
+        if not use_timestamp_file and not old_smolt:
 
             timestamps_out.append(current_date.strftime("%d-%b-%Y %H:%M:%S.%f") + '\n')
             f_in_f=1
@@ -268,6 +277,16 @@ def main(args):
 
             with open(timestamps_out_file, "w") as output:
                 output.writelines(timestamps_out)
+
+        #Old smolt - 10fps and hope for the best!
+        if old_smolt:
+            timestamps_out.append(current_date.strftime("%d-%b-%Y %H:%M:%S.%f") + '\n')
+            for iii in range(nframes-1):
+                current_date = current_date + datetime.timedelta(milliseconds=100)
+                timestamps_out.append(current_date.strftime("%d-%b-%Y %H:%M:%S.%f") + '\n')
+            with open(timestamps_out_file, "w") as output:
+                output.writelines(timestamps_out)
+
 
         #Run through the video and provide the time for each frame.
         #now we will read a second frame...
