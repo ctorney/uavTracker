@@ -92,7 +92,7 @@ def main(args):
                     "This file has not been yet tracked **and validated/corrected**, there is nothing to convert :/ run runTracker and correctTracks first. Skipping!!!"
                 )
                 continue
-            reallife_tracks = pd.DataFrame(columns = ['frame_number','track_id', 'dx','dy','w','h'])
+            reallife_tracks = pd.DataFrame(columns = ['frame_number','timestamp','track_id', 'dx','dy','w','h'])
             nloc = 0 #for a new df
 
             #######################################################################
@@ -169,9 +169,14 @@ def main(args):
                     inv_warp = None
 
                 #display tracks
-                #TODO
-                #calculate distances from pixels to landmarks positions, assuming
-                #A/B being top-left to bottom right for this camera
+                #display cameraname
+                timestamp = timestamps[i]
+                ts_clean = timestamp.replace('\n','')
+                ts_clean = datetime.datetime.strptime(ts_clean,"%d-%b-%Y %H:%M:%S.%f")
+
+                cameraname_timestamp = f'{cameraname}: {timestamp}'
+                #display timestamp
+                cv2.putText(frame, cameraname_timestamp, (120,50), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2)
 
                 for _, track in corrected_tracks[corrected_tracks['frame_number']==i].iterrows():
                     #calculate distance in pixel for each track
@@ -187,13 +192,14 @@ def main(args):
 
                     position = f'[{dx:.0f},{dy:.0f}]'
                     reallife_tracks.loc[nloc] = {
-                            'frame_number':i,
-                            'track_id':int(track['corrected_track_id']),
-                            'dx':dx,
-                            'dy':dy,
-                            'w':w,
-                            'h':h
-                            }
+                        'frame_number':i,
+                        'timestamp':ts_clean,
+                        'track_id':int(track['corrected_track_id']),
+                        'dx':dx,
+                        'dy':dy,
+                        'w':w,
+                        'h':h
+                    }
                     nloc += 1
                     if args_visual:
                         frame =showTracks(track,frame,i,full_warp, True, position)
@@ -205,11 +211,6 @@ def main(args):
                     cv2.circle(frame, (lx,ly),5,(0,0,230), -1)
                     cv2.putText(frame, f'{lm}:[{lx},{ly}]',  (lx,ly), cv2. FONT_HERSHEY_COMPLEX_SMALL, 1.0, (0,170,0), 2)
 
-                #display cameraname
-                timestamp = timestamps[i]
-                cameraname_timestamp = f'{cameraname}: {timestamp}'
-                #display timestamp
-                cv2.putText(frame, cameraname_timestamp, (120,50), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2)
 
                 if args_visual:
                     cv2.imshow('tracker',frame)

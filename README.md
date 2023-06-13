@@ -347,3 +347,12 @@ checked_annotations_md5 : ''
 ```
 python annotate.py -c ../experiments/gnu.yml
 ```
+
+### Workflow for my smolt videos
+
+```
+python prepVideos.py -c ../experiments/any_light_smolts.yml
+python runTracker.py -c ../experiments/any_light_smolts.yml --visual
+python correctTracks.py -c ../experiments/any_light_smolts.yml --visual
+python convertSmoltTracks.py --config ../experiments/any_light_smolts.yml --visual
+```
