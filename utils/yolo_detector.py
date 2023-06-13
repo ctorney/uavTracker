@@ -158,7 +158,12 @@ def showDetections(detections,
 '''
 Show tracks on a frame
 '''
-def showTracks(track,frame1,i,full_warp=None,corrected=False):
+def showTracks(track,
+               frame1,
+               i,
+               full_warp=None,
+               corrected=False,
+               position=''):
     bbox = [track['c0'],
             track['c1'],
             track['c2'],
@@ -210,9 +215,12 @@ def showTracks(track,frame1,i,full_warp=None,corrected=False):
     cv2.rectangle(frame1, (int(minx), int(miny)),
                   (int(maxx), int(maxy)), (r, g, b), 4)
 
-    cv2.putText(frame1, str(t_id),
+    disp_info = f'{t_id}, {position}'
+    cv2.putText(frame1, disp_info,
                 (int(minx) - 5, int(miny) - 5), 0,
                 5e-3 * 200, (r, g, b), 2)
+
+
     cv2.putText(frame1, str(i),  (30,60), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2);
 
     return frame1

@@ -11,6 +11,14 @@ import time, datetime
 from utils import md5check, init_config
 from yolo_detector import showTracks
 
+reallocs = {
+    'ch_width':{
+        'alpha':50,
+        'beta':50,
+        'gamma':50}
+    }
+
+
 def main(args):
     #Load data
     config = init_config(args)
@@ -98,6 +106,20 @@ def main(args):
 
             corrected_tracks = pd.read_csv(data_file_corrected,header=None)
             corrected_tracks.columns = ['frame_number','corrected_track_id','c0','c1','c2','c3']
+            #display landmarks
+            landmarks_list = landmarks_dict['landmarks']
+            cameraname = landmarks_dict['camera']
+
+            #
+            ch_width_px = np.sqrt(
+                np.power(landmarks_list[0][1]-landmarks_list[1][1],2) +
+                np.power(landmarks_list[0][2]-landmarks_list[1][2],2))
+
+            px_to_cm = reallocs['ch_width'][cameraname] / ch_width_px
+
+            #landmark A is the reference point
+            ax = landmarks_list[0][1]
+            ay = landmarks_list[0][2]
 
             #Ok, now display everything with all the calculated data.
             #We will assume a real-life location of 0.0 for landmark A of gamma (a bit of a bottom left corner
@@ -151,16 +173,23 @@ def main(args):
                     #calculate distance in pixel for each track
                     #for each track calculate coordinates of the centre
                     #for each track calculate length of fish from aspect ratio and longer length
-                    frame =showTracks(track,frame,i,full_warp, corrected=True)
 
-                #display landmarks
-                landmarks_list = landmarks_dict['landmarks']
+                    mx = track['c0'] + (track['c2'] - track['c0'])/2
+                    my = track['c1'] + (track['c3'] - track['c1'])/2
+                    dx = (mx - ax) * px_to_cm
+                    dy = - (my - ay) * px_to_cm
+
+                    position = f'[{dx:.0f},{dy:.0f}]'
+                    frame =showTracks(track,frame,i,full_warp, True, position)
+
                 for iii, landmark in enumerate(landmarks_list):
-                    cv2.circle(frame, (landmark[1],landmark[2]),5,(0,0,230), -1)
-                    cv2.putText(frame, landmark[0],  (landmark[1],landmark[2]), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2)
+                    lx = landmark[1]
+                    ly = landmark[2]
+                    lm = landmark[0]
+                    cv2.circle(frame, (lx,ly),5,(0,0,230), -1)
+                    cv2.putText(frame, f'{lm}:[{lx},{ly}]',  (lx,ly), cv2. FONT_HERSHEY_COMPLEX_SMALL, 1.0, (0,170,0), 2)
 
                 #display cameraname
-                cameraname = landmarks_dict['camera']
                 timestamp = timestamps[i]
                 cameraname_timestamp = f'{cameraname}: {timestamp}'
                 #display timestamp
