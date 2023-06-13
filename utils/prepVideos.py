@@ -57,10 +57,13 @@ def main(args):
         #checking fps, mostly because we're curious
         fps = round(cap.get(cv2.CAP_PROP_FPS))
 
+        print(f'Video setting fps is {fps}')
         width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
         height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
         S = (int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
                 int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+
+        nframes = round(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
         if width == 0:
             print('WIDTH is 0. It is safe to assume that the file doesn\'t exist or is corrupted. Hope the next one isn\'t... Skipping - obviously. ')
@@ -122,9 +125,15 @@ def main(args):
             key = cv2.waitKey(100)  #& 0xFF
 
         cv2.destroyWindow('frame')
-        timebox = frame[landmarks_list[0][1]:landmarks_list[1][1],
-                        landmarks_list[0][0]:landmarks_list[1][0],
-                        :]
+        tblimits = [landmarks_list[0][1],
+                    landmarks_list[1][1],
+                    landmarks_list[0][0],
+                    landmarks_list[1][0]]
+
+        timebox = frame[tblimits[0]:tblimits[1],tblimits[2]:tblimits[3],:]
+        # timebox = frame[landmarks_list[0][1]:landmarks_list[1][1],
+        #                 landmarks_list[0][0]:landmarks_list[1][0],
+        #                 :]
         datebox = frame[landmarks_list[2][1]:landmarks_list[3][1],
                         landmarks_list[2][0]:landmarks_list[3][0],
                         :]
@@ -133,7 +142,14 @@ def main(args):
         mydate = pytesseract.image_to_string(datebox,config="--psm 6")
 
         current_date_str = f'{mydate} {mytime}'.replace('\n','')
-        current_date = datetime.datetime.strptime(current_date_str, "%d-%b-%Y %H:%M:%S")
+        try:
+            current_date = datetime.datetime.strptime(current_date_str, "%d-%b-%Y %H:%M:%S")
+        except:
+            print(f'can\'t read it! If it is just a date that is incorrect, write it down. If you need to read time from the screen and it is incorrent maybe correct the box?')
+            print(f'I read \"{current_date_str}\" - does it look good?')
+            current_date_str = input("What is the datetime in the format %d-%b-%Y %H:%M:%S?\n")
+            current_date = datetime.datetime.strptime(current_date_str, "%d-%b-%Y %H:%M:%S")
+
         print(current_date)
 
         ####
@@ -171,10 +187,16 @@ def main(args):
         timestamps_file = os.path.join(noextwithdir + '.txt')
         print(timestamps_file)
 
-        with open(timestamps_file) as f:
-            timestamps = [(int(line.split(', ')[0]),
-                           line.split(', ')[1].replace('\n',''))
-                          for line in f]
+        if os.path.exists(timestamps_file):
+            use_timestamp_file = True
+            with open(timestamps_file) as f:
+                timestamps = [(int(line.split(', ')[0]),
+                            line.split(', ')[1].replace('\n',''))
+                            for line in f]
+        else:
+            use_timestamp_file = False
+            timestamps = []
+
         timestamps_out_file = os.path.join(tracks_dir, noext + '_timestamps.txt')
         # print(datetime.datetime.strptime(x,"%H%M%S%f").strftime('%Y-%m-%d %H:%M:%S'))
         #check if the hour of the timestamp matches that one read from the image.
@@ -191,8 +213,61 @@ def main(args):
             cdt = cdt.replace(year=current_date.year, month=current_date.month, day = current_date.day)
             timestamps_out.append(cdt.strftime("%d-%b-%Y %H:%M:%S.%f") + '\n')
 
-        with open(timestamps_out_file, "w") as output:
-            output.writelines(timestamps_out)
+        if not use_timestamp_file:
+            #now go through the video
+            #keep reading the timeframe
+            #keep adding corrected /nth frame as a timestamp
+
+            timestamps_out.append(current_date.strftime("%d-%b-%Y %H:%M:%S.%f") + '\n')
+            f_in_f=1
+            for i in range(nframes-1):#we already read the first one
+                ret, frame = cap.read()
+                timebox = frame[tblimits[0]:tblimits[1],tblimits[2]:tblimits[3],:]
+                mytime = pytesseract.image_to_string(timebox,config="-c tessedit_char_whitelist=1234567890: --psm 6") # only digits
+                if len(mytime)==8: #somehow missed one colon, happens often
+                    if mytime[2]!=':':
+                        mytime = f'{mytime[:2]}:{mytime[2:]}'
+                    elif mytime[5]!=':':
+                        mytime = f'{mytime[:5]}:{mytime[5:]}'
+                    print('upsi')
+
+                current_date_str = f'{mydate} {mytime}'.replace('\n','')
+                pdate = current_date
+                try:
+                    current_date = datetime.datetime.strptime(current_date_str, "%d-%b-%Y %H:%M:%S")
+                    print(current_date)
+                except:
+                    print(f'cant read: {current_date_str}, matching minutes and seconds...')
+                    try:
+                        c_second = int(mytime[6:])
+                        c_minute = int(mytime[3:5])
+                        current_date = current_date.replace(second=c_second,
+                                                            minute=c_minute)
+                    except:
+                        print(f'cant even do that...')
+
+                #clean and prepare the time
+                if (current_date.hour == 0) and (not nextDay):
+                    current_date = current_date.replace(day=current_date.day+1)
+                    nextDay = True
+
+                if pdate != current_date:
+                    print(f'datecting framerate {f_in_f}')
+                    for iii in range(f_in_f):
+                        fragpdate = pdate + datetime.timedelta(milliseconds=1000 * iii/(f_in_f+1))
+                        timestamps_out.append(fragpdate.strftime("%d-%b-%Y %H:%M:%S.%f") + '\n')
+                    f_in_f=1
+                else:
+                    f_in_f += 1
+
+            #last frame
+            print(f'datecting framerate {f_in_f}')
+            for iii in range(f_in_f):
+                fragpdate = pdate + datetime.timedelta(milliseconds=1000 * iii/(f_in_f+1))
+                timestamps_out.append(fragpdate.strftime("%d-%b-%Y %H:%M:%S.%f") + '\n')
+
+            with open(timestamps_out_file, "w") as output:
+                output.writelines(timestamps_out)
 
         #Run through the video and provide the time for each frame.
         #now we will read a second frame...
