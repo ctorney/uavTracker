@@ -12,6 +12,7 @@ import numpy as np
 import time
 import pandas as pd
 sys.path.append('..')
+sys.path.append('.')
 from utils.utils import init_config
 from utils.yolo_detector import showTracks
 
@@ -165,6 +166,8 @@ def main(args):
             messy_tracks = pd.read_csv(data_file,header=None)
             messy_tracks.columns = ['frame_number','track_id','c0','c1','c2','c3','long_score','score']
 
+
+
             #load in corrections
             # corrected_tracks0 = pd.read_csv(corrections_file,header=None)
             # corrected_tracks0.columns = ['frame_number','track_id','corrected_track_id']
@@ -216,8 +219,11 @@ def main(args):
                     corrected_tracks = messy_tracks.copy()
                     corrected_tracks['corrected_track_id']=corrected_tracks['track_id']
 
-                    #TODO remove all tracks with avg long_score under a threshold
-                    corrected_tracks = corrected_tracks
+                    #remove all tracks with avg long_score under a threshold
+                    track_long_scores = corrected_tracks.groupby(['corrected_track_id']).mean()['long_score']
+                    for tt in corrected_tracks['corrected_track_id'].unique():
+                        if track_long_scores[tt] < track_thresh_val:
+                            corrected_tracks = corrected_tracks[corrected_tracks['corrected_track_id']!=int(tt)]
 
                     #load in transitions
                     with open(transitions_file) as f:
@@ -239,6 +245,11 @@ def main(args):
                         tracks_false = [line for line in f]
                     for tt in tracks_false:
                         corrected_tracks =  corrected_tracks[corrected_tracks['corrected_track_id']!=int(tt)]
+                    #go through all of existing tracks and remove ones with bad long track
+                    track_long_scores = corrected_tracks.groupby(['corrected_track_id']).mean()['long_score']
+                    for tt in corrected_tracks['corrected_track_id'].unique():
+                        if track_long_scores[tt] < track_thresh_val:
+                            corrected_tracks = corrected_tracks[corrected_tracks['corrected_track_id']!=int(tt)]
 
                 #####
                 sys.stdout.write('\r')
