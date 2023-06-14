@@ -196,6 +196,12 @@ def main(args):
             for tt in tracks_false:
                 corrected_tracks =  corrected_tracks[corrected_tracks['corrected_track_id']!=int(tt)]
 
+            #remove all tracks with avg long_score under a threshold
+            track_long_scores = corrected_tracks.groupby(['corrected_track_id']).mean()['long_score']
+            for tt in corrected_tracks['corrected_track_id'].unique():
+                if track_long_scores[tt] < track_thresh_val:
+                    corrected_tracks = corrected_tracks[corrected_tracks['corrected_track_id']!=int(tt)]
+
             while i < nframes:
                 if key == ord('q'):
                     break
@@ -219,11 +225,6 @@ def main(args):
                     corrected_tracks = messy_tracks.copy()
                     corrected_tracks['corrected_track_id']=corrected_tracks['track_id']
 
-                    #remove all tracks with avg long_score under a threshold
-                    track_long_scores = corrected_tracks.groupby(['corrected_track_id']).mean()['long_score']
-                    for tt in corrected_tracks['corrected_track_id'].unique():
-                        if track_long_scores[tt] < track_thresh_val:
-                            corrected_tracks = corrected_tracks[corrected_tracks['corrected_track_id']!=int(tt)]
 
                     #load in transitions
                     with open(transitions_file) as f:

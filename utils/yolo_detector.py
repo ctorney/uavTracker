@@ -220,6 +220,8 @@ def showTracks(track,
     cv2.putText(frame1, disp_info,
                 (int(minx) - 5, int(miny) - 5), 0,
                 5e-3 * 200, (r, g, b), 2)
+    cv2.putText(frame1, str(int(100*track[6])),
+                (int(maxx) + 5, int(miny) - 5), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (r, g, b), 1)
 
 
     cv2.putText(frame1, str(i),  (30,60), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2);
