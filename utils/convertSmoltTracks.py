@@ -198,7 +198,9 @@ def main(args):
                         'dx':dx,
                         'dy':dy,
                         'w':w,
-                        'h':h
+                        'h':h,
+                        'long_score':track['long_score'],
+                        'score':track['score'],
                     }
                     nloc += 1
                     if args_visual:

@@ -163,7 +163,7 @@ def main(args):
             filof = Vidbu(cap,nframes,buffer_size)
 
             messy_tracks = pd.read_csv(data_file,header=None)
-            messy_tracks.columns = ['frame_number','track_id','c0','c1','c2','c3']
+            messy_tracks.columns = ['frame_number','track_id','c0','c1','c2','c3','long_score','score']
 
             #load in corrections
             # corrected_tracks0 = pd.read_csv(corrections_file,header=None)
@@ -216,6 +216,9 @@ def main(args):
                     corrected_tracks = messy_tracks.copy()
                     corrected_tracks['corrected_track_id']=corrected_tracks['track_id']
 
+                    #TODO remove all tracks with avg long_score under a threshold
+                    corrected_tracks = corrected_tracks
+
                     #load in transitions
                     with open(transitions_file) as f:
                         tracks_transitions = [line for line in f]
@@ -236,8 +239,6 @@ def main(args):
                         tracks_false = [line for line in f]
                     for tt in tracks_false:
                         corrected_tracks =  corrected_tracks[corrected_tracks['corrected_track_id']!=int(tt)]
-
-
 
                 #####
                 sys.stdout.write('\r')
@@ -317,7 +318,7 @@ def main(args):
                     key = cv2.waitKey(0)  #& 0xFF
 
 
-                corrected_tracks[['frame_number','corrected_track_id', 'c0','c1','c2','c3']].to_csv(data_file_corrected,header=None,index=False)
+                corrected_tracks[['frame_number','corrected_track_id', 'c0','c1','c2','c3','long_score','score']].to_csv(data_file_corrected,header=None,index=False)
 
 
 if __name__ == '__main__':

@@ -42,7 +42,7 @@ class yoloDetector(object):
         new_image = np.expand_dims(new_image, 0)
 
         # get detections
-        preds = self.model.predict(new_image)
+        preds = self.model.predict(new_image, verbose = 0)
 
         #print('yolo time: ', (stop-start)/batches)
         new_boxes = np.zeros((0,5))

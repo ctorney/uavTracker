@@ -169,9 +169,10 @@ koala:
   obj_thresh: 0.5
   nms_thresh: 0.3
   max_age: 6 #how
-  track_thresh: 0.75 #only return tracks with average confidence above this value
   init_thresh: 0.8
   init_nms: 0.5
+  #the following settings are applied during correctTracks point now
+  track_thresh: 0.75 #only return tracks with average confidence above this value
   hold_without: 6 #how long to show track alive without detections (at max age it will be killed anyway
   transform_before_track: 1
 
