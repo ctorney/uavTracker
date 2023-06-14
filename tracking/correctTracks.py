@@ -103,6 +103,7 @@ def main(args):
             corrections_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_corrections.csv')
             transitions_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_transitions.csv')
             switches_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_switches.csv')
+            false_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_false.csv')
             video_file_corrected = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_corrected.avi')
             print(input_file, video_file_corrected)
             if not os.path.isfile(data_file):
@@ -178,7 +179,7 @@ def main(args):
                 for tt_id in tt.split(',')[1:]:
                     corrected_tracks['corrected_track_id'] = corrected_tracks['corrected_track_id'].replace({int(tt_id):int(tt.split(',')[0])})
 
-            #load in switches
+            #load in switches and false tracks
             with open(switches_file) as f:
                 tracks_switches = [line for line in f]
             for tt in tracks_switches:
@@ -187,21 +188,29 @@ def main(args):
                 track_wrong = int(tt[1])
                 track_right = int(tt[2])
                 corrected_tracks['corrected_track_id'][corrected_tracks['frame_number']>=frame_start] =  corrected_tracks['corrected_track_id'].replace({track_wrong:track_right, track_right:track_wrong})
+            with open(false_file) as f:
+                tracks_false = [line for line in f]
+            for tt in tracks_false:
+                corrected_tracks =  corrected_tracks[corrected_tracks['corrected_track_id']!=int(tt)]
 
             while i < nframes:
                 if key == ord('q'):
                     break
 
                 #append previous frame into buffer and get a next frame
-                if key == ord('d'):
-                    i=i+1
-                    avaf1, frame1 = filof.get_i_frame(i)
-                    avaf0, frame0 = filof.get_i_frame(i-1)
+                try:
+                    if key == ord('d'):
+                        i=i+1
+                        avaf1, frame1 = filof.get_i_frame(i)
+                        avaf0, frame0 = filof.get_i_frame(i-1)
 
-                if key == ord('a'):
-                    i=i-1
-                    avaf1, frame1 = filof.get_i_frame(i)
-                    avaf0, frame0 = filof.get_i_frame(i-1)
+                    if key == ord('a'):
+                        i=i-1
+                        avaf1, frame1 = filof.get_i_frame(i)
+                        avaf0, frame0 = filof.get_i_frame(i-1)
+                except:
+                    print('breaking out!')
+                    break
 
                 if key == ord('l'):
                     corrected_tracks = messy_tracks.copy()
@@ -214,7 +223,7 @@ def main(args):
                         for tt_id in tt.split(',')[1:]:
                             corrected_tracks['corrected_track_id'] = corrected_tracks['corrected_track_id'].replace({int(tt_id):int(tt.split(',')[0])})
 
-                    #load in switches
+                    #load in switches and false tracks
                     with open(switches_file) as f:
                         tracks_switches = [line for line in f]
                     for tt in tracks_switches:
@@ -223,6 +232,11 @@ def main(args):
                         track_wrong = int(tt[1])
                         track_right = int(tt[2])
                         corrected_tracks['corrected_track_id'][corrected_tracks['frame_number']>=frame_start] =  corrected_tracks['corrected_track_id'].replace({track_wrong:track_right, track_right:track_wrong})
+                    with open(false_file) as f:
+                        tracks_false = [line for line in f]
+                    for tt in tracks_false:
+                        corrected_tracks =  corrected_tracks[corrected_tracks['corrected_track_id']!=int(tt)]
+
 
 
                 #####

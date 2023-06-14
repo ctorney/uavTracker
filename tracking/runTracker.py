@@ -6,6 +6,7 @@ import yaml
 import numpy as np
 
 sys.path.append('..')
+sys.path.append('.')
 import time
 from utils.yolo_detector import yoloDetector, showDetections
 from yolo_tracker import yoloTracker
@@ -85,6 +86,7 @@ def main(args):
             corrections_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_corrections.csv')
             transitions_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_transitions.csv')
             switches_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_switches.csv')
+            false_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_false.csv')
 
             video_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_TR.avi')
             print(input_file, video_file)
@@ -303,6 +305,10 @@ def main(args):
                 writer.writerows([])
 
             with open(switches_file, "w") as output:
+                writer = csv.writer(output, lineterminator='\n')
+                writer.writerows([])
+
+            with open(false_file, "w") as output:
                 writer = csv.writer(output, lineterminator='\n')
                 writer.writerows([])
 
