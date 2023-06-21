@@ -179,7 +179,7 @@ koala:
 common:
   LABELS: ['aoi']
   MAX_L: 300
-  MIN_L: 20
+  MIN_L: 15
 
   NO_OBJECT_SCALE: 1.0
   OBJECT_SCALE: 5.0
