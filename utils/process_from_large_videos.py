@@ -3,12 +3,12 @@ For example:
 
 python utils/process_from_large_videos.py -d data/wilderbeest/images -f data/wilderbeest/videos/DJI_0095.MP4
 '''
-import os, sys, glob, argparse, cv2
-
+import os, sys, glob, argparse, cv2, pathlib
 def main(args):
     # Open the video file
     cap = cv2.VideoCapture(args.file[0])
     outdir = args.dir[0]
+    nameseed = pathlib.Path(args.file[0]).stem
 
     # Create a directory to store the images
     if not os.path.exists(outdir):
@@ -32,7 +32,7 @@ def main(args):
         count += 1
 
         # Check if it's the tenth frame
-        if count % 10 == 0:
+        if count % 100 == 0:
             # Split the frame into four images
             h, w, _ = frame.shape
             half_h = h // 2
@@ -46,7 +46,7 @@ def main(args):
 
             # Resize each image to be a multiple of 32
             for i, image in enumerate(images):
-                filename = os.path.join(outdir, f'frame_{count}_part_{i}.jpg')
+                filename = os.path.join(outdir, f'{nameseed}_frame_{count}_part_{i}.jpg')
                 cv2.imwrite(filename, image)
 
         # Check if the user has pressed 'q' to quit

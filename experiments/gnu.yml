@@ -13,19 +13,36 @@ predictions_dir: 'results/predictions/'
 results_dir: 'results/'
 
 autogen_model:
-  pretrained_weights: 'gnu_trainedwithouttestset_phaseone.h5'
-  pretrained_weights_md5: "0413e6a0a8cf9d815fb42e1956103479" #leave empty if you are retraining
+  pretrained_weights: 'gnu_modelbeest_phase_one_2023May15.h5'
+  pretrained_weights_md5: "18e2460dfb029a7a7960cab288c35008"
   num_class: 1
   obj_thresh: 0.70
   nms_thresh: 0.3
-autogen_annotations_fname: 'annotations-autogen_incl23_1.yml'
-autogen_annotations_md5 : 'aeffbda71d4cb26f05aae74ad82d6d3b'
-checked_annotations_fname: 'annotations-checked_incl23_2.yml'
-checked_annotations_md5 : 'b66e132c473c20bc64a198facfe9f029'
+autogen_annotations_fname: 'annotations-autogen_incl23_3.yml'
+autogen_annotations_md5 : '10cb09fab48d473fa5df1f773a1c356e'
+checked_annotations_fname: 'annotations-checked_incl23_4.yml'
+checked_annotations_md5 : ''
 
 results_config_name: 'wildesults_file.yml'
 
 models:
+  maziwa:
+    pretrained_weights: 'gnu_modelbeest_phase_one_2023May15.h5'
+    pretrained_weights_md5: "18e2460dfb029a7a7960cab288c35008"
+    training_sets: ['train_old', 'train_spring23_cyrus']
+    phases: 1
+    num_class: 1
+    obj_thresh: 0.8
+    nms_thresh: 0.1
+    phase_one:
+      BATCH_SIZE: 16
+      EPOCHS: 500
+      LR: 0.5e-3
+      B1: 0.9
+      B2: 0.999
+      EPS: 0.1e-7
+      MIN_DELTA: 0.001
+      PATIENCE: 10
   nyamongo:
     pretrained_weights: 'yolo-v3-coco.h5'
     pretrained_weights_md5: "26cf8e8b5ba9d9d4a3778f9747e3407a" #leave empty if you are retraining
@@ -80,6 +97,20 @@ subsets:
     number_of_images: 13
     description: 'Well annotated by Mix 13 images from DJI_0095.MP4
  and DJI_0098.MP4 videos from Spring 23 flights'
+    filelist: ''
+    regex: '*.jpg'
+  train_spring23_cyrus:
+    directory: 'subsets/train_spring23_cyrus/'
+    number_of_images: 364
+    description: 'Annotated by Cyrus images from DJI_0095.MP4
+ and DJI_0098.MP4, with a 13 second break from the test set videos from Spring 23 flights.'
+    filelist: ''
+    regex: '*.jpg'
+  test_spring23_cyrus:
+    directory: 'subsets/test_spring23_cyrus/'
+    number_of_images: 40
+    description: 'Annotated by Cyrus first images from DJI_0095.MP4
+ and DJI_0098.MP4 videos from Spring 23 flights.'
     filelist: ''
     regex: '*.jpg'
 
