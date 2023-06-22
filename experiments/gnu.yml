@@ -70,7 +70,7 @@ models:
       MIN_DELTA: 0.001
       PATIENCE: 10
 
-testing_sets: ['test_old','test_spring23', 'test_spring23_2']
+testing_sets: ['test_old','test_spring23', 'test_spring23_2', 'test_spring23_cyrus']
 
 subsets:
   train_old:
