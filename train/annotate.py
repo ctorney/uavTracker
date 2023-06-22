@@ -86,7 +86,7 @@ def check_boxes(img_clean, bbox_list):
                 bbox_list.remove(potentials[np.argmin(areas)].tolist())
             draw_all_boxes()
 
-    cv2.namedWindow('image', cv2.WINDOW_GUI_EXPANDED)
+    cv2.namedWindow('image', cv2.WINDOW_NORMAL)
     cv2.resizeWindow('image', 1900, 1100)
     cv2.moveWindow('image', 20,20)
     cv2.setMouseCallback('image', draw_rect_roi)
