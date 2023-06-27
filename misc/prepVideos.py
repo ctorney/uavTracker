@@ -7,7 +7,7 @@ import numpy as np
 
 sys.path.append('..')
 import time, datetime
-from utils import md5check, init_config
+from utils.utils import md5check, init_config
 
 pa = (0,0)
 landmarks_list = []

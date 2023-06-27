@@ -8,8 +8,8 @@ import pandas as pd
 
 sys.path.append('..')
 import time, datetime
-from utils import md5check, init_config
-from yolo_detector import showTracks
+from utils.utils import md5check, init_config
+from utils.yolo_detector import showTracks
 
 reallocs = {
     'ch_width':{

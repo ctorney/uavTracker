@@ -1,8 +1,8 @@
 import numpy as np
 import os, cv2, sys
 import time, math
-sys.path.append("..")
 sys.path.append(".")
+sys.path.append("..")
 from utils.decoder import bbox_iou, interval_overlap
 from utils.utils import makeYoloCompatible
 from models.yolo_models import get_yolo_model
