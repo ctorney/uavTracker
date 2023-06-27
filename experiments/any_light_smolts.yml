@@ -157,8 +157,8 @@ subsets:
 tracking_setup: 'koala'
 
 koala:
-  videos_name_regex: "testvid/*.mp4"
-  # videos_name_regex: "behaviour/*.mp4" #for use by transform.py which also preps the following yml file
+  # videos_name_regex: "testvid/*.mp4"
+  videos_name_regex: "behaviour/*.mp4" #for use by transform.py which also preps the following yml file
   videos_fps: 10
   link_iou: 0.1
   step_frames: 1 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger

@@ -44,6 +44,8 @@ def main(args):
 
     for input_file_dict in filelist:
         old_smolt = False
+        landmarks_list = []
+        landmarks_dict = dict()
         if key==ord('q'):
             break
         input_file = os.path.join(data_dir, input_file_dict["filename"])
@@ -81,6 +83,14 @@ def main(args):
             saved_warp = None
             print(":: oh dear! :: No transformations found.")
 
+        timestamps_out_file = os.path.join(tracks_dir, noext + '_timestamps.txt')
+
+        if os.path.isfile(timestamps_out_file):
+            print(
+                "File already analysed, dear sir. Remove output timestamp/landmark files to redo"
+            )
+            continue
+
         nframes = round(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         cv2.namedWindow('tracker', cv2.WINDOW_GUI_EXPANDED)
         cv2.moveWindow('tracker', 20,20)
@@ -107,7 +117,7 @@ def main(args):
         cv2.imshow('frame', frame)
         frame_disp = frame.copy()
         #First ask to provide a rectangle for time reading.
-        while key != ord('q'):
+        while key != ord('n'):
             cv2.imshow('frame', frame_disp)
             cv2.setMouseCallback("frame", onmouse, param = None)
             for iii, landmark in enumerate(landmarks_list):
@@ -138,8 +148,8 @@ def main(args):
                         landmarks_list[2][0]:landmarks_list[3][0],
                         :]
 
-        mytime = pytesseract.image_to_string(timebox,config="-c tessedit_char_whitelist=123456789: --psm 6") # only digits
-        mydate = pytesseract.image_to_string(datebox,config="--psm 6")
+        mytime = pytesseract.image_to_string(timebox,config="-c tessedit_char_whitelist=123456789: --psm 6").replace(' ','') # only digits
+        mydate = pytesseract.image_to_string(datebox,config="--psm 6").replace(' ','')
 
         current_date_str = f'{mydate} {mytime}'.replace('\n','')
         try:
@@ -153,6 +163,7 @@ def main(args):
                 print(f'A ha! Goth ya! I guess you have an old video with a 10fps without any additional timestamp information :) SPECIAL mode is ON!')
                 old_smolt = True
                 current_date_str = input("What is the datetime in the format %d-%b-%Y %H:%M:%S?\n")
+            mydate = current_date_str.split(' ')[0]
 
             current_date = datetime.datetime.strptime(current_date_str, "%d-%b-%Y %H:%M:%S")
 
@@ -165,7 +176,7 @@ def main(args):
         camera_name = input("what is this camera name?\n")
         key = ord('c')
         landmarks_list = [] # clear landmark list after getting date/time rectangles
-        while key != ord('q'):
+        while key != ord('l'):
             for iii, landmark in enumerate(landmarks_list):
                 cv2.circle(im_aligned, landmark,5,(0,0,230), -1)
                 cv2.putText(im_aligned, chr(65+iii),  landmark, cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2)
@@ -203,7 +214,6 @@ def main(args):
             use_timestamp_file = False
             timestamps = []
 
-        timestamps_out_file = os.path.join(tracks_dir, noext + '_timestamps.txt')
         # print(datetime.datetime.strptime(x,"%H%M%S%f").strftime('%Y-%m-%d %H:%M:%S'))
         #check if the hour of the timestamp matches that one read from the image.
         #rewrite all the datetime as the correct time
@@ -231,8 +241,10 @@ def main(args):
             f_in_f=1
             for i in range(nframes-1):#we already read the first one
                 ret, frame = cap.read()
+                if not ret:
+                    continue
                 timebox = frame[tblimits[0]:tblimits[1],tblimits[2]:tblimits[3],:]
-                mytime = pytesseract.image_to_string(timebox,config="-c tessedit_char_whitelist=1234567890: --psm 6") # only digits
+                mytime = pytesseract.image_to_string(timebox,config="-c tessedit_char_whitelist=1234567890: --psm 6").replace(' ','') # only digits
                 if len(mytime)==8: #somehow missed one colon, happens often
                     if mytime[2]!=':':
                         mytime = f'{mytime[:2]}:{mytime[2:]}'
