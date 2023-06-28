@@ -11,11 +11,12 @@ import time, datetime
 from utils.utils import md5check, init_config
 from utils.yolo_detector import showTracks
 
+#Channel width is 63 cm... in all of the recordings ;)
 reallocs = {
     'ch_width':{
-        'alpha':50,
-        'beta':50,
-        'gamma':50}
+        'alpha':63,
+        'beta':63,
+        'gamma':63}
     }
 
 
@@ -92,7 +93,7 @@ def main(args):
                     "This file has not been yet tracked **and validated/corrected**, there is nothing to convert :/ run runTracker and correctTracks first. Skipping!!!"
                 )
                 continue
-            reallife_tracks = pd.DataFrame(columns = ['frame_number','timestamp','track_id', 'dx','dy','w','h'])
+            reallife_tracks = pd.DataFrame(columns = ['frame_number','timestamp','track_id', 'dx','dy','w','h','long_score','score'])
             nloc = 0 #for a new df
 
             #######################################################################
@@ -108,7 +109,7 @@ def main(args):
                 print(":: oh dear! :: No transformations found.")
 
             corrected_tracks = pd.read_csv(data_file_corrected,header=None)
-            corrected_tracks.columns = ['frame_number','corrected_track_id','c0','c1','c2','c3']
+            corrected_tracks.columns = ['frame_number','corrected_track_id','c0','c1','c2','c3','long_score','score']
             #display landmarks
             landmarks_list = landmarks_dict['landmarks']
             cameraname = landmarks_dict['camera']
