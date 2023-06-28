@@ -1,10 +1,11 @@
 import numpy as np
 import os, cv2, sys
 import time, math
+sys.path.append(".")
 sys.path.append("..")
+from utils.decoder import bbox_iou, interval_overlap
+from utils.utils import makeYoloCompatible
 from models.yolo_models import get_yolo_model
-from utils import makeYoloCompatible
-from decoder import bbox_iou, interval_overlap
 
 def _sigmoid(x):
     return 1. / (1. + np.exp(-x))
@@ -41,7 +42,7 @@ class yoloDetector(object):
         new_image = np.expand_dims(new_image, 0)
 
         # get detections
-        preds = self.model.predict(new_image)
+        preds = self.model.predict(new_image, verbose = 0)
 
         #print('yolo time: ', (stop-start)/batches)
         new_boxes = np.zeros((0,5))
@@ -219,6 +220,8 @@ def showTracks(track,
     cv2.putText(frame1, disp_info,
                 (int(minx) - 5, int(miny) - 5), 0,
                 5e-3 * 200, (r, g, b), 2)
+    cv2.putText(frame1, str(int(100*track[6])),
+                (int(maxx) + 5, int(miny) - 5), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (r, g, b), 1)
 
 
     cv2.putText(frame1, str(i),  (30,60), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2);

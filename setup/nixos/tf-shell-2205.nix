@@ -41,6 +41,7 @@ mkShell {
     seaborn
     folium
     pyproj
+    pytesseract
     ]))
   ];
   shellHook = ''

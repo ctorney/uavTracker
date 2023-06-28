@@ -157,8 +157,8 @@ subsets:
 tracking_setup: 'koala'
 
 koala:
-  videos_name_regex: "testvid/*.mp4"
-# videos_name_regex: "behaviour/*.mp4" #for use by transform.py which also preps the following yml file
+  # videos_name_regex: "testvid/*.mp4"
+  videos_name_regex: "behaviour/*.mp4" #for use by transform.py which also preps the following yml file
   videos_fps: 10
   link_iou: 0.1
   step_frames: 1 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
@@ -169,16 +169,17 @@ koala:
   obj_thresh: 0.5
   nms_thresh: 0.3
   max_age: 6 #how
-  track_thresh: 0.75 #only return tracks with average confidence above this value
   init_thresh: 0.8
   init_nms: 0.5
+  #the following settings are applied during correctTracks point now
+  track_thresh: 0.75 #only return tracks with average confidence above this value
   hold_without: 6 #how long to show track alive without detections (at max age it will be killed anyway
   transform_before_track: 1
 
 common:
   LABELS: ['aoi']
   MAX_L: 300
-  MIN_L: 20
+  MIN_L: 15
 
   NO_OBJECT_SCALE: 1.0
   OBJECT_SCALE: 5.0

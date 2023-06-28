@@ -349,8 +349,9 @@ class yoloTracker(object):
                 d = convert_kfx_to_bbox(trk.kf.x)[0]
             else:
                 d = convert_x_to_bbox(trk.kf.x)[0]
-            if ((trk.time_since_update < self.hold_without) and (trk.long_score>self.track_threshold)):
-                ret.append(np.concatenate((d,[trk.id,trk.long_score,trk.score])).reshape(1,-1))
+            # if ((trk.time_since_update < self.hold_without) and (trk.long_score>self.track_threshold)):
+            #filtering out tracks can and should happen at later stage!
+            ret.append(np.concatenate((d,[trk.id,trk.long_score,trk.score])).reshape(1,-1))
 
         if(len(ret)>0):
             return np.concatenate(ret)

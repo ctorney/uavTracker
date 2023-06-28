@@ -12,6 +12,7 @@ import numpy as np
 import time
 import pandas as pd
 sys.path.append('..')
+sys.path.append('.')
 from utils.utils import init_config
 from utils.yolo_detector import showTracks
 
@@ -42,6 +43,50 @@ class Vidbu:
             self.filo_frames.append(frame)
 
         return True, self.filo_frames[j].copy()
+
+def load_correction_files(messy_tracks,
+                          transitions_file,
+                          switches_file,
+                          false_file,
+                          true_file,
+                          track_thresh_val):
+
+    corrected_tracks = messy_tracks.copy()
+    corrected_tracks['corrected_track_id']=corrected_tracks['track_id']
+
+
+    #load in transitions
+    with open(transitions_file) as f:
+        tracks_transitions = [line for line in f if line.replace('\n','')]
+    for tt in tracks_transitions:
+        for tt_id in tt.split(',')[1:]:
+            corrected_tracks['corrected_track_id'] = corrected_tracks['corrected_track_id'].replace({int(tt_id):int(tt.split(',')[0])})
+
+    #load in switches and false tracks
+    with open(switches_file) as f:
+        tracks_switches = [line for line in f if line.replace('\n','')]
+    for tt in tracks_switches:
+        tt = tt.split(',')
+        frame_start = int(tt[0])
+        track_wrong = int(tt[1])
+        track_right = int(tt[2])
+        corrected_tracks['corrected_track_id'][corrected_tracks['frame_number']>=frame_start] =  corrected_tracks['corrected_track_id'].replace({track_wrong:track_right, track_right:track_wrong})
+    with open(false_file) as f:
+        tracks_false = [line for line in f if line.replace('\n','')]
+    tracks_true = []
+    with open(true_file) as f:
+        tracks_true = [int(line) for line in f if line.replace('\n','')]
+    for tt in tracks_false:
+        corrected_tracks = corrected_tracks[corrected_tracks['corrected_track_id']!=int(tt)]
+    #go through all of existing tracks and remove ones with bad long track
+    track_long_scores = corrected_tracks.groupby(['corrected_track_id']).mean()['long_score']
+    for tt in corrected_tracks['corrected_track_id'].unique():
+        if track_long_scores[tt] < track_thresh_val and (not (tt in tracks_true)):
+            corrected_tracks = corrected_tracks[corrected_tracks['corrected_track_id']!=int(tt)]
+
+    return corrected_tracks
+
+
 
 def main(args):
     #Load data
@@ -75,7 +120,7 @@ def main(args):
     min_l = config['common']['MIN_L']
 
     transform_before_track = config[tracking_setup]['transform_before_track']
-    save_output = True #corrections of tracks need to be visual and save output...
+    save_output = not args_visual # we are only saving output when we are running it automatically, otherwise we are recording the whole process of corrections
     showDetections = config['common']['show_detections']
 
     with open(videos_list, 'r') as video_config_file_h:
@@ -103,6 +148,8 @@ def main(args):
             corrections_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_corrections.csv')
             transitions_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_transitions.csv')
             switches_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_switches.csv')
+            false_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_false.csv')
+            true_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_true.csv')
             video_file_corrected = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_corrected.avi')
             print(input_file, video_file_corrected)
             if not os.path.isfile(data_file):
@@ -162,68 +209,47 @@ def main(args):
             filof = Vidbu(cap,nframes,buffer_size)
 
             messy_tracks = pd.read_csv(data_file,header=None)
-            messy_tracks.columns = ['frame_number','track_id','c0','c1','c2','c3']
+            messy_tracks.columns = ['frame_number','track_id','c0','c1','c2','c3','long_score','score']
+
+
 
             #load in corrections
-            # corrected_tracks0 = pd.read_csv(corrections_file,header=None)
-            # corrected_tracks0.columns = ['frame_number','track_id','corrected_track_id']
-            # corrected_tracks = pd.merge(corrected_tracks0,messy_tracks,on=['frame_number','track_id'],how='left')
-            corrected_tracks = messy_tracks.copy()
-            corrected_tracks['corrected_track_id']=corrected_tracks['track_id']
-
-            #load in transitions
-            with open(transitions_file) as f:
-                tracks_transitions = [line for line in f]
-            for tt in tracks_transitions:
-                for tt_id in tt.split(',')[1:]:
-                    corrected_tracks['corrected_track_id'] = corrected_tracks['corrected_track_id'].replace({int(tt_id):int(tt.split(',')[0])})
-
-            #load in switches
-            with open(switches_file) as f:
-                tracks_switches = [line for line in f]
-            for tt in tracks_switches:
-                tt = tt.split(',')
-                frame_start = int(tt[0])
-                track_wrong = int(tt[1])
-                track_right = int(tt[2])
-                corrected_tracks['corrected_track_id'][corrected_tracks['frame_number']>=frame_start] =  corrected_tracks['corrected_track_id'].replace({track_wrong:track_right, track_right:track_wrong})
+            corrected_tracks = load_correction_files(messy_tracks,
+                                                     transitions_file,
+                                                     switches_file,
+                                                     false_file,
+                                                     true_file,
+                                                     track_thresh_val)
 
             while i < nframes:
                 if key == ord('q'):
                     break
 
                 #append previous frame into buffer and get a next frame
-                if key == ord('d'):
-                    i=i+1
-                    avaf1, frame1 = filof.get_i_frame(i)
-                    avaf0, frame0 = filof.get_i_frame(i-1)
+                try:
+                    if key == ord('d'):
+                        i=i+1
+                        avaf1, frame1 = filof.get_i_frame(i)
+                        avaf0, frame0 = filof.get_i_frame(i-1)
 
-                if key == ord('a'):
-                    i=i-1
-                    avaf1, frame1 = filof.get_i_frame(i)
-                    avaf0, frame0 = filof.get_i_frame(i-1)
+                    if key == ord('a'):
+                        i=i-1
+                        avaf1, frame1 = filof.get_i_frame(i)
+                        avaf0, frame0 = filof.get_i_frame(i-1)
+                except:
+                    print('breaking out!')
+                    break
 
                 if key == ord('l'):
-                    corrected_tracks = messy_tracks.copy()
-                    corrected_tracks['corrected_track_id']=corrected_tracks['track_id']
-
-                    #load in transitions
-                    with open(transitions_file) as f:
-                        tracks_transitions = [line for line in f]
-                    for tt in tracks_transitions:
-                        for tt_id in tt.split(',')[1:]:
-                            corrected_tracks['corrected_track_id'] = corrected_tracks['corrected_track_id'].replace({int(tt_id):int(tt.split(',')[0])})
-
-                    #load in switches
-                    with open(switches_file) as f:
-                        tracks_switches = [line for line in f]
-                    for tt in tracks_switches:
-                        tt = tt.split(',')
-                        frame_start = int(tt[0])
-                        track_wrong = int(tt[1])
-                        track_right = int(tt[2])
-                        corrected_tracks['corrected_track_id'][corrected_tracks['frame_number']>=frame_start] =  corrected_tracks['corrected_track_id'].replace({track_wrong:track_right, track_right:track_wrong})
-
+                    try:
+                        corrected_tracks = load_correction_files(messy_tracks,
+                                                                 transitions_file,
+                                                                 switches_file,
+                                                                 false_file,
+                                                                 true_file,
+                                                                 track_thresh_val)
+                    except:
+                        print('Correction file is incorrect !? :(:(')
 
                 #####
                 sys.stdout.write('\r')
@@ -272,7 +298,7 @@ def main(args):
                 frame1c= frame1.copy()
                 if avaf1: #only draw on available frames
                     for _, track in messy_tracks[messy_tracks['frame_number']==i].iterrows():
-                        frame1 =showTracks(track,frame1,i,full_warp)
+                        frame1 =showTracks(track,frame1,i,full_warp, corrected=False)
 
                     for _, track in corrected_tracks[corrected_tracks['frame_number']==i].iterrows():
                         frame1c =showTracks(track,frame1c,i,full_warp, corrected=True)
@@ -284,12 +310,16 @@ def main(args):
                     for _, track in corrected_tracks[corrected_tracks['frame_number']==i].iterrows():
                         frame0c =showTracks(track,frame0c,i-1,full_warp, corrected=True)
 
+                #display number even if there are not tracks!
+                cv2.putText(frame0, str(i-1),  (30,60), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2);
+                cv2.putText(frame1, str(i),  (30,60), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2);
+
                 if save_output:
                     #       cv2.imshow('', frame)
                     #       cv2.waitKey(10)
-                    framex1 = cv2.resize(frame1, S)
+                    framey0 = cv2.resize(frame0c, S)
                     #   im_aligned = cv2.warpPerspective(frame, full_warp, (S[0],S[1]), borderMode=cv2.BORDER_TRANSPARENT, flags=cv2.WARP_INVERSE_MAP)
-                    out.write(framex1)
+                    out.write(framey0)
 
                 if args_visual:
                     framex0 = cv2.resize(frame0, S)
@@ -301,9 +331,10 @@ def main(args):
                     img_quart = np.concatenate((img_pair, img_pair_corrected), axis=0)
                     cv2.imshow('tracker', img_quart)
                     key = cv2.waitKey(0)  #& 0xFF
+                    cv2.waitKey(20)
 
 
-                corrected_tracks[['frame_number','corrected_track_id', 'c0','c1','c2','c3']].to_csv(data_file_corrected,header=None,index=False)
+                corrected_tracks[['frame_number','corrected_track_id', 'c0','c1','c2','c3','long_score','score']].to_csv(data_file_corrected,header=None,index=False)
 
 
 if __name__ == '__main__':

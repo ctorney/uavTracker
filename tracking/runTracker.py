@@ -6,11 +6,11 @@ import yaml
 import numpy as np
 
 sys.path.append('..')
+sys.path.append('.')
 import time
 from utils.yolo_detector import yoloDetector, showDetections
 from yolo_tracker import yoloTracker
 from utils.utils import md5check, init_config
-
 
 def main(args):
     #Load data
@@ -85,6 +85,8 @@ def main(args):
             corrections_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_corrections.csv')
             transitions_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_transitions.csv')
             switches_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_switches.csv')
+            false_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_false.csv')
+            true_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_true.csv')
 
             video_file = os.path.join(tracks_dir, noext + "_" + period["clipname"] + '_TR.avi')
             print(input_file, video_file)
@@ -182,7 +184,7 @@ def main(args):
                     cap.release()
                     break
                 if i < period["start"]:
-                    print('skipping frame!')
+                    # print('skipping frame!')
                     continue
                 if ((i - period["start"]) % step_frames):
                     continue
@@ -266,9 +268,9 @@ def main(args):
 
                         cv2.putText(frame, str(int(100*track[5])),
                                     (int(maxx) + 5, int(miny) - 5), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (r, g, b), 1)
-
+                        #include long score and score
                     results.append([
-                        i, int(track[4]), bbox[0], bbox[1], bbox[2], bbox[3]
+                        i, int(track[4]), bbox[0], bbox[1], bbox[2], bbox[3], track[5], track[6]
                     ])
                     corrections_template.append([
                         i, int(track[4]), int(track[4])
@@ -303,6 +305,14 @@ def main(args):
                 writer.writerows([])
 
             with open(switches_file, "w") as output:
+                writer = csv.writer(output, lineterminator='\n')
+                writer.writerows([])
+
+            with open(false_file, "w") as output:
+                writer = csv.writer(output, lineterminator='\n')
+                writer.writerows([])
+
+            with open(true_file, "w") as output:
                 writer = csv.writer(output, lineterminator='\n')
                 writer.writerows([])
 
