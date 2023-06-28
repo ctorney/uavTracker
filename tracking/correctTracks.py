@@ -120,7 +120,7 @@ def main(args):
     min_l = config['common']['MIN_L']
 
     transform_before_track = config[tracking_setup]['transform_before_track']
-    save_output = True #corrections of tracks need to be visual and save output...
+    save_output = not args_visual # we are only saving output when we are running it automatically, otherwise we are recording the whole process of corrections
     showDetections = config['common']['show_detections']
 
     with open(videos_list, 'r') as video_config_file_h:
@@ -298,7 +298,7 @@ def main(args):
                 frame1c= frame1.copy()
                 if avaf1: #only draw on available frames
                     for _, track in messy_tracks[messy_tracks['frame_number']==i].iterrows():
-                        frame1 =showTracks(track,frame1,i,full_warp)
+                        frame1 =showTracks(track,frame1,i,full_warp, corrected=False)
 
                     for _, track in corrected_tracks[corrected_tracks['frame_number']==i].iterrows():
                         frame1c =showTracks(track,frame1c,i,full_warp, corrected=True)
@@ -311,15 +311,15 @@ def main(args):
                         frame0c =showTracks(track,frame0c,i-1,full_warp, corrected=True)
 
                 #display number even if there are not tracks!
-                cv2.putText(frame1, str(i),  (30,60), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2);
                 cv2.putText(frame0, str(i-1),  (30,60), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2);
+                cv2.putText(frame1, str(i),  (30,60), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2);
 
                 if save_output:
                     #       cv2.imshow('', frame)
                     #       cv2.waitKey(10)
-                    framex1 = cv2.resize(frame1, S)
+                    framey0 = cv2.resize(frame0c, S)
                     #   im_aligned = cv2.warpPerspective(frame, full_warp, (S[0],S[1]), borderMode=cv2.BORDER_TRANSPARENT, flags=cv2.WARP_INVERSE_MAP)
-                    out.write(framex1)
+                    out.write(framey0)
 
                 if args_visual:
                     framex0 = cv2.resize(frame0, S)
