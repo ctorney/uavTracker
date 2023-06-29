@@ -5,7 +5,7 @@
 # project_name, project_directory, c_date, common:IMAGE_W (must be the same as IMAGE_H), number_of_images for train and test dataset
 project_name: 'toys'
 project_directory: '../data/toys' #adding a '..' because the programs are run from subdirectories. feel free to specify an absolute path if that offends you
-c_date: '2023Mar11' #this is basically a part of project name if you wish.
+c_date: '2023Jun29' #this is basically a part of project name if you wish.
 
 #The general project settings, will be the same if you keep the directory structure intact
 weights_dir: 'weights/'
@@ -48,22 +48,22 @@ models:
     nms_thresh: 0.1
     phase_one:
       BATCH_SIZE: 16
-      EPOCHS: 20
+      EPOCHS: 50
       LR: 0.5e-3
       B1: 0.9
       B2: 0.999
       EPS: 0.1e-7
-      MIN_DELTA: 0.1
-      PATIENCE: 2
+      MIN_DELTA: 0.01
+      PATIENCE: 5
     phase_two:
       BATCH_SIZE: 4
-      EPOCHS: 10
+      EPOCHS: 50
       LR: 0.1e-3
       B1: 0.9
       B2: 0.999
       EPS: 0.1e-7
-      MIN_DELTA: 0.1
-      PATIENCE: 2
+      MIN_DELTA: 0.01
+      PATIENCE: 5
 
 testing_sets: ['test']
 
