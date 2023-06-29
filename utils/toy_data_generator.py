@@ -288,7 +288,7 @@ def main(args):
     ddir  = config['project_directory']
     os.makedirs(ddir, exist_ok=True)
     oname = config['project_name']
-
+    preped_images_dir = os.path.join(ddir, config['preped_images_dir'])
     print(f'Only square images work for now!')
 
     # Prepare a list of when different things happen
@@ -315,6 +315,7 @@ def main(args):
     os.makedirs(train_dir, exist_ok=True)
     os.makedirs(test_dir, exist_ok=True)
     os.makedirs(video_dir, exist_ok=True)
+    os.makedirs(preped_images_dir, exist_ok=True)
     annotations_file = an_dir + '/train_data.yml'
     sequence_file = os.path.join(an_dir,config['seq_yml'])
     all_imgs = []
@@ -429,6 +430,8 @@ def main(args):
                     cv2.imwrite(test_dir + '/' + save_name,plane_cur)
                     out_test.write(plane_cur)
 
+            #all sequences need to be saved in the preped images dir for MOT sequences
+            cv2.imwrite(os.path.join(preped_images_dir, save_name),plane_cur)
             if show_img:
                 cv2.imshow("hdplane",plane_cur)
                 key = cv2.waitKey(0)
