@@ -342,12 +342,15 @@ def main(args):
 
         print(f'Preparing data with setting {setting} with, setting_for_uavtracker={setting_for_uavtracker}')
 
-        alfs, next_track_id = set_alfs(generator_config, setting, mr, side)
+        # alfs, next_track_id = set_alfs(generator_config, setting, mr, side)
         one_fname_gt = os.path.join(an_dir, f'{setting}.txt')
         video_gt = cv2.VideoWriter(os.path.join(video_dir,f'{setting}.avi'), fourCC, 5, (side,side), True)
         one_file_gt = open(one_fname_gt, 'a')
 
         for it in range(dp_per_uavtracker_set):
+            #reset the list of alfs every 1000 frames so that long training data has different colours and slightly bit different parameters
+            if it % 1000 == 0:
+                alfs, next_track_id = set_alfs(generator_config, setting, mr, side)
             plane_cur = hdplane.copy()
             recthosealfs = [] #all animals must be visible and moving within current panel to be useful for training
             save_name_seed = set_name(oname, setting, it)
