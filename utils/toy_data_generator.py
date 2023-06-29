@@ -335,12 +335,18 @@ def main(args):
 
     for setting in generator_config['settings']:
 
+
+        if setting in generator_config['settings_for_dbtracker']:
+            setting_for_dbtracker = True
+        else:
+            setting_for_dbtracker = False
+
         if setting in generator_config['settings_for_uavtracker']:
             setting_for_uavtracker = True
         else:
             setting_for_uavtracker = False
 
-        print(f'Preparing data with setting {setting} with, setting_for_uavtracker={setting_for_uavtracker}')
+        print(f'Preparing data with setting {setting} with, setting_for_uavtracker={setting_for_uavtracker} and setting_for_dbtracker={setting_for_dbtracker}')
 
         # alfs, next_track_id = set_alfs(generator_config, setting, mr, side)
         one_fname_gt = os.path.join(an_dir, f'{setting}.txt')
@@ -349,7 +355,7 @@ def main(args):
 
         for it in range(dp_per_uavtracker_set):
             #reset the list of alfs every 1000 frames so that long training data has different colours and slightly bit different parameters
-            if it % 1000 == 0:
+            if it % 50 == 0:
                 alfs, next_track_id = set_alfs(generator_config, setting, mr, side)
             plane_cur = hdplane.copy()
             recthosealfs = [] #all animals must be visible and moving within current panel to be useful for training
@@ -371,8 +377,9 @@ def main(args):
 
             #only record the sequence for training images
             recthosealfs.append(training_datapoint)
-            #only record sequence for those images that are used for training
-            recthosealfs.append(setting_for_uavtracker)
+
+            #only record sequence for those images that are used for deebbeast training
+            recthosealfs.append((setting_for_dbtracker or setting_for_uavtracker))
             # print(recthosealfs)
             record_the_seq = np.all(recthosealfs)
 

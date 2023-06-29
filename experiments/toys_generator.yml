@@ -3,6 +3,7 @@ size: 400 #if not multiple of 32 it will be made to!
 
 settings: ['alpha', 'beta' , 'A', 'B', 'C', 'D']
 settings_for_uavtracker: ['alpha']
+settings_for_dbtracker: ['alpha', 'beta' , 'A', 'B', 'C', 'D']
 
 alpha:
   mu_s: 3
