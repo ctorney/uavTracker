@@ -90,7 +90,7 @@ track_setup_1:
   videos_list: "my_videos.yml" #after transforms.py was run this is where video list live
   groundtruths_dir: 'gt/'
   predictions_dir: 'pred/'
-  weights: 'toys_model_1_phase_two_2023Mar11.h5'
+  weights: 'toys_model_1_phase_two_2023Jun29.h5'
   # weights: 'yolo-v3-coco.h5'
   weights_md5: ''
   num_class: 1
