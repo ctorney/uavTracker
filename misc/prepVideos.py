@@ -156,13 +156,18 @@ def main(args):
             current_date = datetime.datetime.strptime(current_date_str, "%d-%b-%Y %H:%M:%S")
         except:
             print(f'can\'t read it! If it is just a date that is incorrect, write it down. If you need to read time from the screen and it is incorrent maybe correct the box?')
-            print(f'I read \"{current_date_str}\" - does it look good?')
+            print(f'I read \"{current_date_str}\" - does it look good? Write number of fps below or the datetime if you want it to be inferred automatically')
             current_date_str = input("What is the datetime in the format %d-%b-%Y %H:%M:%S?\n")
             #HACK - for reading files without any displayed image
-            if current_date_str == 'old':
+            if current_date_str == '10':
                 print(f'A ha! Goth ya! I guess you have an old video with a 10fps without any additional timestamp information :) SPECIAL mode is ON!')
                 old_smolt = True
-                current_date_str = input("What is the datetime in the format %d-%b-%Y %H:%M:%S?\n")
+                pfps = 10
+            if current_date_str == '15':
+                print(f'A ha! Goth ya! I guess you have a video with a 15fps without any additional timestamp information :) SPECIAL mode is ON!')
+                old_smolt = True
+                pfps = 15
+            current_date_str = input("Again, what is the datetime in the format %d-%b-%Y %H:%M:%S?\n")
             mydate = current_date_str.split(' ')[0]
 
             current_date = datetime.datetime.strptime(current_date_str, "%d-%b-%Y %H:%M:%S")
@@ -294,7 +299,7 @@ def main(args):
         if old_smolt:
             timestamps_out.append(current_date.strftime("%d-%b-%Y %H:%M:%S.%f") + '\n')
             for iii in range(nframes-1):
-                current_date = current_date + datetime.timedelta(milliseconds=100)
+                current_date = current_date + datetime.timedelta(milliseconds=int(1000/pfps))
                 timestamps_out.append(current_date.strftime("%d-%b-%Y %H:%M:%S.%f") + '\n')
             with open(timestamps_out_file, "w") as output:
                 output.writelines(timestamps_out)
