@@ -1,6 +1,5 @@
 import os, sys, glob, argparse
 import csv
-import pytesseract
 import cv2
 import yaml
 import numpy as np
