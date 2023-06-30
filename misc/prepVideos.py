@@ -167,6 +167,14 @@ def main(args):
                 print(f'A ha! Goth ya! I guess you have a video with a 15fps without any additional timestamp information :) SPECIAL mode is ON!')
                 old_smolt = True
                 pfps = 15
+            if current_date_str == '25':
+                print(f'A ha! Goth ya! I guess you have a video with a 25fps without any additional timestamp information :) SPECIAL mode is ON!')
+                old_smolt = True
+                pfps = 25
+            if current_date_str == '20':
+                print(f'A ha! Goth ya! I guess you have a video with a 20fps without any additional timestamp information :) SPECIAL mode is ON!')
+                old_smolt = True
+                pfps = 20
             current_date_str = input("Again, what is the datetime in the format %d-%b-%Y %H:%M:%S?\n")
             mydate = current_date_str.split(' ')[0]
 
