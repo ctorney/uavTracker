@@ -351,8 +351,9 @@ python annotate.py -c ../experiments/gnu.yml
 ### Workflow for my smolt videos
 
 ```
+python transforms.py -c ../experiments/any_light_smolts.yml --manual
 python prepVideos.py -c ../experiments/any_light_smolts.yml
 python runTracker.py -c ../experiments/any_light_smolts.yml --visual
-python correctTracks.py -c ../experiments/any_light_smolts.yml --visual
+python correctTracks.py -c ../experiments/any_light_smolts.yml # --visual if you want the precisely corrected, otherwise just thresholding
 python convertSmoltTracks.py --config ../experiments/any_light_smolts.yml --visual
 ```

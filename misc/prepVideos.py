@@ -20,6 +20,10 @@ def onmouse(event, x, y, flags, param):
         print(f'Added point {pa}')
         landmarks_list.append(pa)
 
+    if(event == cv2.EVENT_RBUTTONDOWN):
+        print(f'Clearing landmark')
+        landmarks_list = []
+
 def main(args):
     global landmarks_list
     #Load data
@@ -189,7 +193,11 @@ def main(args):
         camera_name = input("what is this camera name?\n")
         key = ord('c')
         landmarks_list = [] # clear landmark list after getting date/time rectangles
+        clear_al = im_aligned.copy()
         while key != ord('l'):
+            if not landmarks_list: #empty
+                im_aligned = clear_al.copy()
+
             for iii, landmark in enumerate(landmarks_list):
                 cv2.circle(im_aligned, landmark,5,(0,0,230), -1)
                 cv2.putText(im_aligned, chr(65+iii),  landmark, cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2)
@@ -232,85 +240,87 @@ def main(args):
         #rewrite all the datetime as the correct time
         timestamps_out = []
         nextDay = False #that happens only once as my recordings are never more than 24hrs
-        for iii, tt in enumerate(timestamps):
-            if iii != tt[0]:
-                raise ValueError(f'a frame {iii} is skipped in the timestamp list!')
-            cdt = datetime.datetime.strptime(tt[1],"%H%M%S%f")
-            if (cdt.hour == 0) and (not nextDay):
-                current_date = current_date.replace(day=current_date.day+1)
-                nextDay = True
-            cdt = cdt.replace(year=current_date.year, month=current_date.month, day = current_date.day)
-            timestamps_out.append(cdt.strftime("%d-%b-%Y %H:%M:%S.%f") + '\n')
-
-
-
-
-        #
-        # Our fantastico algorithm for supplementing on-screen date with frames calculation
-        #
-        if not use_timestamp_file and not old_smolt:
-
-            timestamps_out.append(current_date.strftime("%d-%b-%Y %H:%M:%S.%f") + '\n')
-            f_in_f=1
-            for i in range(nframes-1):#we already read the first one
-                ret, frame = cap.read()
-                if not ret:
-                    continue
-                timebox = frame[tblimits[0]:tblimits[1],tblimits[2]:tblimits[3],:]
-                mytime = pytesseract.image_to_string(timebox,config="-c tessedit_char_whitelist=1234567890: --psm 6").replace(' ','') # only digits
-                if len(mytime)==8: #somehow missed one colon, happens often
-                    if mytime[2]!=':':
-                        mytime = f'{mytime[:2]}:{mytime[2:]}'
-                    elif mytime[5]!=':':
-                        mytime = f'{mytime[:5]}:{mytime[5:]}'
-                    print('upsi')
-
-                current_date_str = f'{mydate} {mytime}'.replace('\n','')
-                pdate = current_date
-                try:
-                    current_date = datetime.datetime.strptime(current_date_str, "%d-%b-%Y %H:%M:%S")
-                    print(current_date)
-                except:
-                    print(f'cant read: {current_date_str}, matching minutes and seconds...')
-                    try:
-                        c_second = int(mytime[6:])
-                        c_minute = int(mytime[3:5])
-                        current_date = current_date.replace(second=c_second,
-                                                            minute=c_minute)
-                    except:
-                        print(f'cant even do that...')
-
-                #clean and prepare the time
-                if (current_date.hour == 0) and (not nextDay):
+        if use_timestamp_file:
+            for iii, tt in enumerate(timestamps):
+                if iii != tt[0]:
+                    raise ValueError(f'a frame {iii} is skipped in the timestamp list!')
+                cdt = datetime.datetime.strptime(tt[1],"%H%M%S%f")
+                if (cdt.hour == 0) and (not nextDay):
                     current_date = current_date.replace(day=current_date.day+1)
                     nextDay = True
-
-                if pdate != current_date:
-                    print(f'datecting framerate {f_in_f}')
-                    for iii in range(f_in_f):
-                        fragpdate = pdate + datetime.timedelta(milliseconds=1000 * iii/(f_in_f+1))
-                        timestamps_out.append(fragpdate.strftime("%d-%b-%Y %H:%M:%S.%f") + '\n')
-                    f_in_f=1
-                else:
-                    f_in_f += 1
-
-            #last frame
-            print(f'datecting framerate {f_in_f}')
-            for iii in range(f_in_f):
-                fragpdate = pdate + datetime.timedelta(milliseconds=1000 * iii/(f_in_f+1))
-                timestamps_out.append(fragpdate.strftime("%d-%b-%Y %H:%M:%S.%f") + '\n')
+                cdt = cdt.replace(year=current_date.year, month=current_date.month, day = current_date.day)
+                timestamps_out.append(cdt.strftime("%d-%b-%Y %H:%M:%S.%f") + '\n')
 
             with open(timestamps_out_file, "w") as output:
                 output.writelines(timestamps_out)
+        else:
 
-        #Old smolt - 10fps and hope for the best!
-        if old_smolt:
-            timestamps_out.append(current_date.strftime("%d-%b-%Y %H:%M:%S.%f") + '\n')
-            for iii in range(nframes-1):
-                current_date = current_date + datetime.timedelta(milliseconds=int(1000/pfps))
+            #
+            # Our fantastico algorithm for supplementing on-screen date with frames calculation
+            #
+            if not use_timestamp_file and not old_smolt:
+
                 timestamps_out.append(current_date.strftime("%d-%b-%Y %H:%M:%S.%f") + '\n')
-            with open(timestamps_out_file, "w") as output:
-                output.writelines(timestamps_out)
+                f_in_f=1
+                for i in range(nframes-1):#we already read the first one
+                    ret, frame = cap.read()
+                    if not ret:
+                        continue
+                    timebox = frame[tblimits[0]:tblimits[1],tblimits[2]:tblimits[3],:]
+                    mytime = pytesseract.image_to_string(timebox,config="-c tessedit_char_whitelist=1234567890: --psm 6").replace(' ','') # only digits
+                    if len(mytime)==8: #somehow missed one colon, happens often
+                        if mytime[2]!=':':
+                            mytime = f'{mytime[:2]}:{mytime[2:]}'
+                        elif mytime[5]!=':':
+                            mytime = f'{mytime[:5]}:{mytime[5:]}'
+                        print('upsi')
+
+                    current_date_str = f'{mydate} {mytime}'.replace('\n','')
+                    pdate = current_date
+                    try:
+                        current_date = datetime.datetime.strptime(current_date_str, "%d-%b-%Y %H:%M:%S")
+                        print(current_date)
+                    except:
+                        print(f'cant read: {current_date_str}, matching minutes and seconds...')
+                        try:
+                            c_second = int(mytime[6:])
+                            c_minute = int(mytime[3:5])
+                            current_date = current_date.replace(second=c_second,
+                                                                minute=c_minute)
+                        except:
+                            print(f'cant even do that...')
+
+                    #clean and prepare the time
+                    if (current_date.hour == 0) and (not nextDay):
+                        current_date = current_date.replace(day=current_date.day+1)
+                        nextDay = True
+
+                    if pdate != current_date:
+                        print(f'datecting framerate {f_in_f}')
+                        for iii in range(f_in_f):
+                            fragpdate = pdate + datetime.timedelta(milliseconds=1000 * iii/(f_in_f+1))
+                            timestamps_out.append(fragpdate.strftime("%d-%b-%Y %H:%M:%S.%f") + '\n')
+                        f_in_f=1
+                    else:
+                        f_in_f += 1
+
+                #last frame
+                print(f'datecting framerate {f_in_f}')
+                for iii in range(f_in_f):
+                    fragpdate = pdate + datetime.timedelta(milliseconds=1000 * iii/(f_in_f+1))
+                    timestamps_out.append(fragpdate.strftime("%d-%b-%Y %H:%M:%S.%f") + '\n')
+
+                with open(timestamps_out_file, "w") as output:
+                    output.writelines(timestamps_out)
+
+            #Old smolt - 10fps and hope for the best!
+            if old_smolt:
+                timestamps_out.append(current_date.strftime("%d-%b-%Y %H:%M:%S.%f") + '\n')
+                for iii in range(nframes-1):
+                    current_date = current_date + datetime.timedelta(milliseconds=int(1000/pfps))
+                    timestamps_out.append(current_date.strftime("%d-%b-%Y %H:%M:%S.%f") + '\n')
+                with open(timestamps_out_file, "w") as output:
+                    output.writelines(timestamps_out)
 
 
         #Run through the video and provide the time for each frame.
