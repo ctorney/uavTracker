@@ -121,7 +121,7 @@ deepBeastLinking:
 
   #checked annotations are used for training:
   checked_annotations_fname: 'seq_data.yml'
-  seq_fname: 'alpha.txt'
+  seq_fname: 'A.txt'
   detection_net_weights: 'toys_model_1_phase_two_2023Jun29.h5'
   detection_net_weights_md5: ''
   linking_net_weights: 'one_toy_link.h5'
@@ -129,7 +129,7 @@ deepBeastLinking:
 
   #training parameters
   BATCH_SIZE: 16
-  EPOCHS: 300
+  EPOCHS: 50
   LR: 0.5e-6
   MIN_DELTA: 0.001
   PATIENCE: 5

@@ -1,9 +1,10 @@
 visual: False
 size: 400 #if not multiple of 32 it will be made to!
 
-settings: ['alpha', 'beta' , 'A', 'B', 'C', 'D']
-settings_for_uavtracker: ['alpha']
-settings_for_dbtracker: ['A', 'B', 'C', 'D']
+settings: ['alpha', 'beta' , 'A', 'B', 'C', 'D', 'E']
+settings_for_uavtracker: ['alpha', 'A']
+settings_for_dbtracker: ['A', 'B' ,'C', 'D', 'E']
+datapoints_for_dbtracker: 10000 #not all frames are suitable for providing the triples for the trainig
 
 alpha:
   mu_s: 3
@@ -37,8 +38,8 @@ A:
 B:
   mu_s: 7
   sigma_speed: 15
-  sigma_angular_velocity: 0.1
-  theta_speed: 0
+  theta_speed: 0.1
+  sigma_angular_velocity: 0
   theta_angular_velocity: 0
   no_alfs: 1
   model: 'simple'
@@ -47,28 +48,28 @@ B:
 C:
   mu_s: 10
   sigma_speed: 0.3
-  sigma_angular_velocity: 0
-  theta_speed: 0.05
+  theta_speed: 0
+  sigma_angular_velocity: 0.05
   theta_angular_velocity: 0.5
   no_alfs: 1
   model: 'simple'
 
 #OU process
-C:
+D:
   mu_s: 8
   sigma_speed: 10
-  sigma_angular_velocity: 0.1
   theta_speed: 0.1
+  sigma_angular_velocity: 0.1
   theta_angular_velocity: 0.3
   no_alfs: 1
   model: 'simple'
 
 #OU process
-D:
+E:
   mu_s: 15
   sigma_speed: 3
-  sigma_angular_velocity: 1.8
-  theta_speed: 0.1
+  theta_speed: 1.8
+  sigma_angular_velocity: 0.1
   theta_angular_velocity: 0.5
   no_alfs: 1
   model: 'simple'
