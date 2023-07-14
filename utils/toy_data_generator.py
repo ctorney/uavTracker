@@ -383,7 +383,7 @@ def main(args):
             training_datapoint = it < (dp_ratio * dp_per_uavtracker_set)
 
             #only record the sequence for training images
-            recthosealfs.append(training_datapoint)
+            # recthosealfs.append(training_datapoint)
 
             #only record sequence for those images that are used for deebbeast training
             recthosealfs.append((setting_for_dbtracker))
