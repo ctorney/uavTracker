@@ -5,7 +5,7 @@
 # project_name, project_directory, c_date, common:IMAGE_W (must be the same as IMAGE_H), number_of_images for train and test dataset
 project_name: 'toys'
 project_directory: '../data/toys' #adding a '..' because the programs are run from subdirectories. feel free to specify an absolute path if that offends you
-c_date: '2023Jun29' #this is basically a part of project name if you wish.
+c_date: '2023Jul22' #this is basically a part of project name if you wish.
 
 #The general project settings, will be the same if you keep the directory structure intact
 weights_dir: 'weights/'
@@ -125,7 +125,7 @@ deepBeastLinking:
   detection_net_weights: 'toys_model_1_phase_two_2023Jun29.h5'
   detection_net_weights_md5: ''
   #linking_net_weights: 'simplest_one_toy_link2.h5'
-  linking_net_weights: 'one_toy_link_many_moreimgs.h5'
+  linking_net_weights: 'simplest_one_toy_link_many_moreimgs.h5'
   linking_net_weights_md5: ''
 
   #training parameters
