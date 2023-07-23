@@ -25,7 +25,7 @@ def onmouse(event, x, y, flags, param):
         landmarks_list = []
 
 def deal_with_timestamps(tracks_dir, noext, input_file):
-
+    global landmarks_list
     cap = cv2.VideoCapture(input_file)
     nframes = round(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     ret, frame = cap.read() #we have to keep reading frames
@@ -92,11 +92,13 @@ def deal_with_timestamps(tracks_dir, noext, input_file):
     with open(timestamps_out_file, "w") as output:
         output.writelines(timestamps_out)
     #You might be excused to think that we can just read the timestamp from the screen or the Exif data. Sadly text recognition is not nearly quality enough, and since we are recording in h264 we don't really have precise file end information.
+    cv2.destroyAllWindows()
     return current_date_str
 
 
 
 def deal_with_landmarks(data_dir, input_file_dict, tracks_dir, noext, input_file, current_date_str):
+    global landmarks_list
     landmarks_file = os.path.join(tracks_dir, noext + '_landmarks.yml')
     #Check and read in landmarks file if exists
     #
@@ -148,16 +150,22 @@ def deal_with_landmarks(data_dir, input_file_dict, tracks_dir, noext, input_file
         camera_name = landmarks_dict['camera']
         key = ord('x')
 
+    if 'landmarks' in landmarks_dict.keys():
+        landmarks_list = [(a[1],a[2]) for a in landmarks_dict['landmarks']]
+    else:
+        landmarks_list = [] #clear the list from the previous video
+
+    print('add landmarks, and press \'c\' to continue')
     while key != ord('c'):
         if key == ord('n'):
-            camera_name = input("what is this camera name?\n")
+            camera_name = input("But first! What is this camera name?\n")
         if not landmarks_list: #empty
             im_aligned = frame.copy()
         for iii, landmark in enumerate(landmarks_list):
             cv2.circle(im_aligned, landmark,5,(0,0,230), -1)
             cv2.putText(im_aligned, chr(65+iii),  landmark, cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2)
         cv2.imshow(camera_name, im_aligned)
-        cv2.setMouseCallback("aligned", onmouse, param = None)
+        cv2.setMouseCallback(camera_name, onmouse, param = None)
         key = cv2.waitKey(100)  #& 0xFF
 
     print('Saving landmarks!')
@@ -170,9 +178,11 @@ def deal_with_landmarks(data_dir, input_file_dict, tracks_dir, noext, input_file
     landmarks_dict['landmarks'] = landmarks_list_named
 
     print(landmarks_dict)
-    landmarks_file = os.path.join(tracks_dir, noext + '_landmarks.yml')
+
     with open(landmarks_file, 'w') as handle:
         yaml.dump(landmarks_dict, handle)
+
+    cv2.destroyAllWindows()
     return 0
 
 def main(args):
