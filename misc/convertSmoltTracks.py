@@ -73,7 +73,7 @@ def main(args):
         with open(landmarks_file, 'r') as input:
             landmarks_dict = yaml.full_load(input)
 
-        nframes = round(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        nframes = len(timestamps)
         if args_visual:
             cv2.namedWindow('tracker', cv2.WINDOW_GUI_EXPANDED)
             cv2.moveWindow('tracker', 20,20)
@@ -92,6 +92,13 @@ def main(args):
                     "This file has not been yet tracked **and validated/corrected**, there is nothing to convert :/ run runTracker and correctTracks first. Skipping!!!"
                 )
                 continue
+
+            if os.path.isfile(data_file_reallife):
+                print(
+                    f"This file already have a file with real life tracks {data_file_reallife} Skipping!!!"
+                )
+                continue
+
             reallife_tracks = pd.DataFrame(columns = ['frame_number','timestamp','track_id', 'dx','dy','w','h','long_score','score'])
             nloc = 0 #for a new df
 
@@ -127,8 +134,13 @@ def main(args):
             #Ok, now display everything with all the calculated data.
             #We will assume a real-life location of 0.0 for landmark A of gamma (a bit of a bottom left corner
             key = ord('c')
+            failed_read = False
             for i in range(nframes):
-                ret, frame = cap.read()
+
+                if args_visual:
+                    ret, frame = cap.read()
+                    failed_read = not ret
+
                 sys.stdout.write('\r')
                 sys.stdout.write("[%-20s] %d%% %d/%d" %
                                  ('=' * int(20 * i / float(nframes)),
@@ -136,47 +148,42 @@ def main(args):
                 sys.stdout.flush()
 
                 #jump frames
-                if (i > period["stop"] and period["stop"] != 0) or not ret:
+                if (i > period["stop"] and period["stop"] != 0) or failed_read:
                     sys.stdout.write('\n')
                     sys.stdout.flush()
                     print("::Hey, hey! :: The end of the defined period, skipping to the next file or period (or maybe the file was shorter than you think")
-                    print("nothing read from file: ")
-                    sys.stdout.write('It is ')
-                    sys.stdout.write(str( not ret))
-                    sys.stdout.write(' that it is the end of the file :)')
+                    print(f"nothing read from file: failed_read: {failed_read} ")
                     sys.stdout.flush()
-                    cap.release()
+                    if args_visual:
+                        cap.release()
                     break
                 if i < period["start"]:
                     continue
                 if ((i - period["start"]) % step_frames):
                     continue
 
-                if saved_warp is None:
-                    full_warp = np.eye(3, 3, dtype=np.float32)
-                else:
-                    full_warp = saved_warp[i]
-                try:
-                    inv_warp = np.linalg.inv(full_warp)
-                except:
-                    print('Couldn\'t invert matrix, not transforming this frame')
-                    inv_warp = np.linalg.inv(np.eye(3, 3, dtype=np.float32))
-
-                #transform frame
-                if transform_before_track:
-                    frame = cv2.warpPerspective(frame, full_warp, (S[0],S[1]))
-                    full_warp = None
-                    inv_warp = None
-
-                #display tracks
-                #display cameraname
+                #GET TIMESTAMP
                 timestamp = timestamps[i]
                 ts_clean = timestamp.replace('\n','')
                 ts_clean = datetime.datetime.strptime(ts_clean,"%d-%b-%Y %H:%M:%S.%f")
 
-                cameraname_timestamp = f'{cameraname}: {timestamp}'
-                #display timestamp
-                cv2.putText(frame, cameraname_timestamp, (120,50), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2)
+                if args_visual:
+                    if saved_warp is None:
+                        full_warp = np.eye(3, 3, dtype=np.float32)
+                    else:
+                        full_warp = saved_warp[i]
+                    try:
+                        inv_warp = np.linalg.inv(full_warp)
+                    except:
+                        print('Couldn\'t invert matrix, not transforming this frame')
+                        inv_warp = np.linalg.inv(np.eye(3, 3, dtype=np.float32))
+
+                    #transform frame
+                    if transform_before_track:
+                        frame = cv2.warpPerspective(frame, full_warp, (S[0],S[1]))
+                        full_warp = None
+                        inv_warp = None
+
 
                 for _, track in corrected_tracks[corrected_tracks['frame_number']==i].iterrows():
                     #calculate distance in pixel for each track
@@ -206,15 +213,19 @@ def main(args):
                     if args_visual:
                         frame =showTracks(track,frame,i,full_warp, True, position)
 
-                for iii, landmark in enumerate(landmarks_list):
-                    lx = landmark[1]
-                    ly = landmark[2]
-                    lm = landmark[0]
-                    cv2.circle(frame, (lx,ly),5,(0,0,230), -1)
-                    cv2.putText(frame, f'{lm}:[{lx},{ly}]',  (lx,ly), cv2. FONT_HERSHEY_COMPLEX_SMALL, 1.0, (0,170,0), 2)
-
-
                 if args_visual:
+                    #display tracks
+                    #display cameraname
+
+                    cameraname_timestamp = f'{cameraname}: {timestamp}'
+                    #display timestamp
+                    cv2.putText(frame, cameraname_timestamp, (120,50), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2)
+                    for iii, landmark in enumerate(landmarks_list):
+                        lx = landmark[1]
+                        ly = landmark[2]
+                        lm = landmark[0]
+                        cv2.circle(frame, (lx,ly),5,(0,0,230), -1)
+                        cv2.putText(frame, f'{lm}:[{lx},{ly}]',  (lx,ly), cv2. FONT_HERSHEY_COMPLEX_SMALL, 1.0, (0,170,0), 2)
                     cv2.imshow('tracker',frame)
                     key = cv2.waitKey(0)  #& 0xFF
 
