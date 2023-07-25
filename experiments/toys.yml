@@ -125,12 +125,13 @@ deepBeastLinking:
   detection_net_weights: 'toys_model_1_phase_two_2023Jun29.h5'
   detection_net_weights_md5: ''
   #linking_net_weights: 'simplest_one_toy_link2.h5'
-  linking_net_weights: 'simplest_one_toy_link_many_moreimgs.h5'
+  #linking_net_weights: 'simplest_one_toy_link_many_moreimgs.h5'
+  linking_net_weights: 'corrected_simplest.h5'
   linking_net_weights_md5: ''
 
   #training parameters
   BATCH_SIZE: 16
-  EPOCHS: 150
+  EPOCHS: 1
   LR: 0.5e-5
-  MIN_DELTA: 0.0001
-  PATIENCE: 5
+  MIN_DELTA: 0.001
+  PATIENCE: 1
