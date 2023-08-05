@@ -67,7 +67,6 @@ def convert_bbox_to_z(bbox):
   r = w / float(h)
   return np.array([x, y, s, r]).reshape((4, 1))
 
-
 def convert_x_to_bbox(x,score=None):
   """
   Takes a bounding box in the centre form [x,y,s,r] and returns it in the form
@@ -211,6 +210,176 @@ class KalmanBoxTracker(object):
         b1 = convert_kfx_to_bbox(self.kf.x[:4])[0]
         return (bbox_iou(b1,y))
 
+class DeepBeastTracker(object):
+    count = 0
+    def __init__(self, yolo_det_model, yololink) -> None:
+       self.yolo_det_model = yolo_det_model
+       self.yololink = yololink 
+
+    def decode_many(self, yolos, obj_thresh, nms_thresh, im_size_w, im_size_h, min_l, max_l):
+        boxes_predict = decode(yolos, obj_thresh, nms_thresh)
+        a_yolo = [0,0,1,1,0] # unlikely case there is no detection
+        all_boxes = []
+        for b in boxes_predict:
+            xmin = int(b[0])
+            xmax = int(b[2])
+            ymin = int(b[1])
+            ymax = int(b[3])
+            if xmin < 0: continue
+            if ymin < 0: continue
+            if xmax > im_size_w: continue
+            if ymax > im_size_h: continue
+            if (xmax - xmin) < min_l: continue
+            if (xmax - xmin) > max_l: continue
+            if (ymax - ymin) < min_l: continue
+            if (ymax - ymin) > max_l: continue
+            a_yolo = [xmin,ymin,xmax,ymax,b[4]]
+            all_boxes.append(a_yolo)
+        sys.stdout.write('done!#of boxes_predict:')
+        sys.stdout.write(str(len(all_boxes)))
+        sys.stdout.write('\n')
+        sys.stdout.flush()
+
+        return a_yolo, all_boxes
+
+    def decodeLinker(self, track_output,yolos, obj_threshold, nms_threshold):
+        new_boxes = np.zeros((0,9))
+        max_length = 1000
+        for i in range(3):
+            netout=yolos[i][0]
+            grid_h, grid_w = netout.shape[:2]
+            pxpos = netout[...,0]
+            pypos = netout[...,1]
+            pwpos = netout[...,2]
+            phpos = netout[...,3]
+
+            objectness = netout[...,4]
+
+            trakcpred = track_output[i][0]
+            xpos = trakcpred[...,0]
+            ypos = trakcpred[...,1]
+            wpos = trakcpred[...,2]
+            hpos = trakcpred[...,3]
+            # select only objects above threshold
+            indexes = (objectness > obj_threshold) & (pwpos<max_length) & (phpos<max_length)
+
+            if np.sum(indexes)==0:
+                # print('no boxes at this level')
+                continue
+
+            pcorner1 = np.column_stack((pxpos[indexes]-pwpos[indexes]/2.0, pypos[indexes]-phpos[indexes]/2.0))
+            pcorner2 = np.column_stack((pxpos[indexes]+pwpos[indexes]/2.0, pypos[indexes]+phpos[indexes]/2.0))
+
+            #pcorner1 = np.column_stack((pxpos[indexes], pypos[indexes]))
+            corner1 = np.column_stack((xpos[indexes]-wpos[indexes]/2.0, ypos[indexes]-hpos[indexes]/2.0))
+            corner2 = np.column_stack((xpos[indexes]+wpos[indexes]/2.0, ypos[indexes]+hpos[indexes]/2.0))
+            new_boxes = np.append(new_boxes, np.column_stack((pcorner1, pcorner2, objectness[indexes], corner1,corner2)),axis=0)
+            #print(new_boxes)
+            #print(pxpos[indexes])
+
+        # do nms
+        sorted_indices = np.argsort(-new_boxes[:,4])
+        boxes=new_boxes.tolist()
+
+        for i in range(len(sorted_indices)):
+            index_i = sorted_indices[i]
+            if new_boxes[index_i,4] == 0: continue
+            for j in range(i+1, len(sorted_indices)):
+                index_j = sorted_indices[j]
+                if bbox_iou(boxes[index_i][0:4], boxes[index_j][0:4]) >= nms_threshold:
+                    new_boxes[index_j,4] = 0
+        new_boxes = new_boxes[new_boxes[:,4]>0]
+        return new_boxes
+
+
+    def predict(self, frame_a, frame_b, frame_c):
+        obj_thresh = self.obj_thresh
+        nms_thresh = self.nms_thresh
+        min_l = self.min_l
+        max_l = self.max_l
+        current_linker_tracks = self.current_linker_tracks
+
+        if frame_a.shape != frame_c.shape:
+            return [], db_topid
+
+        image_h, image_w, _ = frame_a.shape
+
+        new_image_a = frame_a[:, :, ::-1] / 255.#opencvuses BGR,. rest of the world RGB (inc yolo)
+        new_image_a = np.expand_dims(new_image_a, 0)
+        new_image_b = frame_b[:, :, ::-1] / 255.#opencvuses BGR,. rest of the world RGB (inc yolo)
+        new_image_b = np.expand_dims(new_image_b, 0)
+        new_image_c = frame_c[:, :, ::-1] / 255.#opencvuses BGR,. rest of the world RGB (inc yolo)
+        new_image_c = np.expand_dims(new_image_c, 0)
+
+        # run the prediction
+        sys.stdout.write('Yolo predicting in linker ...')
+        sys.stdout.flush()
+        yolos_a = self.yolo_det_model.predict(new_image_a)
+        yolos_b = self.yolo_det_model.predict(new_image_b)
+        yolos_c = self.yolo_det_model.predict(new_image_c)
+
+        #get the box a from yolo predictor
+        _, boxes_a_yolos = self.decode_many(yolos_a, obj_thresh, nms_thresh, image_w, image_h, min_l, max_l)
+        _, boxes_b_yolos = self.decode_many(yolos_b, obj_thresh, nms_thresh, image_w, image_h, min_l, max_l)
+        _, boxes_c_yolos = self.decode_many(yolos_c, obj_thresh, nms_thresh, image_w, image_h, min_l, max_l)
+
+        large_seq = np.concatenate((yolos_a[3],yolos_b[3],yolos_c[3]))
+        med_seq = np.concatenate((yolos_a[4],yolos_b[4],yolos_c[4]))
+        small_seq = np.concatenate((yolos_a[5],yolos_b[5],yolos_c[5]))
+
+        track_seq = [large_seq[None,...],med_seq[None,...],small_seq[None,...]]
+        track_output = yololink.predict(track_seq)
+
+        #get The box from the linker/tracker
+        all_linker_boxes = []
+        #decodeLinker returns matching boxes from frame C and B (t and t-1)
+        #The linker decoder should take the ground truth position at t-1 (B), or boxes_gt_prev and form this provide us with its best estimate of boxes_gt at t
+        new_boxes = decodeLinker(track_output, yolos_b, obj_thresh, nms_thresh)
+        for box in new_boxes:
+            xmin  = int((box[0]))
+            xmax  = int((box[2]))
+            ymin  = int((box[1]))
+            ymax  = int((box[3]))
+            t_xmin  = int((box[5]))
+            t_xmax  = int((box[7]))
+            t_ymin  = int((box[6]))
+            t_ymax  = int((box[8]))
+            #box[4] #has objectness of the frame B yolo
+            a_linker = [box[5],box[6],box[7],box[8]]
+            all_linker_boxes.append(a_linker)
+            #cv2.rectangle(img_a, (xmin,ymin), (xmax,ymax), (0,255,0), 1) #t+dt
+
+        #new_boxes[:,:4] - this should be the same as boxes_b_yolo
+        #match outputs from linker with coressponding boxes
+        #This needs to be somehow done better so that we are doing a proper (hungarian??!) matching. Now this HACK:
+        tidist = np.zeros((len(current_linker_tracks),len(new_boxes)))
+        for linked_track_id in range(len(new_boxes)):
+            for track_id in range(len(current_linker_tracks)):
+                tidist[track_id, linked_track_id] = np.sum((new_boxes[linked_track_id,:4] - current_linker_tracks[track_id][:4])**2)
+
+        best_links = np.argmin(tidist,axis=1) #for each object from middle frame (B) it has a id of the frame from the linker
+        list_of_assigned_cs = []
+        matched_b_boxes = []
+        maxdistthresh = 10 # we should have a near perfect match here
+        for iii, ct in enumerate(current_linker_tracks):
+            if tidist[iii,best_links[iii]] < maxdistthresh:
+                all_linker_boxes[best_links[iii]].append(current_linker_tracks[iii][4])
+                list_of_assigned_cs.append(iii)
+                matched_b_boxes.append(all_linker_boxes[best_links[iii]])
+
+        # best_linker_boxes_ordered = [ all_linker_boxes[x] for x in best_links] #ordered in the order of existing tracks?
+        list_of_unassigned_cs =list(set(range(len(new_boxes))) - set(list_of_assigned_cs))
+        unmatched_b_boxes = [all_linker_boxes[x] for x in list_of_unassigned_cs]
+        newid = db_topid
+        for iii, b in enumerate(unmatched_b_boxes):
+            b.append(newid)
+            newid = db_topid + iii
+        db_topid = newid
+
+        all_linker_tracks = matched_b_boxes + unmatched_b_boxes
+
+        return all_linker_tracks, db_topid
+
 def associate_detections_to_trackers(detections,trackers,iou_threshold = 0.3):
     """
     Assigns detections to tracked object (both represented as bounding boxes)
@@ -259,10 +428,8 @@ def associate_detections_to_trackers(detections,trackers,iou_threshold = 0.3):
 
     return matches, np.array(unmatched_detections), np.array(unmatched_trackers)
 
-
-
 class yoloTracker(object):
-    def __init__(self,max_age=1,track_threshold=0.5, init_threshold=0.9, init_nms=0.0,link_iou=0.3, hold_without=3, kalman_type='torney' ):
+    def __init__(self,max_age=1,track_threshold=0.5, init_threshold=0.9, init_nms=0.0,link_iou=0.3, hold_without=3, kalman_type='torney', yolo_det_model = None, yololink = None ):
         """
         Sets key parameters for YOLOtrack
         """
@@ -277,9 +444,16 @@ class yoloTracker(object):
         self.kalman_type = kalman_type
         if self.kalman_type == 'sort':
             KalmanBoxSortTracker.count = 0
-        else:
+        elif self.kalman_type == 'torney':
             KalmanBoxTracker.count = 0
-    def update_0_predict(self):
+        elif self.kalman_type == 'deepbeast':
+            DeepBeastTracker.count = 0
+            self.yolo_det_model = yolo_det_model
+            self.yololink = yololink
+        else:
+            except('Unknown name of a tracker: {self.kalman_type}')
+
+    def update_0_predict(self, frame_a=None, frame_b=None, frame_c=None):
         self.frame_count += 1
         #get predicted locations from existing trackers.
         for t,trk in enumerate(self.trackers):
@@ -333,8 +507,16 @@ class yoloTracker(object):
         for det in dets:
             if self.kalman_type == 'sort':
                 trk = KalmanBoxSortTracker(det[:])
-            else:
+            elif self.kalman_type == 'torney':
                 trk = KalmanBoxTracker(det[:])
+            elif self.kalman_type == 'deepbeast':
+                #here logic is a wee bit different, as the predictions are happening on the global level
+                DeepBeastTracker.count = 0
+                self.yolo_det_model = yolo_det_model
+                self.yololink = yololink
+                trk = DeepBeastTracker(det[:],
+            else:
+                except(f'this should never happen')
             self.trackers.append(trk)
 
         i = len(self.trackers)

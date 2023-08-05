@@ -192,7 +192,7 @@ def main(args):
 
                     mx = track['c0'] + (track['c2'] - track['c0'])/2
                     my = track['c1'] + (track['c3'] - track['c1'])/2
-                    dx = (mx - ax) * px_to_cm
+                    dx = (mx - ax) * px_to_cm #TODO change dx to x, it isn't a dx
                     dy = - (my - ay) * px_to_cm
                     w = (track['c2'] - track['c0']) * px_to_cm
                     h = (track['c3'] - track['c1']) * px_to_cm
