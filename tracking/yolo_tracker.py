@@ -210,37 +210,14 @@ class KalmanBoxTracker(object):
         b1 = convert_kfx_to_bbox(self.kf.x[:4])[0]
         return (bbox_iou(b1,y))
 
-class DeepBeastTracker(object):
-    count = 0
+'''
+DeepBeastTracker
+Unlike Kalman Box Trackers, for DeepBeastTrackerBattery we are only having one tracker for all tracks.
+'''
+class DeepBeastTrackerBattery(object):
     def __init__(self, yolo_det_model, yololink) -> None:
        self.yolo_det_model = yolo_det_model
        self.yololink = yololink 
-
-    def decode_many(self, yolos, obj_thresh, nms_thresh, im_size_w, im_size_h, min_l, max_l):
-        boxes_predict = decode(yolos, obj_thresh, nms_thresh)
-        a_yolo = [0,0,1,1,0] # unlikely case there is no detection
-        all_boxes = []
-        for b in boxes_predict:
-            xmin = int(b[0])
-            xmax = int(b[2])
-            ymin = int(b[1])
-            ymax = int(b[3])
-            if xmin < 0: continue
-            if ymin < 0: continue
-            if xmax > im_size_w: continue
-            if ymax > im_size_h: continue
-            if (xmax - xmin) < min_l: continue
-            if (xmax - xmin) > max_l: continue
-            if (ymax - ymin) < min_l: continue
-            if (ymax - ymin) > max_l: continue
-            a_yolo = [xmin,ymin,xmax,ymax,b[4]]
-            all_boxes.append(a_yolo)
-        sys.stdout.write('done!#of boxes_predict:')
-        sys.stdout.write(str(len(all_boxes)))
-        sys.stdout.write('\n')
-        sys.stdout.flush()
-
-        return a_yolo, all_boxes
 
     def decodeLinker(self, track_output,yolos, obj_threshold, nms_threshold):
         new_boxes = np.zeros((0,9))
@@ -291,7 +268,6 @@ class DeepBeastTracker(object):
         new_boxes = new_boxes[new_boxes[:,4]>0]
         return new_boxes
 
-
     def predict(self, frame_a, frame_b, frame_c):
         obj_thresh = self.obj_thresh
         nms_thresh = self.nms_thresh
@@ -300,7 +276,7 @@ class DeepBeastTracker(object):
         current_linker_tracks = self.current_linker_tracks
 
         if frame_a.shape != frame_c.shape:
-            return [], db_topid
+            return []
 
         image_h, image_w, _ = frame_a.shape
 
@@ -318,67 +294,44 @@ class DeepBeastTracker(object):
         yolos_b = self.yolo_det_model.predict(new_image_b)
         yolos_c = self.yolo_det_model.predict(new_image_c)
 
-        #get the box a from yolo predictor
-        _, boxes_a_yolos = self.decode_many(yolos_a, obj_thresh, nms_thresh, image_w, image_h, min_l, max_l)
-        _, boxes_b_yolos = self.decode_many(yolos_b, obj_thresh, nms_thresh, image_w, image_h, min_l, max_l)
-        _, boxes_c_yolos = self.decode_many(yolos_c, obj_thresh, nms_thresh, image_w, image_h, min_l, max_l)
-
         large_seq = np.concatenate((yolos_a[3],yolos_b[3],yolos_c[3]))
         med_seq = np.concatenate((yolos_a[4],yolos_b[4],yolos_c[4]))
         small_seq = np.concatenate((yolos_a[5],yolos_b[5],yolos_c[5]))
 
         track_seq = [large_seq[None,...],med_seq[None,...],small_seq[None,...]]
-        track_output = yololink.predict(track_seq)
+        track_output = self.yololink.predict(track_seq)
 
         #get The box from the linker/tracker
-        all_linker_boxes = []
+        c_linker_boxes = []
+        b_boxes = []
         #decodeLinker returns matching boxes from frame C and B (t and t-1)
         #The linker decoder should take the ground truth position at t-1 (B), or boxes_gt_prev and form this provide us with its best estimate of boxes_gt at t
-        new_boxes = decodeLinker(track_output, yolos_b, obj_thresh, nms_thresh)
+        new_boxes = self.decodeLinker(track_output, yolos_b, obj_thresh, nms_thresh)
         for box in new_boxes:
-            xmin  = int((box[0]))
-            xmax  = int((box[2]))
-            ymin  = int((box[1]))
-            ymax  = int((box[3]))
-            t_xmin  = int((box[5]))
-            t_xmax  = int((box[7]))
-            t_ymin  = int((box[6]))
-            t_ymax  = int((box[8]))
-            #box[4] #has objectness of the frame B yolo
-            a_linker = [box[5],box[6],box[7],box[8]]
-            all_linker_boxes.append(a_linker)
-            #cv2.rectangle(img_a, (xmin,ymin), (xmax,ymax), (0,255,0), 1) #t+dt
+            b_xmin  = int((box[0]))
+            b_xmax  = int((box[2]))
+            b_ymin  = int((box[1]))
+            b_ymax  = int((box[3]))
+            b_box = [b_xmin,b_ymin,b_xmax,b_ymax]
 
-        #new_boxes[:,:4] - this should be the same as boxes_b_yolo
-        #match outputs from linker with coressponding boxes
-        #This needs to be somehow done better so that we are doing a proper (hungarian??!) matching. Now this HACK:
-        tidist = np.zeros((len(current_linker_tracks),len(new_boxes)))
-        for linked_track_id in range(len(new_boxes)):
-            for track_id in range(len(current_linker_tracks)):
-                tidist[track_id, linked_track_id] = np.sum((new_boxes[linked_track_id,:4] - current_linker_tracks[track_id][:4])**2)
+            c_pred_xmin  = int((box[5]))
+            c_pred_xmax  = int((box[7]))
+            c_pred_ymin  = int((box[6]))
+            c_pred_ymax  = int((box[8]))
+            c_linker_boxe = [c_pred_xmin,c_pred_ymin,c_pred_xmax,c_pred_ymax]
 
-        best_links = np.argmin(tidist,axis=1) #for each object from middle frame (B) it has a id of the frame from the linker
-        list_of_assigned_cs = []
-        matched_b_boxes = []
-        maxdistthresh = 10 # we should have a near perfect match here
-        for iii, ct in enumerate(current_linker_tracks):
-            if tidist[iii,best_links[iii]] < maxdistthresh:
-                all_linker_boxes[best_links[iii]].append(current_linker_tracks[iii][4])
-                list_of_assigned_cs.append(iii)
-                matched_b_boxes.append(all_linker_boxes[best_links[iii]])
+            c_linker_boxes.append(c_linker_boxe)
+            b_boxes.append(b_box)
+        return c_linker_boxes, b_boxes
 
-        # best_linker_boxes_ordered = [ all_linker_boxes[x] for x in best_links] #ordered in the order of existing tracks?
-        list_of_unassigned_cs =list(set(range(len(new_boxes))) - set(list_of_assigned_cs))
-        unmatched_b_boxes = [all_linker_boxes[x] for x in list_of_unassigned_cs]
-        newid = db_topid
-        for iii, b in enumerate(unmatched_b_boxes):
-            b.append(newid)
-            newid = db_topid + iii
-        db_topid = newid
-
-        all_linker_tracks = matched_b_boxes + unmatched_b_boxes
-
-        return all_linker_tracks, db_topid
+    def predict_trackers(self, frame_a, frame_b, frame_c):
+        '''
+        Iterate through all of the trackers in this battery and predict their next position based on deep beast linker
+        '''
+        c_pred_boxes, b_boxes = self.predict(frame_a, frame_b, frame_c)
+        #TODO filter out only b_boxes that has been tracks at frame_b
+        ret = c_pred_boxes
+        return ret
 
 def associate_detections_to_trackers(detections,trackers,iou_threshold = 0.3):
     """
@@ -447,25 +400,30 @@ class yoloTracker(object):
         elif self.kalman_type == 'torney':
             KalmanBoxTracker.count = 0
         elif self.kalman_type == 'deepbeast':
-            DeepBeastTracker.count = 0
-            self.yolo_det_model = yolo_det_model
-            self.yololink = yololink
+            dbt_battery = DeepBeastTrackerBattery(yolo_det_model=yolo_det_model, yololink=yololink)
         else:
             except('Unknown name of a tracker: {self.kalman_type}')
 
     def update_0_predict(self, frame_a=None, frame_b=None, frame_c=None):
         self.frame_count += 1
-        #get predicted locations from existing trackers.
-        for t,trk in enumerate(self.trackers):
-            self.trackers[t].predict()
+        
+        #get predicted locations from existing trackers for Kalman
+        if self.kalman_type != 'deepbeast':
+            for t,trk in enumerate(self.trackers):
+                self.trackers[t].predict()
 
-        ret = []
-        for trk in (self.trackers):
-            if trk.kalman_type == 'torney':
-                d = convert_kfx_to_bbox(trk.kf.x)[0]
+            ret = []
+            for trk in (self.trackers):
+                if trk.kalman_type == 'torney':
+                    d = convert_kfx_to_bbox(trk.kf.x)[0]
+                else:
+                    d = convert_x_to_bbox(trk.kf.x)[0]
+                ret.append(np.concatenate((d,[trk.id,trk.long_score,trk.score])).reshape(1,-1))
+        else: #deepBeast
+            if not frame_a is None and not frame_b is None and not frame_c is None:
+                raise('DeepBeast tracker needs 3 frames to predict')
             else:
-                d = convert_x_to_bbox(trk.kf.x)[0]
-            ret.append(np.concatenate((d,[trk.id,trk.long_score,trk.score])).reshape(1,-1))
+                ret = self.dbt_battery.predict_trackers(frame_a, frame_b, frame_c)
 
         #The following lines are very important because python secretly cares about data types very much.
         if(len(ret)>0):
