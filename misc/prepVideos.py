@@ -210,6 +210,7 @@ def main(args):
     tracks_dir = os.path.join(data_dir,config['tracks_dir'])
 
     print('Remember to run `transforms` script before this file so, yml file with a list of videos is created')
+    print('Opening ' + videos_list)
     with open(videos_list, 'r') as video_config_file_h:
         video_config = yaml.safe_load(video_config_file_h)
 
@@ -218,10 +219,25 @@ def main(args):
 
     for input_file_dict in filelist:
         input_file = os.path.join(data_dir, input_file_dict["filename"])
-        first_frame_file = os.path.join(data_dir, input_file_dict["first_frame"])
-
         direct, ext = os.path.split(input_file)
         noext, _ = os.path.splitext(ext)
+
+        try: 
+            first_frame_file = os.path.join(data_dir, input_file_dict["first_frame"])
+            #if first frame is not available we need to crete it from the video:
+            if not os.path.isfile(first_frame_file):
+                print('First frame not found. Creating it from the video')
+                cap = cv2.VideoCapture(input_file)
+                ret, frame = cap.read()
+                cv2.imwrite(first_frame_file, frame)
+        except:
+            first_frame_file = os.path.join(tracks_dir, noext + '_first_frame.png')
+            print('First frame not defined. Creating it from the video')
+            print(f'First frame file is {first_frame_file}')
+            cap = cv2.VideoCapture(input_file)
+            ret, frame = cap.read()
+            cv2.imwrite(first_frame_file, frame)
+
 
         print("Loading " + str(len(input_file_dict["periods"])) +
               " predefined periods for tracking...")
