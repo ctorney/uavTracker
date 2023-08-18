@@ -218,6 +218,8 @@ class DeepBeastTrackerBattery(object):
     def __init__(self, yolo_det_model, yololink) -> None:
        self.yolo_det_model = yolo_det_model
        self.yololink = yololink 
+       #Initialise the list of tracker objects
+       
 
     def decodeLinker(self, track_output,yolos, obj_threshold, nms_threshold):
         new_boxes = np.zeros((0,9))
@@ -329,6 +331,11 @@ class DeepBeastTrackerBattery(object):
         Iterate through all of the trackers in this battery and predict their next position based on deep beast linker
         '''
         c_pred_boxes, b_boxes = self.predict(frame_a, frame_b, frame_c)
+        #For each existing track
+        #match its bbox_b with b_boxes from prediction
+        #provide matching id c_pred_box as the predicted location
+
+
         #TODO filter out only b_boxes that has been tracks at frame_b
         ret = c_pred_boxes
         return ret
@@ -400,7 +407,7 @@ class yoloTracker(object):
         elif self.kalman_type == 'torney':
             KalmanBoxTracker.count = 0
         elif self.kalman_type == 'deepbeast':
-            dbt_battery = DeepBeastTrackerBattery(yolo_det_model=yolo_det_model, yololink=yololink)
+            self.dbt_battery = DeepBeastTrackerBattery(yolo_det_model=yolo_det_model, yololink=yololink)
         else:
             except('Unknown name of a tracker: {self.kalman_type}')
 
@@ -419,7 +426,8 @@ class yoloTracker(object):
                 else:
                     d = convert_x_to_bbox(trk.kf.x)[0]
                 ret.append(np.concatenate((d,[trk.id,trk.long_score,trk.score])).reshape(1,-1))
-        else: #deepBeast
+        #Get all predictions from Deep Beast 
+        else:
             if not frame_a is None and not frame_b is None and not frame_c is None:
                 raise('DeepBeast tracker needs 3 frames to predict')
             else:
