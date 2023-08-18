@@ -24,11 +24,16 @@ def onmouse(event, x, y, flags, param):
         print(f'Clearing landmark')
         landmarks_list = []
 
-def deal_with_timestamps(tracks_dir, noext, input_file):
+def deal_with_timestamps(tracks_dir, noext, input_file, first_frame_file):
     global landmarks_list
     cap = cv2.VideoCapture(input_file)
     nframes = round(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    ret, frame = cap.read() #we have to keep reading frames
+    try:
+        ret, frame = cap.read() #we have to keep reading frames
+    except:
+        print('Video is empty. Using first frame if available')
+        frame - cv2.imread(first_frame_file)
+        print('success!')
 
     timestamps_out_file = os.path.join(tracks_dir, noext + '_timestamps.txt')
     if os.path.isfile(timestamps_out_file):
@@ -95,9 +100,7 @@ def deal_with_timestamps(tracks_dir, noext, input_file):
     cv2.destroyAllWindows()
     return current_date_str
 
-
-
-def deal_with_landmarks(data_dir, input_file_dict, tracks_dir, noext, input_file, current_date_str):
+def deal_with_landmarks(data_dir, input_file_dict, tracks_dir, noext, input_file, current_date_str, first_frame_file):
     global landmarks_list
     landmarks_file = os.path.join(tracks_dir, noext + '_landmarks.yml')
     #Check and read in landmarks file if exists
@@ -139,7 +142,13 @@ def deal_with_landmarks(data_dir, input_file_dict, tracks_dir, noext, input_file
     else:
         full_warp = saved_warp[i]
 
-    ret, frame = cap.read() #we have to keep reading frames
+    try:
+        ret, frame = cap.read() #we have to keep reading frames
+    except:
+        print('Video is empty. Using first frame if available')
+        frame - cv2.imread(first_frame_file)
+        print('success!')
+
     frame = cv2.resize(frame, S)
     frame = cv2.warpPerspective(frame, full_warp, (S[0],S[1]))
     im_aligned = frame.copy()
@@ -209,6 +218,7 @@ def main(args):
 
     for input_file_dict in filelist:
         input_file = os.path.join(data_dir, input_file_dict["filename"])
+        first_frame_file = os.path.join(data_dir, input_file_dict["first_frame"])
 
         direct, ext = os.path.split(input_file)
         noext, _ = os.path.splitext(ext)
@@ -217,9 +227,9 @@ def main(args):
               " predefined periods for tracking...")
 
         #Deal with timestamps
-        current_date_str = deal_with_timestamps(tracks_dir, noext, input_file)
+        current_date_str = deal_with_timestamps(tracks_dir, noext, input_file, first_frame_file)
         #Deal with getting landmarks
-        deal_with_landmarks(data_dir, input_file_dict, tracks_dir, noext, input_file, current_date_str)
+        deal_with_landmarks(data_dir, input_file_dict, tracks_dir, noext, input_file, current_date_str, first_frame_file)
 
     print('Done!')
 

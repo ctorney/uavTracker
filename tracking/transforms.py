@@ -28,6 +28,8 @@ def onmouse(event, x, y, flags, param):
         print(f'pb is {pb}')
 
 def main(args):
+    #to make sure they are reseted for each new video
+    global dx, dy, pa, pb
 
     padding = 1000
     shift_display = np.array([1,0,padding/2,0,1,padding/2,0,0,1])
@@ -59,6 +61,10 @@ def main(args):
     scalefact = 4.0
 
     for input_file in filelist:
+        dx=0
+        dy=0
+        pa = (0,0)
+        pb = (0,0)
         key = ord('c')
 
         full_i_path = Path(input_file)
@@ -67,6 +73,9 @@ def main(args):
         noext, _ = os.path.splitext(ext)
         tr_file = os.path.join(tracks_dir, noext + '_MAT.npy')
         tr_file_short = os.path.join(config['tracks_dir'], noext + '_MAT.npy')
+        first_frame_file_short = os.path.join(config['tracks_dir'], noext + '_first_frame.png')
+        first_frame_file = os.path.join(tracks_dir, noext + '_first_frame.png')
+
         if os.path.isfile(tr_file):
             print("transformation file already exists")
             continue
@@ -106,6 +115,7 @@ def main(args):
         vid_info['periods'].append({"start": 0, "stop": 0, "clipname": "all"})
         vid_info['filename'] = input_file_short
         vid_info['transforms'] = tr_file_short
+        vid_info['first_frame'] = first_frame_file_short
 
         frame_idx = 0
         if args_visual:
@@ -118,6 +128,11 @@ def main(args):
             # if i >0:
             #     print(save_warp[i-1,:,:])
             ret, frame = cap.read()
+            if i ==0:
+                print("saving first frame, it is before transformations:")
+                print(f"{first_frame_file}")
+                cv2.imwrite(first_frame_file, frame)
+
             sys.stdout.write('\r')
             sys.stdout.write("[%-20s] %d%% %d/%d" %
                              ('=' * int(20 * i / float(nframes)),
@@ -138,6 +153,10 @@ def main(args):
                             rotated = cv2.warpAffine(frame, warp_matrix, (w, h))
                             cv2.imshow('image_transformed',rotated)
                             key = cv2.waitKey(0)
+
+                            print("Overwriting first frame file with manually corrected version:")
+                            print(f"{first_frame_file}")
+                            cv2.imwrite(first_frame_file, rotated)
                 else: #automatically set static without anny corrections
                     warp_matrix = np.eye(2, 3, dtype=np.float32)
 
@@ -184,6 +203,7 @@ def main(args):
                 warped_frame = cv2.warpPerspective(frame, shifted,(padding+frame.shape[1],padding+frame.shape[0]))
                 cv2.imshow('image transformed', warped_frame)
                 key = cv2.waitKey(1)  #& 0xFF
+            
 
 #          print('ecc ', time.time()-start)
 
