@@ -210,16 +210,63 @@ class KalmanBoxTracker(object):
         b1 = convert_kfx_to_bbox(self.kf.x[:4])[0]
         return (bbox_iou(b1,y))
 
+class BeastTrack(object):
+    """
+    This class represents the internel state of individual tracked objects observed as bbox.
+    """
+    count = 0
+    def __init__(self,bbox):
+        self.bbox = bbox
+        self.time_since_update = 0
+        self.id = BeastTrack.count
+        BeastTrack.count += 1
+        self.hits = 1
+        self.hit_streak = 1
+        self.age = 1
+        self.score = bbox[4]
+        self.long_score = bbox[4]/2 #when creating track the long_score is halved to indicate our uncertainty over one high-confidence detection
+
+    def update(self,bbox):
+        """
+        Updates the state vector with observed bbox.
+        """
+        self.time_since_update = 0
+        self.hits += 1
+        self.hit_streak += 1
+        self.score = (self.score*(self.hits-1.0)/float(self.hits)) + (bbox[4]/float(self.hits))
+        self.long_score = (self.long_score*(self.age-1.0)/float(self.age)) + (bbox[4]/float(self.age)) #average of the entire track
+
+    def predict(self):
+        pre_update(self)
+
+    def pre_update(self):
+        '''
+        This is an equivalent of Kalman Filter predict function. However as the predictions happen on the global level of the battery, we do not need to do anything here apart from incrementing the tracks states such as age
+        '''
+        self.age += 1
+        if(self.time_since_update>0):
+            self.hit_streak = 0
+            self.long_score = (self.long_score*(self.age-1.0)/float(self.age))
+        
+        self.time_since_update += 1
 '''
-DeepBeastTracker
+DeepBeastTrackerBettery
 Unlike Kalman Box Trackers, for DeepBeastTrackerBattery we are only having one tracker for all tracks.
 '''
 class DeepBeastTrackerBattery(object):
     def __init__(self, yolo_det_model, yololink) -> None:
        self.yolo_det_model = yolo_det_model
        self.yololink = yololink 
+    self.trackers = []
        #Initialise the list of tracker objects
-       
+
+    def create_trackers(self, detections):
+        '''
+        Create a list of tracker objects from the detections.
+        '''
+        for det in detections:
+            self.trackers.append(BeastTrack(det))      
+        return self.trackers
 
     def decodeLinker(self, track_output,yolos, obj_threshold, nms_threshold):
         new_boxes = np.zeros((0,9))
@@ -328,12 +375,13 @@ class DeepBeastTrackerBattery(object):
 
     def predict_trackers(self, frame_a, frame_b, frame_c):
         '''
-        Iterate through all of the trackers in this battery and predict their next position based on deep beast linker
+        For all of the trackers in this battery and predict their next position based on deep beast linker. Here we are not yet associating the trackers with the detections, we simply provide a prediction for each *previously existing* tracker
         '''
         c_pred_boxes, b_boxes = self.predict(frame_a, frame_b, frame_c)
         #For each existing track
         #match its bbox_b with b_boxes from prediction
         #provide matching id c_pred_box as the predicted location
+
 
 
         #TODO filter out only b_boxes that has been tracks at frame_b
@@ -409,9 +457,12 @@ class yoloTracker(object):
         elif self.kalman_type == 'deepbeast':
             self.dbt_battery = DeepBeastTrackerBattery(yolo_det_model=yolo_det_model, yololink=yololink)
         else:
-            except('Unknown name of a tracker: {self.kalman_type}')
+            raise Exception('Unknown name of a tracker: {self.kalman_type}')
 
     def update_0_predict(self, frame_a=None, frame_b=None, frame_c=None):
+        '''
+        Update all trackers with new detections predictions
+        '''
         self.frame_count += 1
         
         #get predicted locations from existing trackers for Kalman
@@ -426,12 +477,11 @@ class yoloTracker(object):
                 else:
                     d = convert_x_to_bbox(trk.kf.x)[0]
                 ret.append(np.concatenate((d,[trk.id,trk.long_score,trk.score])).reshape(1,-1))
-        #Get all predictions from Deep Beast 
+        #Get all predictions from Deep Beast Battery if all the frames are not None
+        elif frame_a is not None and frame_b is not None and frame_c is not None:
+            ret = self.dbt_battery.predict_trackers(frame_a, frame_b, frame_c)
         else:
-            if not frame_a is None and not frame_b is None and not frame_c is None:
-                raise('DeepBeast tracker needs 3 frames to predict')
-            else:
-                ret = self.dbt_battery.predict_trackers(frame_a, frame_b, frame_c)
+            ret = []
 
         #The following lines are very important because python secretly cares about data types very much.
         if(len(ret)>0):
@@ -477,12 +527,9 @@ class yoloTracker(object):
                 trk = KalmanBoxTracker(det[:])
             elif self.kalman_type == 'deepbeast':
                 #here logic is a wee bit different, as the predictions are happening on the global level
-                DeepBeastTracker.count = 0
-                self.yolo_det_model = yolo_det_model
-                self.yololink = yololink
-                trk = DeepBeastTracker(det[:],
+                trk = self.dbt_battery.create_trackers(det)
             else:
-                except(f'this should never happen')
+                raise Exception(f'this should never happen')
             self.trackers.append(trk)
 
         i = len(self.trackers)
