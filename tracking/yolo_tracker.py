@@ -235,13 +235,14 @@ class BeastTrack(object):
         self.hit_streak += 1
         self.score = (self.score*(self.hits-1.0)/float(self.hits)) + (bbox[4]/float(self.hits))
         self.long_score = (self.long_score*(self.age-1.0)/float(self.age)) + (bbox[4]/float(self.age)) #average of the entire track
+        self.bbox = bbox
 
-    def predict(self):
-        pre_update(self)
+    def predict_fill(self, bbox):
+        self.bbox = bbox
 
-    def pre_update(self):
+    def pre_predict(self, bbox):
         '''
-        This is an equivalent of Kalman Filter predict function. However as the predictions happen on the global level of the battery, we do not need to do anything here apart from incrementing the tracks states such as age
+        This is an equivalent of Kalman Filter predict function. However as the predictions happen on the global level of the battery, we are passing a new predicted bbox from battery predictions 
         '''
         self.age += 1
         if(self.time_since_update>0):
@@ -249,6 +250,7 @@ class BeastTrack(object):
             self.long_score = (self.long_score*(self.age-1.0)/float(self.age))
         
         self.time_since_update += 1
+
 '''
 DeepBeastTrackerBettery
 Unlike Kalman Box Trackers, for DeepBeastTrackerBattery we are only having one tracker for all tracks.
@@ -377,16 +379,28 @@ class DeepBeastTrackerBattery(object):
         '''
         For all of the trackers in this battery and predict their next position based on deep beast linker. Here we are not yet associating the trackers with the detections, we simply provide a prediction for each *previously existing* tracker
         '''
+        #Get actual predictions of positions of all objects in frame b using deepbeast
         c_pred_boxes, b_boxes = self.predict(frame_a, frame_b, frame_c)
-        #For each existing track
-        #match its bbox_b with b_boxes from prediction
-        #provide matching id c_pred_box as the predicted location
+        assignment_list = np.ones(len(c_pred_boxes))*-1
 
-
-
-        #TODO filter out only b_boxes that has been tracks at frame_b
-        ret = c_pred_boxes
-        return ret
+        #Do the technical update of all trackers state
+        for trk in self.trackers:
+            #For each tracker, find the matching b_box and assign correct c_pred_box as the predicted location
+            for iii, b_box in enumerate(b_boxes):
+                trk.pre_predict()
+                if bbox_iou(trk.bbox, b_box)>0.9: 
+                    if assignment_list[iii] == -1:
+                        assignment_list[iii] = trk.id
+                        trk.predict_fill(c_pred_boxes[iii])
+                    else:
+                        raise Exception('Two trackers are assigned to the same b_box!')
+                    continue
+        
+        #We have remaining two problems - or not really
+        # 1. Unassigned c_pred_boxes - not really a problem! We create a new tracks for new unassigned detections on `update` step
+        # 2. Unassigned trackers - `pre_predict` updated tracker step while keeping an existing track location. Unlike Kalman filter, an unmatched track will not be moving. I'm not sure that it will ever actually happen :hmm:
+        
+        return self.trackers
 
 def associate_detections_to_trackers(detections,trackers,iou_threshold = 0.3):
     """
@@ -479,7 +493,8 @@ class yoloTracker(object):
                 ret.append(np.concatenate((d,[trk.id,trk.long_score,trk.score])).reshape(1,-1))
         #Get all predictions from Deep Beast Battery if all the frames are not None
         elif frame_a is not None and frame_b is not None and frame_c is not None:
-            ret = self.dbt_battery.predict_trackers(frame_a, frame_b, frame_c)
+            #we are updating yoloTracker trackers wtih DeepBeastTrackerBattery trackers
+            self.trackers = self.dbt_battery.predict_trackers(frame_a, frame_b, frame_c)
         else:
             ret = []
 
@@ -491,14 +506,14 @@ class yoloTracker(object):
     def update_1_update(self, dets):
         ret = []
         matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(dets,self.trackers, self.link_iou)
-        #update matched trackers with assigned detections
+        # update matched trackers with assigned detections
         for t,trk in enumerate(self.trackers):
             if(t not in unmatched_trks):
                 d = matched[np.where(matched[:,1]==t)[0],0]
                 trk.update(dets[d,:][0])
                 dets[d,4]=2.0 # once assigned we set it to full certainty
 
-        #add tracks to detection list
+        # add tracks to detection list
         for t,trk in enumerate(self.trackers):
             if(t in unmatched_trks):
 
@@ -520,17 +535,23 @@ class yoloTracker(object):
             dets= dets[dets[:,4]<1.1]
             dets= dets[dets[:,4]>0]
 
-        for det in dets:
-            if self.kalman_type == 'sort':
-                trk = KalmanBoxSortTracker(det[:])
-            elif self.kalman_type == 'torney':
-                trk = KalmanBoxTracker(det[:])
-            elif self.kalman_type == 'deepbeast':
-                #here logic is a wee bit different, as the predictions are happening on the global level
-                trk = self.dbt_battery.create_trackers(det)
-            else:
-                raise Exception(f'this should never happen')
-            self.trackers.append(trk)
+        #update trackers in the dbt_battery downstream from here
+        if self.kalman_type == 'deepbeast':
+            self.dbt_battery.trackers = self.trackers
+
+        # Create new trackers from unassigned detections
+        if self.kalman_type == 'deepbeast':
+            #here logic is a wee bit different, as the predictions are happening on the global level
+            self.trackers = self.dbt_battery.create_trackers(det)
+        else:
+            for det in dets:
+                if self.kalman_type == 'sort':
+                    trk = KalmanBoxSortTracker(det[:])
+                elif self.kalman_type == 'torney':
+                    trk = KalmanBoxTracker(det[:])
+                else:
+                    raise Exception(f'This should never happen, kalman type is {self.kalman_type}')
+                self.trackers.append(trk)
 
         i = len(self.trackers)
         for trk in reversed(self.trackers):
@@ -539,11 +560,18 @@ class yoloTracker(object):
             if(trk.time_since_update > self.max_age):
                 self.trackers.pop(i)
 
+        #Updated the dbt_battery trackers
+        if self.kalman_type == 'deepbeast':
+            self.dbt_battery.trackers = self.trackers
+
+        # Provide an output list of trackers
         for trk in (self.trackers):
             if trk.kalman_type == 'torney':
                 d = convert_kfx_to_bbox(trk.kf.x)[0]
-            else:
+            elif trk.kalman_type == 'sort':
                 d = convert_x_to_bbox(trk.kf.x)[0]
+            elif trk.kalman_type == 'deepbeast':
+                d = trk.bbox
             # if ((trk.time_since_update < self.hold_without) and (trk.long_score>self.track_threshold)):
             #filtering out tracks can and should happen at later stage!
             ret.append(np.concatenate((d,[trk.id,trk.long_score,trk.score])).reshape(1,-1))
