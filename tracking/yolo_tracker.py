@@ -85,7 +85,7 @@ def get_box(trk):
     elif trk.kalman_type == 'sort':
         trackBox = convert_x_to_bbox(trk.kf.x[:4])[0]
     elif trk.kalman_type == 'deepbeast':
-        trackBox = trk.bbox
+        trackBox = trk.bbox[:4]
     else:
         raise ValueError('Unknown kalman type')
     return trackBox 
@@ -512,6 +512,7 @@ class yoloTracker(object):
     def update_1_update(self, dets):
         ret = []
         matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(dets,self.trackers, self.link_iou)
+        #TODO not assigning detections correctly to deep beast
         # update matched trackers with assigned detections
         for t,trk in enumerate(self.trackers):
             if(t not in unmatched_trks):
@@ -572,6 +573,10 @@ class yoloTracker(object):
             # if ((trk.time_since_update < self.hold_without) and (trk.long_score>self.track_threshold)):
             #filtering out tracks can and should happen at later stage!
             ret.append(np.concatenate((d,[trk.id,trk.long_score,trk.score])).reshape(1,-1))
+            print(f'd is {d}')
+            print(f'trk.id is {trk.id}')
+            print(f'trk.long_score is {trk.long_score}')
+            print(f'trk.score is {trk.score}')
 
         print("ret")
         print(ret)
