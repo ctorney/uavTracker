@@ -4,8 +4,8 @@ size: 400 #if not multiple of 32 it will be made to!
 #settings: ['alpha', 'beta' , 'A', 'B', 'C', 'D', 'E']
 settings: ['alpha', 'A', 'B', 'C', 'D', 'E']
 settings_for_uavtracker: ['alpha']
-settings_for_dbtracker: ['A', 'B', 'C', 'D', 'E']
-datapoints_for_dbtracker: 100000 #not all frames are suitable for providing the triples for the trainig
+settings_for_dbtracker: ['alpha','A', 'B', 'C', 'D', 'E']
+datapoints_for_dbtracker: 10000 #not all frames are suitable for providing the triples for the trainig
 
 alpha:
   mu_s: 3
