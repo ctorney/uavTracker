@@ -79,6 +79,17 @@ def convert_x_to_bbox(x,score=None):
   else:
     return np.array([x[0]-w/2.,x[1]-h/2.,x[0]+w/2.,x[1]+h/2.,score]).reshape((1,5))
 
+def get_box(trk):
+    if trk.kalman_type == 'torney':
+        trackBox = convert_kfx_to_bbox(trk.kf.x[:4])[0]
+    elif trk.kalman_type == 'sort':
+        trackBox = convert_x_to_bbox(trk.kf.x[:4])[0]
+    elif trk.kalman_type == 'deepbeast':
+        trackBox = trk.bbox
+    else:
+        raise ValueError('Unknown kalman type')
+    return trackBox 
+
 class KalmanBoxSortTracker(object):
   """
   This class represents the internal state of individual tracked objects observed as bbox.
@@ -225,6 +236,7 @@ class BeastTrack(object):
         self.age = 1
         self.score = bbox[4]
         self.long_score = bbox[4]/2 #when creating track the long_score is halved to indicate our uncertainty over one high-confidence detection
+        self.kalman_type='deepbeast'
 
     def update(self,bbox):
         """
@@ -259,7 +271,7 @@ class DeepBeastTrackerBattery(object):
     def __init__(self, yolo_det_model, yololink) -> None:
        self.yolo_det_model = yolo_det_model
        self.yololink = yololink 
-    self.trackers = []
+       self.trackers = []
        #Initialise the list of tracker objects
 
     def create_trackers(self, detections):
@@ -416,10 +428,7 @@ def associate_detections_to_trackers(detections,trackers,iou_threshold = 0.3):
 
     for d,det in enumerate(detections):
         for t,trk in enumerate(trackers):
-            if trk.kalman_type == 'torney':
-                trackBox = convert_kfx_to_bbox(trk.kf.x[:4])[0]
-            else:
-                trackBox = convert_x_to_bbox(trk.kf.x[:4])[0]
+            trackBox = get_box(trk)
             iou_matrix[d,t] = bbox_iou(trackBox, det)
             id_matrix[d,t] = scale_id*det[4]
     matched_indices = linear_assignment(-iou_matrix-id_matrix)
@@ -486,10 +495,7 @@ class yoloTracker(object):
 
             ret = []
             for trk in (self.trackers):
-                if trk.kalman_type == 'torney':
-                    d = convert_kfx_to_bbox(trk.kf.x)[0]
-                else:
-                    d = convert_x_to_bbox(trk.kf.x)[0]
+                d = get_box(trk)
                 ret.append(np.concatenate((d,[trk.id,trk.long_score,trk.score])).reshape(1,-1))
         #Get all predictions from Deep Beast Battery if all the frames are not None
         elif frame_a is not None and frame_b is not None and frame_c is not None:
@@ -516,11 +522,7 @@ class yoloTracker(object):
         # add tracks to detection list
         for t,trk in enumerate(self.trackers):
             if(t in unmatched_trks):
-
-                if trk.kalman_type == 'torney':
-                    d = convert_kfx_to_bbox(trk.kf.x)[0]
-                else:
-                    d = convert_x_to_bbox(trk.kf.x)[0]
+                d = get_box(trk)
                 d = np.append(d,np.array([2]), axis=0)
                 d = np.expand_dims(d,0)
 
@@ -542,7 +544,7 @@ class yoloTracker(object):
         # Create new trackers from unassigned detections
         if self.kalman_type == 'deepbeast':
             #here logic is a wee bit different, as the predictions are happening on the global level
-            self.trackers = self.dbt_battery.create_trackers(det)
+            self.trackers = self.dbt_battery.create_trackers(dets)
         else:
             for det in dets:
                 if self.kalman_type == 'sort':
@@ -566,16 +568,14 @@ class yoloTracker(object):
 
         # Provide an output list of trackers
         for trk in (self.trackers):
-            if trk.kalman_type == 'torney':
-                d = convert_kfx_to_bbox(trk.kf.x)[0]
-            elif trk.kalman_type == 'sort':
-                d = convert_x_to_bbox(trk.kf.x)[0]
-            elif trk.kalman_type == 'deepbeast':
-                d = trk.bbox
+            d = get_box(trk)
             # if ((trk.time_since_update < self.hold_without) and (trk.long_score>self.track_threshold)):
             #filtering out tracks can and should happen at later stage!
             ret.append(np.concatenate((d,[trk.id,trk.long_score,trk.score])).reshape(1,-1))
 
+        print("ret")
+        print(ret)
+        print("ret")
         if(len(ret)>0):
             return np.concatenate(ret)
         return np.empty((0,5))
