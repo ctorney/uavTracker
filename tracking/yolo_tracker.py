@@ -252,9 +252,9 @@ class BeastTrack(object):
     def predict_fill(self, bbox):
         self.bbox = bbox
 
-    def pre_predict(self, bbox):
+    def pre_predict(self):
         '''
-        This is an equivalent of Kalman Filter predict function. However as the predictions happen on the global level of the battery, we are passing a new predicted bbox from battery predictions 
+        This is an equivalent of Kalman Filter predict function. However as the predictions happen on the global level of the battery, we are passing a new predicted bbox from battery predictions in predict_fill
         '''
         self.age += 1
         if(self.time_since_update>0):
@@ -268,10 +268,12 @@ DeepBeastTrackerBettery
 Unlike Kalman Box Trackers, for DeepBeastTrackerBattery we are only having one tracker for all tracks.
 '''
 class DeepBeastTrackerBattery(object):
-    def __init__(self, yolo_det_model, yololink) -> None:
+    def __init__(self, yolo_det_model, yololink, obj_thresh, nms_thresh) -> None:
        self.yolo_det_model = yolo_det_model
        self.yololink = yololink 
        self.trackers = []
+       self.obj_thresh = obj_thresh
+       self.nms_thresh = nms_thresh
        #Initialise the list of tracker objects
 
     def create_trackers(self, detections):
@@ -334,14 +336,11 @@ class DeepBeastTrackerBattery(object):
     def predict(self, frame_a, frame_b, frame_c):
         obj_thresh = self.obj_thresh
         nms_thresh = self.nms_thresh
-        min_l = self.min_l
-        max_l = self.max_l
-        current_linker_tracks = self.current_linker_tracks
+        current_linker_tracks = self.trackers
+        #TODO predict location not for yolo boexs in B but for tracks existing in B
 
         if frame_a.shape != frame_c.shape:
-            return []
-
-        image_h, image_w, _ = frame_a.shape
+            return [], []
 
         new_image_a = frame_a[:, :, ::-1] / 255.#opencvuses BGR,. rest of the world RGB (inc yolo)
         new_image_a = np.expand_dims(new_image_a, 0)
@@ -478,7 +477,7 @@ class yoloTracker(object):
         elif self.kalman_type == 'torney':
             KalmanBoxTracker.count = 0
         elif self.kalman_type == 'deepbeast':
-            self.dbt_battery = DeepBeastTrackerBattery(yolo_det_model=yolo_det_model, yololink=yololink)
+            self.dbt_battery = DeepBeastTrackerBattery(yolo_det_model, yololink, track_threshold, init_nms)
         else:
             raise Exception('Unknown name of a tracker: {self.kalman_type}')
 
@@ -493,16 +492,17 @@ class yoloTracker(object):
             for t,trk in enumerate(self.trackers):
                 self.trackers[t].predict()
 
-            ret = []
-            for trk in (self.trackers):
-                d = get_box(trk)
-                ret.append(np.concatenate((d,[trk.id,trk.long_score,trk.score])).reshape(1,-1))
         #Get all predictions from Deep Beast Battery if all the frames are not None
         elif frame_a is not None and frame_b is not None and frame_c is not None:
             #we are updating yoloTracker trackers wtih DeepBeastTrackerBattery trackers
             self.trackers = self.dbt_battery.predict_trackers(frame_a, frame_b, frame_c)
         else:
-            ret = []
+            pass
+
+        ret = []
+        for trk in (self.trackers):
+            d = get_box(trk)
+            ret.append(np.concatenate((d,[trk.id,trk.long_score,trk.score])).reshape(1,-1))
 
         #The following lines are very important because python secretly cares about data types very much.
         if(len(ret)>0):
@@ -567,20 +567,13 @@ class yoloTracker(object):
         if self.kalman_type == 'deepbeast':
             self.dbt_battery.trackers = self.trackers
 
-        # Provide an output list of trackers
+        # Provide an output list of trackers if needed
         for trk in (self.trackers):
             d = get_box(trk)
             # if ((trk.time_since_update < self.hold_without) and (trk.long_score>self.track_threshold)):
             #filtering out tracks can and should happen at later stage!
             ret.append(np.concatenate((d,[trk.id,trk.long_score,trk.score])).reshape(1,-1))
-            print(f'd is {d}')
-            print(f'trk.id is {trk.id}')
-            print(f'trk.long_score is {trk.long_score}')
-            print(f'trk.score is {trk.score}')
 
-        print("ret")
-        print(ret)
-        print("ret")
         if(len(ret)>0):
             return np.concatenate(ret)
         return np.empty((0,5))
