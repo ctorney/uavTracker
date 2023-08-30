@@ -15,8 +15,6 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from __future__ import print_function
-
 import sys
 import os.path
 import scipy
@@ -288,7 +286,6 @@ class DeepBeastTrackerBattery(object):
         new_boxes = np.empty((0,9))
 
         for trk in current_tracks:
-            print(f'decodeLinker: {trk.bbox}')
             #Get yolo anchor box for prevoius frame detection 
             c0 = int(trk.bbox[5])
             c1 = int(trk.bbox[6])
@@ -315,11 +312,8 @@ class DeepBeastTrackerBattery(object):
                         c1,
                         c2,
                         yolo_scale] #we are setting the score to 0 here as we are not suure if there will be later detection. Also our best guess at location of the next prediction would be previous yolo location in absence of detection
-
-            print('n_box',n_box)
             new_boxes = np.vstack((new_boxes,n_box))
 
-        print(f'new_boxes {new_boxes}')
         return new_boxes
 
     def predict(self, frame_a, frame_b, frame_c):
@@ -464,12 +458,6 @@ class yoloTracker(object):
 
     def update_1_update(self, dets):
         ret = []
-        print(f'update_1_update len: {len(dets)}')
-        print(f'update_1_update detections: {dets}')
-        print(f'update_1_update trackers: {self.trackers}')
-        for trk in (self.trackers):
-            print(f'trk id: {trk.id}')
-            print(get_box(trk))
         matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(dets,self.trackers, self.link_iou)
 
         #update matched trackers with assigned detections
@@ -498,7 +486,6 @@ class yoloTracker(object):
             dets= dets[dets[:,4]<1.1]
             dets= dets[dets[:,4]>0]
 
-        print(f'Current trackers: {self.trackers}')
         # Create new trackers from unassigned detections
         if self.kalman_type == 'deepbeast':
             #here logic is a wee bit different, as the predictions are happening on the global level
@@ -523,12 +510,6 @@ class yoloTracker(object):
         #Updated the dbt_battery trackers
         if self.kalman_type == 'deepbeast':
             self.dbt_battery.trackers = self.trackers
-            #DEBUG:
-            print(f'Current trackers after creating news: {self.dbt_battery.trackers}')
-
-            for trk in (self.dbt_battery.trackers):
-                print(f'trk id: {trk.id}')
-                print(trk.bbox)
 
         # Provide an output list of trackers if needed/wanted
         for trk in (self.trackers):
