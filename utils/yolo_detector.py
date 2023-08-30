@@ -45,7 +45,7 @@ class yoloDetector(object):
         preds = self.model.predict(new_image, verbose = 0)
 
         #print('yolo time: ', (stop-start)/batches)
-        new_boxes = np.zeros((0,5))
+        new_boxes = np.zeros((0,8))
         for i in range(3):
             netout=preds[i][0]
             grid_h, grid_w = netout.shape[:2]
@@ -58,7 +58,6 @@ class yoloDetector(object):
 
             # select only objects above threshold
             indexes = (objectness > self.obj_threshold) & (wpos<self.max_length) & (hpos<self.max_length)
-
             if np.sum(indexes)==0:
                 continue
 
@@ -84,8 +83,12 @@ class yoloDetector(object):
                 max_y = np.max(np.column_stack((corner1[:,1],corner2[:,1],corner3[:,1],corner4[:,1])),axis=1)
                 corner1 = np.column_stack((min_x,min_y))
                 corner2 = np.column_stack((max_x,max_y))
+            indexes_locs = np.where(indexes)
+            indexes_coords = list(zip(indexes_locs[0], indexes_locs[1]))
+            #provide a list containing current yolo scale (i) for each detection
+            yolo_scale = np.array([i]*len(indexes_coords))
 
-            new_boxes = np.append(new_boxes, np.column_stack((corner1, corner2, objectness[indexes])),axis=0)
+            new_boxes = np.append(new_boxes, np.column_stack((corner1, corner2, objectness[indexes], indexes_locs[0], indexes_locs[1], yolo_scale)),axis=0)
 
         # do nms
         sorted_indices = np.argsort(-new_boxes[:,4])
@@ -105,8 +108,7 @@ class yoloDetector(object):
         new_boxes = new_boxes[new_boxes[:,4]>0]
         detection_list = []
         for row in new_boxes:
-            stacker = (row[0],row[1],row[2],row[3], row[4])
-            detection_list.append(stacker)
+            detection_list.append(tuple(row))
 
 
         return detection_list

@@ -524,7 +524,8 @@ class yoloTracker(object):
         for t,trk in enumerate(self.trackers):
             if(t in unmatched_trks):
                 d = get_box(trk)
-                d = np.append(d,np.array([2]), axis=0)
+                #yolo grid indeces are set to -1
+                d = np.append(d,np.array([2,-1,-1,-1]), axis=0)
                 d = np.expand_dims(d,0)
 
                 if len(dets)>0:
