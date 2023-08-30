@@ -284,53 +284,24 @@ class DeepBeastTrackerBattery(object):
             self.trackers.append(BeastTrack(det))      
         return self.trackers
 
-    def decodeLinker(self, track_output,yolos, obj_threshold, nms_threshold):
-        new_boxes = np.zeros((0,9))
-        max_length = 1000
-        for i in range(3):
-            netout=yolos[i][0]
-            grid_h, grid_w = netout.shape[:2]
-            pxpos = netout[...,0]
-            pypos = netout[...,1]
-            pwpos = netout[...,2]
-            phpos = netout[...,3]
+    def decodeLinker(self, track_output,current_tracks):
+        new_boxes = np.zeros((0,4))
 
-            objectness = netout[...,4]
-
-            trakcpred = track_output[i][0]
+        for trk in current_tracks:
+            #Get yolo anchor box for prevoius frame detection 
+            c0 = trk.bbox[5]
+            c1 = trk.bbox[6]
+            yolo_scale = trk.box[7]
+            trakcpred = track_output[yolo_scale][0]
             xpos = trakcpred[...,0]
             ypos = trakcpred[...,1]
             wpos = trakcpred[...,2]
             hpos = trakcpred[...,3]
-            # select only objects above threshold
-            indexes = (objectness > obj_threshold) & (pwpos<max_length) & (phpos<max_length)
 
-            if np.sum(indexes)==0:
-                # print('no boxes at this level')
-                continue
-
-            pcorner1 = np.column_stack((pxpos[indexes]-pwpos[indexes]/2.0, pypos[indexes]-phpos[indexes]/2.0))
-            pcorner2 = np.column_stack((pxpos[indexes]+pwpos[indexes]/2.0, pypos[indexes]+phpos[indexes]/2.0))
-
-            #pcorner1 = np.column_stack((pxpos[indexes], pypos[indexes]))
-            corner1 = np.column_stack((xpos[indexes]-wpos[indexes]/2.0, ypos[indexes]-hpos[indexes]/2.0))
-            corner2 = np.column_stack((xpos[indexes]+wpos[indexes]/2.0, ypos[indexes]+hpos[indexes]/2.0))
-            new_boxes = np.append(new_boxes, np.column_stack((pcorner1, pcorner2, objectness[indexes], corner1,corner2)),axis=0)
-            #print(new_boxes)
-            #print(pxpos[indexes])
-
-        # do nms
-        sorted_indices = np.argsort(-new_boxes[:,4])
-        boxes=new_boxes.tolist()
-
-        for i in range(len(sorted_indices)):
-            index_i = sorted_indices[i]
-            if new_boxes[index_i,4] == 0: continue
-            for j in range(i+1, len(sorted_indices)):
-                index_j = sorted_indices[j]
-                if bbox_iou(boxes[index_i][0:4], boxes[index_j][0:4]) >= nms_threshold:
-                    new_boxes[index_j,4] = 0
-        new_boxes = new_boxes[new_boxes[:,4]>0]
+            corner1 = (xpos[c0,c1]-wpos[c0,c1]/2.0, ypos[c0,c1]-hpos[c0,c1]/2.0)
+            corner2 = (xpos[c0,c1]+wpos[c0,c1]/2.0, ypos[c0,c1]+hpos[c0,c1]/2.0)
+            new_boxes = np.append(new_boxes, np.column_stack((corner1,corner2)),axis=0)
+        print(f'new_boxes {new_boxes}')
         return new_boxes
 
     def predict(self, frame_a, frame_b, frame_c):
@@ -368,14 +339,8 @@ class DeepBeastTrackerBattery(object):
         b_boxes = []
         #decodeLinker returns matching boxes from frame C and B (t and t-1)
         #The linker decoder should take the ground truth position at t-1 (B), or boxes_gt_prev and form this provide us with its best estimate of boxes_gt at t
-        new_boxes = self.decodeLinker(track_output, yolos_b, obj_thresh, nms_thresh)
+        new_boxes = self.decodeLinker(track_output, current_linker_tracks, obj_thresh, nms_thresh)
         for box in new_boxes:
-            b_xmin  = int((box[0]))
-            b_xmax  = int((box[2]))
-            b_ymin  = int((box[1]))
-            b_ymax  = int((box[3]))
-            b_box = [b_xmin,b_ymin,b_xmax,b_ymax]
-
             c_pred_xmin  = int((box[5]))
             c_pred_xmax  = int((box[7]))
             c_pred_ymin  = int((box[6]))
@@ -383,33 +348,20 @@ class DeepBeastTrackerBattery(object):
             c_linker_boxe = [c_pred_xmin,c_pred_ymin,c_pred_xmax,c_pred_ymax]
 
             c_linker_boxes.append(c_linker_boxe)
-            b_boxes.append(b_box)
-        return c_linker_boxes, b_boxes
+        return c_linker_boxes
 
     def predict_trackers(self, frame_a, frame_b, frame_c):
         '''
         For all of the trackers in this battery and predict their next position based on deep beast linker. Here we are not yet associating the trackers with the detections, we simply provide a prediction for each *previously existing* tracker
         '''
         #Get actual predictions of positions of all objects in frame b using deepbeast
-        c_pred_boxes, b_boxes = self.predict(frame_a, frame_b, frame_c)
-        assignment_list = np.ones(len(c_pred_boxes))*-1
+        c_pred_boxes = self.predict(frame_a, frame_b, frame_c)
 
         #Do the technical update of all trackers state
-        for trk in self.trackers:
-            #For each tracker, find the matching b_box and assign correct c_pred_box as the predicted location
-            for iii, b_box in enumerate(b_boxes):
-                trk.pre_predict()
-                if bbox_iou(trk.bbox, b_box)>0.9: 
-                    if assignment_list[iii] == -1:
-                        assignment_list[iii] = trk.id
-                        trk.predict_fill(c_pred_boxes[iii])
-                    else:
-                        raise Exception('Two trackers are assigned to the same b_box!')
-                    continue
-        
-        #We have remaining two problems - or not really
-        # 1. Unassigned c_pred_boxes - not really a problem! We create a new tracks for new unassigned detections on `update` step
-        # 2. Unassigned trackers - `pre_predict` updated tracker step while keeping an existing track location. Unlike Kalman filter, an unmatched track will not be moving. I'm not sure that it will ever actually happen :hmm:
+        for iii, trk in enumerate(self.trackers):
+            #For each tracker, assign correct c_pred_box as the predicted location
+            trk.pre_predict()
+            trk.predict_fill(c_pred_boxes[iii])
         
         return self.trackers
 
@@ -511,6 +463,12 @@ class yoloTracker(object):
 
     def update_1_update(self, dets):
         ret = []
+        print(f'update_1_update: {len(dets)}')
+        print(f'update_1_update: {dets}')
+        print(f'update_1_update: {self.trackers}')
+        for trk in (self.trackers):
+            print(f'update_1_update: {trk.id}')
+            print(get_box(trk))
         matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(dets,self.trackers, self.link_iou)
         #TODO not assigning detections correctly to deep beast
         # update matched trackers with assigned detections
