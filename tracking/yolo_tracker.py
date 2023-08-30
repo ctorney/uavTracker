@@ -285,33 +285,45 @@ class DeepBeastTrackerBattery(object):
         return self.trackers
 
     def decodeLinker(self, track_output,current_tracks):
-        new_boxes = np.zeros((0,4))
+        new_boxes = np.empty((0,9))
 
         for trk in current_tracks:
+            print(f'decodeLinker: {trk.bbox}')
             #Get yolo anchor box for prevoius frame detection 
-            c0 = trk.bbox[5]
-            c1 = trk.bbox[6]
-            yolo_scale = trk.box[7]
-            trakcpred = track_output[yolo_scale][0]
-            xpos = trakcpred[...,0]
-            ypos = trakcpred[...,1]
-            wpos = trakcpred[...,2]
-            hpos = trakcpred[...,3]
+            c0 = int(trk.bbox[5])
+            c1 = int(trk.bbox[6])
+            c2 = int(trk.bbox[7])
+            #index of previous detection
+            ipd = (c0, c1, c2)
+            yolo_scale = int(trk.bbox[8])
 
-            corner1 = (xpos[c0,c1]-wpos[c0,c1]/2.0, ypos[c0,c1]-hpos[c0,c1]/2.0)
-            corner2 = (xpos[c0,c1]+wpos[c0,c1]/2.0, ypos[c0,c1]+hpos[c0,c1]/2.0)
-            new_boxes = np.append(new_boxes, np.column_stack((corner1,corner2)),axis=0)
+            if c0 == -1: #If for some reason the track in previous frame was not linked to any detection
+                n_box = trk.bbox[:4]
+            else:
+                trakcpred = track_output[yolo_scale][0]
+                xpos = trakcpred[...,0]
+                ypos = trakcpred[...,1]
+                wpos = trakcpred[...,2]
+                hpos = trakcpred[...,3]
+
+                n_box = [xpos[ipd]-wpos[ipd]/2.0, 
+                        ypos[ipd]-hpos[ipd]/2.0, 
+                        xpos[ipd]+wpos[ipd]/2.0, 
+                        ypos[ipd]+hpos[ipd]/2.0, 
+                        0,
+                        c0,
+                        c1,
+                        c2,
+                        yolo_scale] #we are setting the score to 0 here as we are not suure if there will be later detection. Also our best guess at location of the next prediction would be previous yolo location in absence of detection
+
+            print('n_box',n_box)
+            new_boxes = np.vstack((new_boxes,n_box))
+
         print(f'new_boxes {new_boxes}')
         return new_boxes
 
     def predict(self, frame_a, frame_b, frame_c):
-        obj_thresh = self.obj_thresh
-        nms_thresh = self.nms_thresh
         current_linker_tracks = self.trackers
-        #TODO predict location not for yolo boexs in B but for tracks existing in B
-
-        if frame_a.shape != frame_c.shape:
-            return [], []
 
         new_image_a = frame_a[:, :, ::-1] / 255.#opencvuses BGR,. rest of the world RGB (inc yolo)
         new_image_a = np.expand_dims(new_image_a, 0)
@@ -336,19 +348,10 @@ class DeepBeastTrackerBattery(object):
 
         #get The box from the linker/tracker
         c_linker_boxes = []
-        b_boxes = []
         #decodeLinker returns matching boxes from frame C and B (t and t-1)
         #The linker decoder should take the ground truth position at t-1 (B), or boxes_gt_prev and form this provide us with its best estimate of boxes_gt at t
-        new_boxes = self.decodeLinker(track_output, current_linker_tracks, obj_thresh, nms_thresh)
-        for box in new_boxes:
-            c_pred_xmin  = int((box[5]))
-            c_pred_xmax  = int((box[7]))
-            c_pred_ymin  = int((box[6]))
-            c_pred_ymax  = int((box[8]))
-            c_linker_boxe = [c_pred_xmin,c_pred_ymin,c_pred_xmax,c_pred_ymax]
-
-            c_linker_boxes.append(c_linker_boxe)
-        return c_linker_boxes
+        new_boxes = self.decodeLinker(track_output, current_linker_tracks)
+        return new_boxes
 
     def predict_trackers(self, frame_a, frame_b, frame_c):
         '''
@@ -444,12 +447,10 @@ class yoloTracker(object):
             for t,trk in enumerate(self.trackers):
                 self.trackers[t].predict()
 
-        #Get all predictions from Deep Beast Battery if all the frames are not None
-        elif frame_a is not None and frame_b is not None and frame_c is not None:
+        #Get all predictions from Deep Beast Battery
+        else:
             #we are updating yoloTracker trackers wtih DeepBeastTrackerBattery trackers
             self.trackers = self.dbt_battery.predict_trackers(frame_a, frame_b, frame_c)
-        else:
-            pass
 
         ret = []
         for trk in (self.trackers):
@@ -463,27 +464,27 @@ class yoloTracker(object):
 
     def update_1_update(self, dets):
         ret = []
-        print(f'update_1_update: {len(dets)}')
-        print(f'update_1_update: {dets}')
-        print(f'update_1_update: {self.trackers}')
+        print(f'update_1_update len: {len(dets)}')
+        print(f'update_1_update detections: {dets}')
+        print(f'update_1_update trackers: {self.trackers}')
         for trk in (self.trackers):
-            print(f'update_1_update: {trk.id}')
+            print(f'trk id: {trk.id}')
             print(get_box(trk))
         matched, unmatched_dets, unmatched_trks = associate_detections_to_trackers(dets,self.trackers, self.link_iou)
-        #TODO not assigning detections correctly to deep beast
-        # update matched trackers with assigned detections
+
+        #update matched trackers with assigned detections
         for t,trk in enumerate(self.trackers):
             if(t not in unmatched_trks):
                 d = matched[np.where(matched[:,1]==t)[0],0]
                 trk.update(dets[d,:][0])
                 dets[d,4]=2.0 # once assigned we set it to full certainty
 
-        # add tracks to detection list
+        #add umatched tracks to detection list
         for t,trk in enumerate(self.trackers):
             if(t in unmatched_trks):
                 d = get_box(trk)
                 #yolo grid indeces are set to -1
-                d = np.append(d,np.array([2,-1,-1,-1]), axis=0)
+                d = np.append(d,np.array([2,-1,-1,-1,-1]), axis=0)
                 d = np.expand_dims(d,0)
 
                 if len(dets)>0:
@@ -497,10 +498,7 @@ class yoloTracker(object):
             dets= dets[dets[:,4]<1.1]
             dets= dets[dets[:,4]>0]
 
-        #update trackers in the dbt_battery downstream from here
-        if self.kalman_type == 'deepbeast':
-            self.dbt_battery.trackers = self.trackers
-
+        print(f'Current trackers: {self.trackers}')
         # Create new trackers from unassigned detections
         if self.kalman_type == 'deepbeast':
             #here logic is a wee bit different, as the predictions are happening on the global level
@@ -525,8 +523,14 @@ class yoloTracker(object):
         #Updated the dbt_battery trackers
         if self.kalman_type == 'deepbeast':
             self.dbt_battery.trackers = self.trackers
+            #DEBUG:
+            print(f'Current trackers after creating news: {self.dbt_battery.trackers}')
 
-        # Provide an output list of trackers if needed
+            for trk in (self.dbt_battery.trackers):
+                print(f'trk id: {trk.id}')
+                print(trk.bbox)
+
+        # Provide an output list of trackers if needed/wanted
         for trk in (self.trackers):
             d = get_box(trk)
             # if ((trk.time_since_update < self.hold_without) and (trk.long_score>self.track_threshold)):
