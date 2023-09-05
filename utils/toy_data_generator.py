@@ -73,7 +73,7 @@ class Mooveemodel:
         self.dt = np.ones(2)
         self.rng = np.random.default_rng()
         self.pos = np.array([x_init,y_init])
-        self.angle = 0.
+        self.angle = 360 * self.rng.uniform() #prob of going into special state
         self.os = np.array(self.mu)
         self.s = 0
         self.updateSpeed()
@@ -117,7 +117,7 @@ class Zwierzak:
         self.x_prev=x_init
         self.y_prev=y_init
         self.hsv=(hue,sat,0) # initialise as a dim value
-        self.angle = 0
+        self.angle = mm.angle
         self.islong = 30 #half of width and height as opencv ellipses measurements defined
         self.iswide = 10
         self.speed = 2 #shouldn't that be mu_s?
@@ -288,7 +288,7 @@ def main(args):
     ddir  = config['project_directory']
     os.makedirs(ddir, exist_ok=True)
     oname = config['project_name']
-
+    preped_images_dir = os.path.join(ddir, config['preped_images_dir'])
     print(f'Only square images work for now!')
 
     # Prepare a list of when different things happen
@@ -297,7 +297,10 @@ def main(args):
     dp = dp_train + dp_test
     dp_ratio = dp_train / dp
     number_of_uavtracker_sets = len(generator_config['settings_for_uavtracker'])
+    number_of_dbtracker_sets = len(generator_config['settings_for_dbtracker'])
     dp_per_uavtracker_set = math.ceil(dp / number_of_uavtracker_sets)
+    dp_per_dbtracker_set = math.ceil( generator_config['datapoints_for_dbtracker']/ number_of_dbtracker_sets)
+
 
     #Those are *not* raw images as we forcing them to be yolo-compatible size as they are _already_ annotated!
     #test_dir = os.path.join(ddir,config['raw_imgs_dir'],config['subsets']['test']['directory'])
@@ -315,6 +318,7 @@ def main(args):
     os.makedirs(train_dir, exist_ok=True)
     os.makedirs(test_dir, exist_ok=True)
     os.makedirs(video_dir, exist_ok=True)
+    os.makedirs(preped_images_dir, exist_ok=True)
     annotations_file = an_dir + '/train_data.yml'
     sequence_file = os.path.join(an_dir,config['seq_yml'])
     all_imgs = []
@@ -333,20 +337,33 @@ def main(args):
 
 
     for setting in generator_config['settings']:
+        if setting in generator_config['settings_for_dbtracker']:
+            setting_for_dbtracker = True
+            dps = dp_per_dbtracker_set
+        else:
+            setting_for_dbtracker = False
 
+        #number datapoints for uavtracker is more important
         if setting in generator_config['settings_for_uavtracker']:
             setting_for_uavtracker = True
+            dps = dp_per_uavtracker_set
         else:
             setting_for_uavtracker = False
 
-        print(f'Preparing data with setting {setting} with, setting_for_uavtracker={setting_for_uavtracker}')
 
-        alfs, next_track_id = set_alfs(generator_config, setting, mr, side)
+
+        print(f'Preparing data with setting {setting} with, setting_for_uavtracker={setting_for_uavtracker} and setting_for_dbtracker={setting_for_dbtracker} with {dps} datapoints')
+
+        # alfs, next_track_id = set_alfs(generator_config, setting, mr, side)
         one_fname_gt = os.path.join(an_dir, f'{setting}.txt')
         video_gt = cv2.VideoWriter(os.path.join(video_dir,f'{setting}.avi'), fourCC, 5, (side,side), True)
         one_file_gt = open(one_fname_gt, 'a')
 
-        for it in range(dp_per_uavtracker_set):
+
+        for it in range(dps):
+            #reset the list of alfs every 1000 frames so that long training data has different colours and slightly bit different parameters
+            if it % 50 == 0:
+                alfs, next_track_id = set_alfs(generator_config, setting, mr, side)
             plane_cur = hdplane.copy()
             recthosealfs = [] #all animals must be visible and moving within current panel to be useful for training
             save_name_seed = set_name(oname, setting, it)
@@ -366,9 +383,11 @@ def main(args):
             training_datapoint = it < (dp_ratio * dp_per_uavtracker_set)
 
             #only record the sequence for training images
-            recthosealfs.append(training_datapoint)
-            #only record sequence for those images that are used for training
-            recthosealfs.append(setting_for_uavtracker)
+            # recthosealfs.append(training_datapoint)
+
+            #only record sequence for those images that are used for deebbeast training
+            recthosealfs.append((setting_for_dbtracker))
+            #recthosealfs.append((setting_for_dbtracker or setting_for_uavtracker))
             # print(recthosealfs)
             record_the_seq = np.all(recthosealfs)
 
@@ -429,9 +448,11 @@ def main(args):
                     cv2.imwrite(test_dir + '/' + save_name,plane_cur)
                     out_test.write(plane_cur)
 
+            #all sequences need to be saved in the preped images dir for MOT sequences
+            cv2.imwrite(os.path.join(preped_images_dir, save_name),plane_cur)
             if show_img:
                 cv2.imshow("hdplane",plane_cur)
-                key = cv2.waitKey(0)
+                key = cv2.waitKey(20)
                 if key==ord('q'):
                     break
 

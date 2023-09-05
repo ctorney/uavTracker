@@ -89,6 +89,7 @@ def load_correction_files(messy_tracks,
 
 
 def main(args):
+    print('Correcting!')
     #Load data
     config = init_config(args)
     args_visual = config['args_visual']
@@ -220,8 +221,8 @@ def main(args):
                                                      false_file,
                                                      true_file,
                                                      track_thresh_val)
-
-            while i < nframes:
+            #only got frame by frame for videos edited visually, otherwise just save the prepared previously corrections (and apply the track threshold!)
+            while ((i < nframes) and args_visual):
                 if key == ord('q'):
                     break
 
@@ -334,7 +335,7 @@ def main(args):
                     cv2.waitKey(20)
 
 
-                corrected_tracks[['frame_number','corrected_track_id', 'c0','c1','c2','c3','long_score','score']].to_csv(data_file_corrected,header=None,index=False)
+            corrected_tracks[['frame_number','corrected_track_id', 'c0','c1','c2','c3','long_score','score']].to_csv(data_file_corrected,header=None,index=False)
 
 
 if __name__ == '__main__':

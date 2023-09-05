@@ -5,7 +5,7 @@
 # project_name, project_directory, c_date, common:IMAGE_W (must be the same as IMAGE_H), number_of_images for train and test dataset
 project_name: 'toys'
 project_directory: '../data/toys' #adding a '..' because the programs are run from subdirectories. feel free to specify an absolute path if that offends you
-c_date: '2023Mar11' #this is basically a part of project name if you wish.
+c_date: '2023Jun29' #this is basically a part of project name if you wish.
 
 #The general project settings, will be the same if you keep the directory structure intact
 weights_dir: 'weights/'
@@ -19,7 +19,7 @@ results_dir: 'results/'
 seq_yml: 'seq_data.yml'
 
 #This is annotations
-preped_images_dir: "subsets/train/"
+preped_images_dir: "subsets/sequences/"
 tracking_setup: 'track_setup_1'
 
 autogen_model:
@@ -48,22 +48,22 @@ models:
     nms_thresh: 0.1
     phase_one:
       BATCH_SIZE: 16
-      EPOCHS: 20
+      EPOCHS: 50
       LR: 0.5e-3
       B1: 0.9
       B2: 0.999
       EPS: 0.1e-7
-      MIN_DELTA: 0.1
-      PATIENCE: 2
+      MIN_DELTA: 0.01
+      PATIENCE: 5
     phase_two:
       BATCH_SIZE: 4
-      EPOCHS: 10
+      EPOCHS: 50
       LR: 0.1e-3
       B1: 0.9
       B2: 0.999
       EPS: 0.1e-7
-      MIN_DELTA: 0.1
-      PATIENCE: 2
+      MIN_DELTA: 0.01
+      PATIENCE: 5
 
 testing_sets: ['test']
 
@@ -71,7 +71,7 @@ testing_sets: ['test']
 subsets:
   train:
     directory: 'subsets/train/'
-    number_of_images: 500
+    number_of_images: 5000
     description: 'easy subset to train on'
     filelist: '' #if filelist is empty, use regex
     regex: '*.jpg'
@@ -90,7 +90,7 @@ track_setup_1:
   videos_list: "my_videos.yml" #after transforms.py was run this is where video list live
   groundtruths_dir: 'gt/'
   predictions_dir: 'pred/'
-  weights: 'toys_model_1_phase_two_2023Mar11.h5'
+  weights: 'toys_model_1_phase_two_2023Jun29.h5'
   # weights: 'yolo-v3-coco.h5'
   weights_md5: ''
   num_class: 1
@@ -101,6 +101,7 @@ track_setup_1:
   init_thresh: 0.9
   init_nms: 0.1
   hold_without: 2 #how long to show track alive without detections (at max age it will be killed anyway
+  transform_before_track: 1 #this is to align the image before tracking so that tracks are in the corrected image space already
 
 common:
   LABELS: ['toy']
@@ -121,12 +122,16 @@ deepBeastLinking:
 
   #checked annotations are used for training:
   checked_annotations_fname: 'seq_data.yml'
-  seq_fname: 'alpha.txt'
-  detection_net_weights: 'toys_model_1_phase_two_2023Mar11.h5'
-  linking_net_weights: 'toys_link.h5'
+  seq_fname: 'B.txt'
+  detection_net_weights: 'toys_model_1_phase_two_2023Jun29.h5'
+  detection_net_weights_md5: ''
+  #linking_net_weights: 'simplest_one_toy_link2.h5'
+  linking_net_weights: 'one_toy_link.h5'
+  linking_net_weights_md5: ''
 
   #training parameters
-  FINE_TUNE: 1
   BATCH_SIZE: 16
-  EPOCHS: 100
-  LR: 0.5e-4
+  EPOCHS: 150
+  LR: 0.5e-5
+  MIN_DELTA: 0.0001
+  PATIENCE: 5

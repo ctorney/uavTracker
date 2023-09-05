@@ -1,4 +1,4 @@
-import hashlib, math, yaml, glob, cv2, sys, os
+import hashlib, math, yaml, glob, cv2, sys, os, datetime
 import numpy as np
 from scipy.special import expit
 
@@ -295,7 +295,8 @@ def showOnMosaic(namelist,
                  rowlength,
                  resized_width=None,
                  display = True,
-                 output_stream = None):
+                 output_stream = None,
+                 write_images_dir = None):
     margin = 10
     space_for_label = 10
 
@@ -328,6 +329,10 @@ def showOnMosaic(namelist,
 
     if output_stream:
         output_stream.write(full_display)
+
+    if write_images_dir:
+        ts = datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")[:-3]
+        cv2.imwrite(os.path.join(write_images_dir,f'{ts}.png'),full_display)
 
     key = cv2.waitKey(waittime)
     return key
