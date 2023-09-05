@@ -327,8 +327,6 @@ class DeepBeastTrackerBattery(object):
         new_image_c = np.expand_dims(new_image_c, 0)
 
         # run the prediction
-        sys.stdout.write('Yolo predicting in linker ...')
-        sys.stdout.flush()
         yolos_a = self.yolo_det_model.predict(new_image_a)
         yolos_b = self.yolo_det_model.predict(new_image_b)
         yolos_c = self.yolo_det_model.predict(new_image_c)
