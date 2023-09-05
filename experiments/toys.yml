@@ -101,6 +101,7 @@ track_setup_1:
   init_thresh: 0.9
   init_nms: 0.1
   hold_without: 2 #how long to show track alive without detections (at max age it will be killed anyway
+  transform_before_track: 1 #this is to align the image before tracking so that tracks are in the corrected image space already
 
 common:
   LABELS: ['toy']
