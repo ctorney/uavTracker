@@ -311,7 +311,6 @@ def showOnMosaic(namelist,
 
     full_display = np.zeros((height, width, 3),framelist[0].dtype)
     full_display.fill(255)
-    print(full_display.shape)
     #fill in
     for iii in range(nframes):
         ty = iii//rowlength * (fheight + 2*margin + space_for_label)

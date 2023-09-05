@@ -92,7 +92,7 @@ track_setup_1:
   predictions_dir: 'pred/'
   weights: 'toys_model_1_phase_two_2023Jun29.h5'
   # weights: 'yolo-v3-coco.h5'
-  weights_md5: ''
+  weights_md5: '8e42d6246860ce3d53bb6410817aba9a'
   num_class: 1
   obj_thresh: 0.9
   nms_thresh: 0.1
@@ -122,12 +122,13 @@ deepBeastLinking:
 
   #checked annotations are used for training:
   checked_annotations_fname: 'seq_data.yml'
-  seq_fname: 'B.txt'
+  test_seqs: ['A.txt', 'B.txt', 'C.txt', 'D.txt', 'alpha.txt']
+  nframes_seq: 20 #set to 0 if you want the wole sequence, otherwise provide number of frames
   detection_net_weights: 'toys_model_1_phase_two_2023Jun29.h5'
-  detection_net_weights_md5: ''
+  detection_net_weights_md5: '8e42d6246860ce3d53bb6410817aba9a'
   #linking_net_weights: 'simplest_one_toy_link2.h5'
   linking_net_weights: 'one_toy_link.h5'
-  linking_net_weights_md5: ''
+  linking_net_weights_md5: 'd96d65698350ac0e016aeb567974ef7c'
 
   #training parameters
   BATCH_SIZE: 16
