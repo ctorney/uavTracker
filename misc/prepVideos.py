@@ -1,9 +1,7 @@
 import os, sys, glob, argparse
-import csv
-import pytesseract
-import cv2
-import yaml
+import cv2, yaml
 import numpy as np
+import pandas as pd
 
 sys.path.append('..')
 import time, datetime
@@ -24,7 +22,7 @@ def onmouse(event, x, y, flags, param):
         print(f'Clearing landmark')
         landmarks_list = []
 
-def deal_with_timestamps(tracks_dir, noext, input_file, first_frame_file):
+def deal_with_timestamps(tracks_dir, noext, input_file, first_frame_file, vmf, filename):
     global landmarks_list
     cap = cv2.VideoCapture(input_file)
     nframes = round(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -45,10 +43,18 @@ def deal_with_timestamps(tracks_dir, noext, input_file, first_frame_file):
     print(input_file)
     cv2.imshow('frame', frame)
     key = cv2.waitKey(20)  #& 0xFF
-    current_date_str = input("What is the datetime in the format %d-%b-%Y %H:%M:%S?\n")
-    mydate = current_date_str.split(' ')[0]
 
-    current_date = datetime.datetime.strptime(current_date_str, "%d-%b-%Y %H:%M:%S")
+    #Provided csv file with some goodies    
+    if vmf is not None:
+        print('Using video meta file to get the date')
+        current_date_str = vmf.loc[vmf['name'] == filename, 'startdate'].values[0]
+        print(current_date_str)
+        current_date = datetime.datetime.strptime(current_date_str, "%d-%b-%Y %H:%M:%S")
+    else:
+        current_date_str = input("What is the datetime in the format %d-%b-%Y %H:%M:%S?\n")
+        mydate = current_date_str.split(' ')[0]
+
+        current_date = datetime.datetime.strptime(current_date_str, "%d-%b-%Y %H:%M:%S")
 
 
     #
@@ -87,8 +93,13 @@ def deal_with_timestamps(tracks_dir, noext, input_file, first_frame_file):
     #Second best, we have a first frame date and know the fps
     #
     else:
-        pfps_str = input("What is the fps?\n")
-        pfps = int(pfps_str)
+        if vmf is not None:
+            print('Using video meta file to get the fps')
+            pfps = vmf.loc[vmf['name'] == filename, 'fps'].values[0]
+        else:
+            pfps_str = input("What is the fps?\n")
+            pfps = int(pfps_str)
+
         timestamps_out.append(current_date.strftime("%d-%b-%Y %H:%M:%S.%f") + '\n')
         for iii in range(nframes-1):
             current_date = current_date + datetime.timedelta(milliseconds=int(1000/pfps))
@@ -100,7 +111,7 @@ def deal_with_timestamps(tracks_dir, noext, input_file, first_frame_file):
     cv2.destroyAllWindows()
     return current_date_str
 
-def deal_with_landmarks(data_dir, input_file_dict, tracks_dir, noext, input_file, current_date_str, first_frame_file):
+def deal_with_landmarks(data_dir, input_file_dict, tracks_dir, noext, input_file, current_date_str, first_frame_file, vmf, filename):
     global landmarks_list
     landmarks_file = os.path.join(tracks_dir, noext + '_landmarks.yml')
     #Check and read in landmarks file if exists
@@ -167,7 +178,12 @@ def deal_with_landmarks(data_dir, input_file_dict, tracks_dir, noext, input_file
     print('add landmarks, and press \'c\' to continue')
     while key != ord('c'):
         if key == ord('n'):
-            camera_name = input("But first! What is this camera name?\n")
+            if vmf is not None:
+                print('Using video meta file to get the camera name')
+                camera_name = vmf.loc[vmf['name'] == filename, 'camera'].values[0]
+                key = ord('x')
+            else:
+                camera_name = input("But first! What is this camera name?\n")
         if not landmarks_list: #empty
             im_aligned = frame.copy()
         for iii, landmark in enumerate(landmarks_list):
@@ -198,6 +214,7 @@ def main(args):
     global landmarks_list
     #Load data
     config = init_config(args)
+    DEBUG = config['args_debug']
 
     data_dir = config['project_directory']
 
@@ -215,12 +232,20 @@ def main(args):
         video_config = yaml.safe_load(video_config_file_h)
 
     filelist = video_config
-    print(yaml.dump(filelist))
+    if DEBUG:
+        print(yaml.dump(filelist))
+
+    vmf = None
+    if 'video_meta_file' in config[tracking_setup]:
+        print('Found video meta file')
+        vmfile = os.path.join(data_dir, config[tracking_setup]['video_meta_file'])
+        vmf = pd.read_csv(vmfile)
+
 
     for input_file_dict in filelist:
         input_file = os.path.join(data_dir, input_file_dict["filename"])
         direct, ext = os.path.split(input_file)
-        noext, _ = os.path.splitext(ext)
+        noext, fext = os.path.splitext(ext)
 
         try: 
             first_frame_file = os.path.join(data_dir, input_file_dict["first_frame"])
@@ -243,9 +268,9 @@ def main(args):
               " predefined periods for tracking...")
 
         #Deal with timestamps
-        current_date_str = deal_with_timestamps(tracks_dir, noext, input_file, first_frame_file)
+        current_date_str = deal_with_timestamps(tracks_dir, noext, input_file, first_frame_file, vmf, ext)
         #Deal with getting landmarks
-        deal_with_landmarks(data_dir, input_file_dict, tracks_dir, noext, input_file, current_date_str, first_frame_file)
+        deal_with_landmarks(data_dir, input_file_dict, tracks_dir, noext, input_file, current_date_str, first_frame_file, vmf, ext)
 
     print('Done!')
 
