@@ -1,0 +1,194 @@
+project_name: 'salmon_tracking'
+c_date: '2023Feb01' #this is basically a part of project name if you wish.
+
+project_directory: '../data/salmon_tracking' #adding a '..' because the programs are run from subdirectories. feel free to specify an absolute path if that offends you
+
+#The general project settings, will be the same if you keep the directory structure intact
+weights_dir: 'weights/'
+# annotations_dir: 'annotations/'
+# raw_imgs_dir: 'unprocessed/'
+tracks_dir: 'tracks_data/'
+# bbox_images_dir: 'extracted_tracks/'
+# groundtruths_dir: 'results/groundtruths/'
+# predictions_dir: 'results/predictions/'
+# results_dir: 'results/'
+
+# autogen_annotations_fname: 'autogen_annotated.yml'
+# autogen_annotations_md5 : '3174ade5d941fc7a3b8319c68c7f2ed0'
+# autogen_model:
+#   pretrained_weights: 'any_light_smolts_lightz_phase_two_2023Feb01.h5'
+#   pretrained_weights_md5: "24d1ad328e55b0759a2d0e07ef6940de" #leave empty if you are retraining
+#   num_class: 1
+#   obj_thresh: 0.9
+#   nms_thresh: 0.05
+
+# checked_annotations_fname: 'manual_annotated_christmas22.yml'
+# checked_annotations_md5 : 'fb69025f21f5223d5c29f22eed854236'
+
+# results_config_name: 'results.yml'
+
+# models:
+#   drondo:
+#     pretrained_weights: 'yolo-v3-coco.h5'
+#     pretrained_weights_md5: "26cf8e8b5ba9d9d4a3778f9747e3407a" #leave empty if you are retraining
+#     training_sets: ['training2019', 'day_choice_2019','day_choice_difficult_2019','nightly_2019','nightly_2021', 'train_mar', 'train_empty']
+#     phases: 2
+#     num_class: 1
+#     obj_thresh: 0.8
+#     nms_thresh: 0.1
+#     phase_one:
+#       BATCH_SIZE: 16
+#       EPOCHS: 500
+#       LR: 0.5e-3
+#       B1: 0.9
+#       B2: 0.999
+#       EPS: 0.1e-7
+#       MIN_DELTA: 0
+#       PATIENCE: 20
+#     phase_two:
+#       BATCH_SIZE: 2
+#       EPOCHS: 100
+#       LR: 0.1e-4
+#       B1: 0.9
+#       B2: 0.999
+#       EPS: 0.1e-7
+#       MIN_DELTA: 0
+#       PATIENCE: 20
+#   dayonly:
+#     pretrained_weights: 'yolo-v3-coco.h5'
+#     pretrained_weights_md5: "26cf8e8b5ba9d9d4a3778f9747e3407a" #leave empty if you are retraining
+#     training_sets: ['training2019', 'day_choice_2019','day_choice_difficult_2019']
+#     phases: 2
+#     num_class: 1
+#     obj_thresh: 0.2
+#     nms_thresh: 0.3
+#     phase_one:
+#       BATCH_SIZE: 16
+#       EPOCHS: 500
+#       LR: 0.5e-3
+#       B1: 0.9
+#       B2: 0.999
+#       EPS: 0.1e-7
+#       MIN_DELTA: 0.001
+#       PATIENCE: 10
+#     phase_two:
+#       BATCH_SIZE: 2
+#       EPOCHS: 100
+#       LR: 0.1e-3
+#       B1: 0.9
+#       B2: 0.999
+#       EPS: 0.1e-7
+#       MIN_DELTA: 0.001
+#       PATIENCE: 10
+
+
+
+# testing_sets: ['testing2019','test_2019', 'test_nightly_2021','additional_test']
+
+
+# subsets:
+#   testing2019:
+#     directory: 'subsets/testing2019/'
+#     number_of_images: 248
+#     description: 'original testing set from 2019'
+#     filelist: '' #if filelist is empty, use regex
+#     regex: '*.png'
+#   training2019:
+#     directory: 'subsets/training2019/'
+#     number_of_images: 1162
+#     description: 'original training set from 2019'
+#     filelist: ''
+#     regex: '*.png'
+#   day_choice_2019:
+#     directory: 'subsets/day_choice_2019/'
+#     number_of_images: 387
+#     description: 'additional training set from 2019 choice chamber recordings'
+#     filelist: ''
+#     regex: '*.png'
+#   day_choice_difficult_2019:
+#     directory: 'subsets/day_choice_difficult_2019/'
+#     number_of_images: 475
+#     description: 'additional particularly nasty images from 2019 choice chamber recordings'
+#     filelist: ''
+#     regex: '*.png'
+#   nightly_2019:
+#     directory: 'subsets/nightly_2019/'
+#     number_of_images: 41
+#     description: 'Night-time recordings from 2019'
+#     filelist: ''
+#     regex: '*.png'
+#   nightly_2021:
+#     directory: 'subsets/nightly_2021/'
+#     number_of_images: 301
+#     description: 'Night-time recordings from 2021'
+#     filelist: ''
+#     regex: '*.png'
+#   test_2019:
+#     directory: 'subsets/test_2019/'
+#     number_of_images: 90
+#     description: 'Additional testing images from 2019 for testing (mostly daytime)'
+#     filelist: ''
+#     regex: '*.png'
+#   test_nightly_2021:
+#     directory: 'subsets/test_nightly_2021/'
+#     number_of_images: 58
+#     description: 'Test set of night-time recordings from 2021'
+#     filelist: ''
+#     regex: '*.png'
+#   additional_test:
+#     directory: 'subsets/additional_test/'
+#     number_of_images: 26
+#     description: 'I see the tracker being extremely bad, so I want to see performance on some frames from the videos. Those pictures are repeated in train_mar partially'
+#     filelist: ''
+#     regex: '*.png'
+#   train_mar:
+#     directory: 'subsets/train_mar/'
+#     number_of_images: 520
+#     description: 'Extracted many images (mostly night) from the set of videos used for tunning of the tracker. I believe there are still some improvement to be made on training. Interestingly I presented 533 images, but becasue some were already in addtional_test set they were skipped.'
+#     filelist: ''
+#     regex: '*.png'
+#   train_empty:
+#     directory: 'subsets/train_empty/'
+#     number_of_images: 380
+#     description: 'From many videos extracted frames without any fish in order to improve the training dataset at minimal annotation cost.'
+#     filelist: ''
+#     regex: '*.png'
+
+tracking_setup: 'koala'
+
+koala:
+  # videos_name_regex: "testvid/*.mp4"
+  # videos_name_regex: "all_vids/*.mp4" #for use by transform.py which also preps the following yml file
+  #videos_name_regex: "linked_videos/*.(mp4|h264)" 
+  videos_name_regex_list: ["linked_videos/*.h264", 'linked_videos/*.mp4'] 
+  # videos_fps: 15
+  link_iou: 0.1
+  step_frames: 1 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
+  #videos_list: "all_vids.yml" #after transforms.py was run this is where video list live
+  videos_list: "entire_video_set.yml" #after transforms.py was run this is where video list live
+  weights: 'any_light_smolts_drondo_phase_two_2023Feb01.h5'
+  weights_md5: "8816a826ac98be3ef0e479cfe85363c7"
+  num_class: 1
+  obj_thresh: 0.5
+  nms_thresh: 0.3
+  max_age: 6 #how
+  init_thresh: 0.8
+  init_nms: 0.5
+  #the following settings are applied during correctTracks point now
+  track_thresh: 0.75 #only return tracks with average confidence above this value
+  hold_without: 6 #how long to show track alive without detections (at max age it will be killed anyway
+  transform_before_track: 1
+
+common:
+  LABELS: ['aoi']
+  MAX_L: 300
+  MIN_L: 15
+
+  NO_OBJECT_SCALE: 1.0
+  OBJECT_SCALE: 5.0
+  COORD_SCALE: 2.0
+  CLASS_SCALE: 1.0
+  display: 1
+  save_output: 1
+  show_detections: 1 # flag to show all detections in image
+  corrections_buffer_size: 200 #number of frames kept in the memory for rewinding back the tracks

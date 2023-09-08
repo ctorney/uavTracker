@@ -52,11 +52,18 @@ def main(args):
     tracking_setup = config["tracking_setup"]
     np.set_printoptions(suppress=True)
 
-    videos_name_regex_short = config[tracking_setup]['videos_name_regex']
+    #Because glob.glob cannot deal with a multiple options, we can alsp specify a list of regrexes
+    filelist = []
+    if 'videos_name_regex' in config[tracking_setup]:
+        videos_name_regex_short = config[tracking_setup]['videos_name_regex']
+        filelist = glob.glob(os.path.join(data_dir, videos_name_regex_short))
+    else:
+        for vr in config[tracking_setup]['videos_name_regex_list']:
+            filelist += glob.glob(os.path.join(data_dir, vr))
+
     videos_list = os.path.join(data_dir,config[tracking_setup]['videos_list'])
     videos_info = []  #this list will be saved into videos_list file
 
-    filelist = glob.glob(os.path.join(data_dir, videos_name_regex_short))
     print(filelist)
     scalefact = 4.0
 
@@ -87,6 +94,10 @@ def main(args):
         cap = cv2.VideoCapture(input_file)
         fps = round(cap.get(cv2.CAP_PROP_FPS))
         nframes = round(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        if nframes == 0:
+           print('No frames in this video, skipping!')
+           continue
+
 
         ##########################################################################
         ##          corrections for camera motion
@@ -108,7 +119,7 @@ def main(args):
             3,
             3,
         ))
-        np.save(tr_file, save_warp)
+        #np.save(tr_file, save_warp)
 
         vid_info = {}
         vid_info['periods'] = []
@@ -162,8 +173,9 @@ def main(args):
 
                 #full_warp = np.dot(full_warp, np.vstack((warp_matrix, [0, 0, 1])))
                 full_warp = np.vstack((warp_matrix, [0, 0, 1]))
-                save_warp[i, :, :] = full_warp
-                continue
+                #Assign full_wrap to all frames
+                save_warp[:] = full_warp
+                break
 
 
             if not ret:
