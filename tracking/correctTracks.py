@@ -209,8 +209,14 @@ def main(args):
 
             filof = Vidbu(cap,nframes,buffer_size)
 
-            messy_tracks = pd.read_csv(data_file,header=None)
-            messy_tracks.columns = ['frame_number','track_id','c0','c1','c2','c3','long_score','score']
+            mtc = ['frame_number','track_id','c0','c1','c2','c3','long_score','score']
+            try: 
+                messy_tracks = pd.read_csv(data_file,header=None)
+                messy_tracks.columns = mtc
+            except pd.errors.EmptyDataError:
+                print('Empty tracks file, no tracks here!')
+                continue
+
 
 
 

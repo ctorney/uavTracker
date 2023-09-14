@@ -45,7 +45,7 @@ def deal_with_timestamps(tracks_dir, noext, input_file, first_frame_file, vmf, f
     key = cv2.waitKey(20)  #& 0xFF
 
     #Provided csv file with some goodies    
-    if vmf is not None:
+    if vmf is not None and filename in vmf['name'].values:
         print('Using video meta file to get the date')
         current_date_str = vmf.loc[vmf['name'] == filename, 'startdate'].values[0]
         print(current_date_str)
@@ -93,7 +93,7 @@ def deal_with_timestamps(tracks_dir, noext, input_file, first_frame_file, vmf, f
     #Second best, we have a first frame date and know the fps
     #
     else:
-        if vmf is not None:
+        if vmf is not None and filename in vmf['name'].values:
             print('Using video meta file to get the fps')
             pfps = vmf.loc[vmf['name'] == filename, 'fps'].values[0]
         else:
@@ -178,7 +178,7 @@ def deal_with_landmarks(data_dir, input_file_dict, tracks_dir, noext, input_file
     print('add landmarks, and press \'c\' to continue')
     while key != ord('c'):
         if key == ord('n'):
-            if vmf is not None:
+            if vmf is not None and filename in vmf['name'].values:
                 print('Using video meta file to get the camera name')
                 camera_name = vmf.loc[vmf['name'] == filename, 'camera'].values[0]
                 key = ord('x')
