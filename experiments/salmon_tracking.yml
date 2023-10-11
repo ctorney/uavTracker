@@ -159,13 +159,14 @@ tracking_setup: 'koala'
 koala:
   # videos_name_regex: "testvid/*.mp4"
   # videos_name_regex: "all_vids/*.mp4" #for use by transform.py which also preps the following yml file
-  #videos_name_regex: "linked_videos/*.(mp4|h264)" 
-  videos_name_regex_list: ["linked_videos/*.h264", 'linked_videos/*.mp4'] 
+  #videos_name_regex: "linked_videos/*.(mp4|h264)"
+  videos_name_regex_list: ["linked_videos/*.h264", 'linked_videos/*.mp4']
   videos_fps: 20 # tihs is mostly for display of output videos
   link_iou: 0.1
   step_frames: 1 #how many frames between each step of a tracker/downsampling. Remember to adjust link_iou if jump is bigger
   #videos_list: "all_vids.yml" #after transforms.py was run this is where video list live
   videos_list: "entire_video_set.yml" #after transforms.py was run this is where video list live
+  # videos_list: "problem.yml" #after transforms.py was run this is where video list live
   video_meta_file: "all_videos_described.csv"
   weights: 'any_light_smolts_drondo_phase_two_2023Feb01.h5'
   weights_md5: "8816a826ac98be3ef0e479cfe85363c7"

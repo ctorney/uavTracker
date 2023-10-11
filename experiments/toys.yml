@@ -71,7 +71,7 @@ testing_sets: ['test']
 subsets:
   train:
     directory: 'subsets/train/'
-    number_of_images: 5000
+    number_of_images: 500
     description: 'easy subset to train on'
     filelist: '' #if filelist is empty, use regex
     regex: '*.jpg'

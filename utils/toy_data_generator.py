@@ -39,8 +39,6 @@ def getRoI(zwk):
     bottomright = (np.max([c1[0],c2[0],c3[0],c4[0]])+offset,np.max([c1[1],c2[1],c3[1],c4[1]])+offset)
     return (head, topleft, bottomright)
 
-
-
 """
 Updates position of all Zwierzaks.
 We are allowing them to run on top of each other for now...
@@ -62,7 +60,6 @@ def updateZwkPosition(zwk,zwks,side):
 """
 This movement model need to be just the movement model so my position on the map initis etc have to be moved out of here
 """
-
 class Mooveemodel:
     def __init__(self, x_init, y_init, mu_s, sigma_speed, sigma_angular_velocity, theta_speed, theta_angular_velocity):
         # [speed and angular velocity]
@@ -99,14 +96,12 @@ class Mooveemodel:
 
         return self.v
 
-
     def getDirection(self):
         return np.degrees(np.arctan2(self.v[1],self.v[0]))
 
 """
 Our animal can have different colour or the same
 """
-
 class Zwierzak:
     def __init__(self, zwkid, track_id, x_init,y_init, mm, genmodel, hue=0, sat=1):
         self.mm = mm #movememnt mode, each animus has its own now
@@ -168,7 +163,6 @@ class Zwierzak:
 
     """
     Update the position and tell us if we have moved past the border. Updating position shouldn't really be job of movement model though....?
-
     """
     def updatePosition(self, side):
 
@@ -284,7 +278,8 @@ def main(args):
 
     #read from command line
     config = init_config(args)
-
+    DEBUG = config['args_debug']
+    print(f'Debugging is {DEBUG}')
     ddir  = config['project_directory']
     os.makedirs(ddir, exist_ok=True)
     oname = config['project_name']
@@ -382,6 +377,9 @@ def main(args):
 
             training_datapoint = it < (dp_ratio * dp_per_uavtracker_set)
 
+            # if DEBUG:
+            #     print(recthosealfs)
+
             #only record the sequence for training images
             # recthosealfs.append(training_datapoint)
 
@@ -393,7 +391,8 @@ def main(args):
 
             #recording this sequence for linker training/testing
             if record_the_seq:
-                #DEBUG cv2.putText(plane_cur, "R",  (30,30), cv2. FONT_HERSHEY_COMPLEX_SMALL, 1.0, (0,0,250), 2);
+                if DEBUG:
+                    cv2.putText(plane_cur, "R",  (30,30), cv2. FONT_HERSHEY_COMPLEX_SMALL, 1.0, (0,0,250), 2);
                 seq_data = {'object':[]}
                 seq_data['filename'] = save_name
                 p1_fname = set_name(oname, setting, it-1)
@@ -452,7 +451,10 @@ def main(args):
             cv2.imwrite(os.path.join(preped_images_dir, save_name),plane_cur)
             if show_img:
                 cv2.imshow("hdplane",plane_cur)
-                key = cv2.waitKey(20)
+                if DEBUG:
+                    key = cv2.waitKey(0)
+                else:
+                    key = cv2.waitKey(20)
                 if key==ord('q'):
                     break
 
@@ -478,6 +480,8 @@ if __name__ == '__main__':
     parser.add_argument('--config', '-c', required=True, nargs=1, help='Your yml config file')
     parser.add_argument('--gen', '-g', required=True, nargs=1,
                         help='Additional parameters for the generator')
+    parser.add_argument('--debug', '-d', default=False, action='store_true',
+                        help='Debugging')
 
 
     args = parser.parse_args()

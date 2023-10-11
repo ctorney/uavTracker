@@ -114,8 +114,8 @@ def main(args):
                 saved_warp = None
                 print(":: oh dear! :: No transformations found.")
 
-            corrected_tracks = pd.read_csv(data_file_corrected,header=None)
-            corrected_tracks.columns = ['frame_number','corrected_track_id','c0','c1','c2','c3','long_score','score']
+            ct_columns = ['frame_number','corrected_track_id','c0','c1','c2','c3','long_score','score']
+            corrected_tracks = pd.read_csv(data_file_corrected,header=None, names=ct_columns)
             #display landmarks
             landmarks_list = landmarks_dict['landmarks']
             cameraname = landmarks_dict['camera']
