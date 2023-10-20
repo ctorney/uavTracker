@@ -1,13 +1,12 @@
 import os, sys, glob, argparse
 import csv
 
-import cv2
-import yaml
+import cv2, yaml, math, time
 import numpy as np
+from itertools import count
 
 sys.path.append('..')
 sys.path.append('.')
-import time
 from utils.yolo_detector import yoloDetector, showDetections
 from yolo_tracker import yoloTracker
 from utils.utils import md5check, init_config
@@ -120,13 +119,6 @@ def main(args):
             print("Loading YOLO models")
             print("We will use the following model for testing: ")
             print(weights)
-            detector = yoloDetector(
-                width,
-                height,
-                wt_file=weights,
-                obj_threshold=obj_thresh,
-                nms_threshold=nms_thresh,
-                max_length=max_l)
 
             tracker = yoloTracker(
                 max_age=max_age_val,
@@ -162,135 +154,154 @@ def main(args):
             if args_visual:
                 cv2.namedWindow('tracker', cv2.WINDOW_GUI_EXPANDED)
                 cv2.moveWindow('tracker', 20,20)
-            for i in range(nframes):
 
-                ret, frame = cap.read() #we have to keep reading frames
-                sys.stdout.write('\r')
-                sys.stdout.write("[%-20s] %d%% %d/%d" %
-                                 ('=' * int(20 * i / float(nframes)),
-                                  int(100.0 * i / float(nframes)), i, nframes))
-                sys.stdout.flush()
+            viddiv_len = 10000
+            go_to_next_vid = False
 
-                #jump frames
-                if (i > period["stop"] and period["stop"] != 0) or not ret:
-                    sys.stdout.write('\n')
-                    sys.stdout.flush()
-                    print("::Hey, hey! :: The end of the defined period, skipping to the next file or period (or maybe the file was shorter than you think")
-                    print("nothing read from file: ")
-                    sys.stdout.write('It is ')
-                    sys.stdout.write(str( not ret))
-                    sys.stdout.write(' that it is the end of the file :)')
-                    sys.stdout.flush()
-                    cap.release()
+            for viddiv in count(0):
+                #To avoid OOM we are resetting detector every some frames
+                if go_to_next_vid:
+                    go_to_next_vid = False
                     break
-                if i < period["start"]:
-                    # print('skipping frame!')
-                    continue
-                if ((i - period["start"]) % step_frames):
-                    continue
+                detector = yoloDetector(
+                    width,
+                    height,
+                    wt_file=weights,
+                    obj_threshold=obj_thresh,
+                    nms_threshold=nms_thresh,
+                    max_length=max_l)
+                for i in range(viddiv * viddiv_len, viddiv_len + (viddiv * viddiv_len)):
 
-                if saved_warp is None:
-                    full_warp = np.eye(3, 3, dtype=np.float32)
-                else:
-                    full_warp = saved_warp[i]
+                    ret, frame = cap.read() #we have to keep reading frames
+                    sys.stdout.write('\r')
+                    sys.stdout.write("[%-20s] %d%% %d/%d" %
+                                    ('=' * int(20 * i / float(nframes)),
+                                    int(100.0 * i / float(nframes)), i, nframes))
+                    sys.stdout.flush()
 
-                #avoid crash when matrix is singular (det is 0 and cannot invert, crashes instead, joy!
-                try:
-                    inv_warp = np.linalg.inv(full_warp)
-                except:
-                    print('Couldn\'t invert matrix, not transforming this frame')
-                    inv_warp = np.linalg.inv(np.eye(3, 3, dtype=np.float32))
+                    #jump frames
+                    if (i > period["stop"] and period["stop"] != 0) or not ret:
+                        sys.stdout.write('\n')
+                        sys.stdout.flush()
+                        print("::Hey, hey! :: The end of the defined period, skipping to the next file or period (or maybe the file was shorter than you think")
+                        print("nothing read from file: ")
+                        sys.stdout.write('It is ')
+                        sys.stdout.write(str( not ret))
+                        sys.stdout.write(' that it is the end of the file :)')
+                        sys.stdout.flush()
+                        cap.release()
+                        go_to_next_vid = True
+                        break
+                    if i < period["start"]:
+                        # print('skipping frame!')
+                        continue
+                    if ((i - period["start"]) % step_frames):
+                        continue
 
-                #For simplicity in smolt tracking we can first convert the frame and track in the converted image.
-                if transform_before_track:
-                    frame = cv2.warpPerspective(frame, full_warp, (frame.shape[1],frame.shape[0]))
-                    full_warp = None
-                    inv_warp = None
+                    if saved_warp is None:
+                        full_warp = np.eye(3, 3, dtype=np.float32)
+                    else:
+                        full_warp = saved_warp[i]
+
+                    #avoid crash when matrix is singular (det is 0 and cannot invert, crashes instead, joy!
+                    try:
+                        inv_warp = np.linalg.inv(full_warp)
+                    except:
+                        print('Couldn\'t invert matrix, not transforming this frame')
+                        inv_warp = np.linalg.inv(np.eye(3, 3, dtype=np.float32))
+
+                    #For simplicity in smolt tracking we can first convert the frame and track in the converted image.
+                    if transform_before_track:
+                        frame = cv2.warpPerspective(frame, full_warp, (frame.shape[1],frame.shape[0]))
+                        full_warp = None
+                        inv_warp = None
 
 
-                # Run detector
-                detections = detector.create_detections(
-                    frame, inv_warp )                 # Update tracker
-                tracks = tracker.update(np.asarray(detections))
+                    # Run detector
+                    detections = detector.create_detections(
+                        frame, inv_warp )                 # Update tracker
+                    tracks = tracker.update(np.asarray(detections))
 
-                if show_detections:
-                    frame = showDetections(detections, frame, full_warp)
+                    if show_detections:
+                        frame = showDetections(detections, frame, full_warp)
 
-                cv2.putText(frame, str(i),  (30,60), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2);
+                    cv2.putText(frame, str(i),  (30,60), cv2. FONT_HERSHEY_COMPLEX_SMALL, 2.0, (0,170,0), 2);
 
-                for track in tracks:
-                    bbox = track[0:4]
+                    for track in tracks:
+                        bbox = track[0:4]
+                        if save_output:
+                            if full_warp == None:
+                                minx = bbox[0]
+                                miny = bbox[1]
+                                maxx = bbox[2]
+                                maxy = bbox[3]
+                            else:
+                                iwarp = (full_warp)
+
+                                corner1 = np.expand_dims([bbox[0], bbox[1]], axis=0)
+                                corner1 = np.expand_dims(corner1, axis=0)
+                                corner1 = cv2.perspectiveTransform(corner1,
+                                                                iwarp)[0, 0, :]
+                                corner2 = np.expand_dims([bbox[2], bbox[3]], axis=0)
+                                corner2 = np.expand_dims(corner2, axis=0)
+                                corner2 = cv2.perspectiveTransform(corner2,
+                                                                iwarp)[0, 0, :]
+                                corner3 = np.expand_dims([[bbox[0], bbox[3]]], axis=0)
+                                #               corner3 = np.expand_dims(corner3,axis=0)
+                                corner3 = cv2.perspectiveTransform(corner3,
+                                                                iwarp)[0, 0, :]
+                                corner4 = np.expand_dims([bbox[2], bbox[1]], axis=0)
+                                corner4 = np.expand_dims(corner4, axis=0)
+                                corner4 = cv2.perspectiveTransform(corner4,
+                                                                iwarp)[0, 0, :]
+                                maxx = max(corner1[0], corner2[0], corner3[0],
+                                        corner4[0])
+                                minx = min(corner1[0], corner2[0], corner3[0],
+                                        corner4[0])
+                                maxy = max(corner1[1], corner2[1], corner3[1],
+                                        corner4[1])
+                                miny = min(corner1[1], corner2[1], corner3[1],
+                                        corner4[1])
+
+                            np.random.seed(
+                                int(track[4])
+                            )  # show each track as its own colour - note can't use np random number generator in this code
+                            r = np.random.randint(256)
+                            g = np.random.randint(256)
+                            b = np.random.randint(256)
+                            cv2.rectangle(frame, (int(minx), int(miny)),
+                                        (int(maxx), int(maxy)), (r, g, b), 4)
+                            cv2.putText(frame, str(int(track[4])),
+                                        (int(minx) - 5, int(miny) - 5), 0,
+                                        5e-3 * 200, (r, g, b), 2)
+
+                            cv2.putText(frame, str(int(100*track[5])),
+                                        (int(maxx) + 5, int(miny) - 5), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (r, g, b), 1)
+                            #include long score and score
+                        results.append([
+                            i, int(track[4]), bbox[0], bbox[1], bbox[2], bbox[3], track[5], track[6]
+                        ])
+                        corrections_template.append([
+                            i, int(track[4]), int(track[4])
+                        ])
+
                     if save_output:
-                        if full_warp == None:
-                            minx = bbox[0]
-                            miny = bbox[1]
-                            maxx = bbox[2]
-                            maxy = bbox[3]
-                        else:
-                            iwarp = (full_warp)
+                        #       cv2.imshow('', frame)
+                        #       cv2.waitKey(10)
+                        frame = cv2.resize(frame, S)
+                        #   im_aligned = cv2.warpPerspective(frame, full_warp, (S[0],S[1]), borderMode=cv2.BORDER_TRANSPARENT, flags=cv2.WARP_INVERSE_MAP)
+                        out.write(frame)
 
-                            corner1 = np.expand_dims([bbox[0], bbox[1]], axis=0)
-                            corner1 = np.expand_dims(corner1, axis=0)
-                            corner1 = cv2.perspectiveTransform(corner1,
-                                                            iwarp)[0, 0, :]
-                            corner2 = np.expand_dims([bbox[2], bbox[3]], axis=0)
-                            corner2 = np.expand_dims(corner2, axis=0)
-                            corner2 = cv2.perspectiveTransform(corner2,
-                                                            iwarp)[0, 0, :]
-                            corner3 = np.expand_dims([[bbox[0], bbox[3]]], axis=0)
-                            #               corner3 = np.expand_dims(corner3,axis=0)
-                            corner3 = cv2.perspectiveTransform(corner3,
-                                                            iwarp)[0, 0, :]
-                            corner4 = np.expand_dims([bbox[2], bbox[1]], axis=0)
-                            corner4 = np.expand_dims(corner4, axis=0)
-                            corner4 = cv2.perspectiveTransform(corner4,
-                                                            iwarp)[0, 0, :]
-                            maxx = max(corner1[0], corner2[0], corner3[0],
-                                    corner4[0])
-                            minx = min(corner1[0], corner2[0], corner3[0],
-                                    corner4[0])
-                            maxy = max(corner1[1], corner2[1], corner3[1],
-                                    corner4[1])
-                            miny = min(corner1[1], corner2[1], corner3[1],
-                                    corner4[1])
+                    if args_visual:
+                        frame = cv2.resize(frame, S)
+                        cv2.imshow('tracker', frame)
+                        key = cv2.waitKey(wk_length)  #& 0xFF
+                    #cv2.imwrite('pout' + str(i) + '.jpg',frame)
+                    if key in [ord('q'), ord('s')]:
+                        break
 
-                        np.random.seed(
-                            int(track[4])
-                        )  # show each track as its own colour - note can't use np random number generator in this code
-                        r = np.random.randint(256)
-                        g = np.random.randint(256)
-                        b = np.random.randint(256)
-                        cv2.rectangle(frame, (int(minx), int(miny)),
-                                      (int(maxx), int(maxy)), (r, g, b), 4)
-                        cv2.putText(frame, str(int(track[4])),
-                                    (int(minx) - 5, int(miny) - 5), 0,
-                                    5e-3 * 200, (r, g, b), 2)
-
-                        cv2.putText(frame, str(int(100*track[5])),
-                                    (int(maxx) + 5, int(miny) - 5), cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (r, g, b), 1)
-                        #include long score and score
-                    results.append([
-                        i, int(track[4]), bbox[0], bbox[1], bbox[2], bbox[3], track[5], track[6]
-                    ])
-                    corrections_template.append([
-                        i, int(track[4]), int(track[4])
-                    ])
-
-                if save_output:
-                    #       cv2.imshow('', frame)
-                    #       cv2.waitKey(10)
-                    frame = cv2.resize(frame, S)
-                    #   im_aligned = cv2.warpPerspective(frame, full_warp, (S[0],S[1]), borderMode=cv2.BORDER_TRANSPARENT, flags=cv2.WARP_INVERSE_MAP)
-                    out.write(frame)
-
-                if args_visual:
-                    frame = cv2.resize(frame, S)
-                    cv2.imshow('tracker', frame)
-                    key = cv2.waitKey(wk_length)  #& 0xFF
-                #cv2.imwrite('pout' + str(i) + '.jpg',frame)
-                if key in [ord('q'), ord('s')]:
-                    break
-
+                print('resetting tracker!')
+                del detector
 
             with open(data_file, "w") as output:
                 writer = csv.writer(output, lineterminator='\n')
