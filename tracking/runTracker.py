@@ -218,8 +218,13 @@ def main(args):
 
 
                     # Run detector
-                    detections = detector.create_detections(
-                        frame, inv_warp )                 # Update tracker
+                    try:
+                        detections = detector.create_detections(
+                            frame, inv_warp )                 # Update tracker
+                    except:
+                        print('Detector failed, skipping frame')
+                        detections = []
+
                     tracks = tracker.update(np.asarray(detections))
 
                     if show_detections:
@@ -303,29 +308,30 @@ def main(args):
                 print('resetting tracker!')
                 del detector
 
-            with open(data_file, "w") as output:
-                writer = csv.writer(output, lineterminator='\n')
-                writer.writerows(results)
+                #Writing with every iteration the current full results
+                with open(data_file, "w") as output:
+                    writer = csv.writer(output, lineterminator='\n')
+                    writer.writerows(results)
 
-            with open(corrections_file, "w") as output:
-                writer = csv.writer(output, lineterminator='\n')
-                writer.writerows(corrections_template)
+                with open(corrections_file, "w") as output:
+                    writer = csv.writer(output, lineterminator='\n')
+                    writer.writerows(corrections_template)
 
-            with open(transitions_file, "w") as output:
-                writer = csv.writer(output, lineterminator='\n')
-                writer.writerows([])
+                with open(transitions_file, "w") as output:
+                    writer = csv.writer(output, lineterminator='\n')
+                    writer.writerows([])
 
-            with open(switches_file, "w") as output:
-                writer = csv.writer(output, lineterminator='\n')
-                writer.writerows([])
+                with open(switches_file, "w") as output:
+                    writer = csv.writer(output, lineterminator='\n')
+                    writer.writerows([])
 
-            with open(false_file, "w") as output:
-                writer = csv.writer(output, lineterminator='\n')
-                writer.writerows([])
+                with open(false_file, "w") as output:
+                    writer = csv.writer(output, lineterminator='\n')
+                    writer.writerows([])
 
-            with open(true_file, "w") as output:
-                writer = csv.writer(output, lineterminator='\n')
-                writer.writerows([])
+                with open(true_file, "w") as output:
+                    writer = csv.writer(output, lineterminator='\n')
+                    writer.writerows([])
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
