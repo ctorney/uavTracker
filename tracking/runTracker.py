@@ -158,18 +158,19 @@ def main(args):
             viddiv_len = 10000
             go_to_next_vid = False
 
+            detector = yoloDetector(
+                width,
+                height,
+                wt_file=weights,
+                obj_threshold=obj_thresh,
+                nms_threshold=nms_thresh,
+                max_length=max_l)
             for viddiv in count(0):
-                #To avoid OOM we are resetting detector every some frames
+
+                #To deal with OOM we are saving results every some frames and catching that exception
                 if go_to_next_vid:
                     go_to_next_vid = False
                     break
-                detector = yoloDetector(
-                    width,
-                    height,
-                    wt_file=weights,
-                    obj_threshold=obj_thresh,
-                    nms_threshold=nms_thresh,
-                    max_length=max_l)
                 for i in range(viddiv * viddiv_len, viddiv_len + (viddiv * viddiv_len)):
 
                     ret, frame = cap.read() #we have to keep reading frames
@@ -304,9 +305,6 @@ def main(args):
                     #cv2.imwrite('pout' + str(i) + '.jpg',frame)
                     if key in [ord('q'), ord('s')]:
                         break
-
-                print('resetting tracker!')
-                del detector
 
                 #Writing with every iteration the current full results
                 with open(data_file, "w") as output:
