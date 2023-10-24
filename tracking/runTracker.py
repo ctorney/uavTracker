@@ -157,6 +157,7 @@ def main(args):
 
             viddiv_len = 10000
             go_to_next_vid = False
+            ooms_that_happen = 0
 
             detector = yoloDetector(
                 width,
@@ -171,8 +172,11 @@ def main(args):
                 if go_to_next_vid:
                     go_to_next_vid = False
                     break
-                for i in range(viddiv * viddiv_len, viddiv_len + (viddiv * viddiv_len)):
 
+                for i in range(viddiv * viddiv_len, viddiv_len + (viddiv * viddiv_len)):
+                    if ooms_that_happen > 10:
+                        go_to_next_vid = True
+                        break
                     ret, frame = cap.read() #we have to keep reading frames
                     sys.stdout.write('\r')
                     sys.stdout.write("[%-20s] %d%% %d/%d" %
@@ -224,6 +228,7 @@ def main(args):
                             frame, inv_warp )                 # Update tracker
                     except:
                         print('Detector failed, skipping frame')
+                        ooms_that_happen += 1
                         detections = []
 
                     tracks = tracker.update(np.asarray(detections))
