@@ -99,7 +99,7 @@ def main(args):
                 )
                 continue
 
-            reallife_tracks = pd.DataFrame(columns = ['frame_number','timestamp','track_id', 'dx','dy','w','h','long_score','score'])
+            reallife_tracks = pd.DataFrame(columns = ['frame_number','timestamp','track_id', 'x_pos','y_pos','w','h','long_score','score'])
             nloc = 0 #for a new df
 
             #######################################################################
@@ -192,18 +192,18 @@ def main(args):
 
                     mx = track['c0'] + (track['c2'] - track['c0'])/2
                     my = track['c1'] + (track['c3'] - track['c1'])/2
-                    dx = (mx - ax) * px_to_cm #TODO change dx to x, it isn't a dx
-                    dy = - (my - ay) * px_to_cm
+                    x_pos = (mx - ax) * px_to_cm
+                    y_pos = - (my - ay) * px_to_cm
                     w = (track['c2'] - track['c0']) * px_to_cm
                     h = (track['c3'] - track['c1']) * px_to_cm
 
-                    position = f'[{dx:.0f},{dy:.0f}]'
+                    position = f'[{x_pos:.0f},{y_pos:.0f}]'
                     reallife_tracks.loc[nloc] = {
                         'frame_number':i,
                         'timestamp':ts_clean,
                         'track_id':int(track['corrected_track_id']),
-                        'dx':dx,
-                        'dy':dy,
+                        'x_pos':x_pos,
+                        'y_pos':y_pos,
                         'w':w,
                         'h':h,
                         'long_score':track['long_score'],

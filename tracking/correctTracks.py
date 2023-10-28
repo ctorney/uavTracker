@@ -210,7 +210,7 @@ def main(args):
             filof = Vidbu(cap,nframes,buffer_size)
 
             mtc = ['frame_number','track_id','c0','c1','c2','c3','long_score','score']
-            try: 
+            try:
                 messy_tracks = pd.read_csv(data_file,header=None)
                 messy_tracks.columns = mtc
             except pd.errors.EmptyDataError:
@@ -342,6 +342,7 @@ def main(args):
 
 
             corrected_tracks[['frame_number','corrected_track_id', 'c0','c1','c2','c3','long_score','score']].to_csv(data_file_corrected,header=None,index=False)
+            print('Corrected tracks saved to: ', data_file_corrected)
 
 
 if __name__ == '__main__':
