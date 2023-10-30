@@ -101,6 +101,7 @@ def main(args):
 
             reallife_tracks = pd.DataFrame(columns = ['frame_number','timestamp','track_id', 'x_pos','y_pos','w','h','long_score','score'])
             nloc = 0 #for a new df
+            reallife_tracks.to_csv(data_file_reallife,header=True,index=False)
 
             #######################################################################
             ##          corrections for camera motion
@@ -137,6 +138,7 @@ def main(args):
             failed_read = False
             for i in range(nframes):
 
+                reallife_tracks = pd.DataFrame(columns = ['frame_number','timestamp','track_id', 'x_pos','y_pos','w','h','long_score','score'])
                 if args_visual:
                     ret, frame = cap.read()
                     failed_read = not ret
@@ -231,8 +233,7 @@ def main(args):
 
                 if key == ord('q'):
                     break
-
-            reallife_tracks.to_csv(data_file_reallife,header=True,index=False)
+                reallife_tracks.to_csv(data_file_reallife, mode='a', header=False, index=False)
 
 
 
