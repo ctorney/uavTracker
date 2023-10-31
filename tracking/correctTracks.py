@@ -121,7 +121,9 @@ def main(args):
     min_l = config['common']['MIN_L']
 
     transform_before_track = config[tracking_setup]['transform_before_track']
-    save_output = not args_visual # we are only saving output when we are running it automatically, otherwise we are recording the whole process of corrections
+    save_output = config['common']['save_output']
+    if save_output and args_visual:
+        save_output = False# we are only saving output when we are running it automatically, otherwise we are recording the whole process of corrections
     showDetections = config['common']['show_detections']
 
     with open(videos_list, 'r') as video_config_file_h:
@@ -228,7 +230,7 @@ def main(args):
                                                      true_file,
                                                      track_thresh_val)
             #only got frame by frame for videos edited visually, otherwise just save the prepared previously corrections (and apply the track threshold!)
-            while ((i < nframes) and args_visual):
+            while ((i < nframes) and (args_visual or save_output)):
                 if key == ord('q'):
                     break
 
