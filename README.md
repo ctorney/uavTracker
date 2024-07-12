@@ -9,7 +9,7 @@ Try the following example:
 ```
 mkdir weights
 cd weights
-wget wget https://www.dropbox.com/s/9dq7kxrgzma4sx6/yolo-v3-coco.h5
+wget https://www.dropbox.com/s/9dq7kxrgzma4sx6/yolo-v3-coco.h5
 cd ../utils
 python toy_data_generator.py -c ../experiments/toys.yml -g ../experiments/toys_generator.yml
 cd ..
