@@ -386,6 +386,9 @@ def main(args):
     borders = Borders(1, 1, side - 1, side - 1)
 
     hdplane = np.zeros((side, side, 3), np.uint8)
+    hdplane[:, :, 2] = 255
+    hdplane[:, :, 1] = 247
+    hdplane[:, :, 0] = 230
     mr = np.random.default_rng()
 
     x_init, y_init = [side // 2, side // 2]
