@@ -3,7 +3,7 @@
 # in `utils` directory, with an optional flag `-v` for visual to see data being generated
 # The following input variables can be edited safely@
 # project_name, project_directory, c_date, common:IMAGE_W (must be the same as IMAGE_H), number_of_images for train and test dataset
-project_name: 'alfs'
+project_name: 'alfsanity'
 project_directory: '../data/final_alfsanity' #adding a '..' because the programs are run from subdirectories. feel free to specify an absolute path if that offends you
 c_date: '2024Jul' #this is basically a part of project name if you wish.
 
