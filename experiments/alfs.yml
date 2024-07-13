@@ -105,6 +105,7 @@ shepherd:
 
 common:
   LABELS: ['alf']
+  known_img_width: 640 #known for synthetic data and needed for testing deepBeast
   MAX_L: 400
   MIN_L: 4
   OBJECT_SCALE: 5.0
