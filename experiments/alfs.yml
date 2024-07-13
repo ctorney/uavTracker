@@ -130,7 +130,7 @@ deepBeastLinking:
   linking_net_weights_md5: ''
 
   #training parameters
-  BATCH_SIZE: 16
+  BATCH_SIZE: 8
   EPOCHS: 150
   LR: 0.5e-5
   MIN_DELTA: 0.0001

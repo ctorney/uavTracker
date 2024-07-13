@@ -1,5 +1,5 @@
 visual: False
-size: 400 #if not multiple of 32 it will be made to!
+size: 640 #if not multiple of 32 it will be made to!
 
 settings: ['alpha', 'beta' , 'A', 'B', 'C', 'D', 'E']
 settings_for_uavtracker: ['alpha', 'A']
