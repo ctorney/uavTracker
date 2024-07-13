@@ -90,7 +90,7 @@ shepherd:
   videos_list: "my_videos.yml" #after transforms.py was run this is where video list live
   groundtruths_dir: 'gt/'
   predictions_dir: 'pred/'
-  weights: 'alfs_testterr_phase_two_2024Jul.h5'
+  weights: 'alfsanity_testterr_phase_two_2024Jul.h5'
   # weights: 'yolo-v3-coco.h5'
   weights_md5: ''
   num_class: 1
