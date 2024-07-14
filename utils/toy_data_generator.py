@@ -337,7 +337,10 @@ def main(args):
     side = (
         int(generator_config["size"]) // 32
     ) * 32  # The generator provides images with annotations so they have to be yolo-compatible size already
-    identical = generator_config["identical"]
+    if "synth_identical" in config.keys():
+        identical = config["synth_identical"]
+    else:
+        identical = False
 
     # read from command line
     DEBUG = config["args_debug"]
@@ -351,14 +354,28 @@ def main(args):
     # Prepare a list of when different things happen
     dp_train = config["subsets"]["train"]["number_of_images"]
     dp_test = config["subsets"]["test"]["number_of_images"]
+
     dp = dp_train + dp_test
     dp_ratio = dp_train / dp
-    number_of_uavtracker_sets = len(generator_config["settings_for_uavtracker"])
-    number_of_dbtracker_sets = len(generator_config["settings_for_dbtracker"])
+
+    settings_for_dbtracker_train = generator_config["settings_for_dbtracker_train"]
+    settings_for_dbtracker_test = generator_config["settings_for_dbtracker_test"]
+    if set(settings_for_dbtracker_train).intersection(set(settings_for_dbtracker_test)):
+        raise ValueError(
+            "The settings for dbtracker train and test should be disjoint sets"
+        )
+
+    settings_for_dbtracker = settings_for_dbtracker_train + settings_for_dbtracker_test
+    settings_for_uavtracker = generator_config["settings_for_uavtracker"]
+    if set(settings_for_dbtracker).intersection(set(settings_for_uavtracker)):
+        raise ValueError(
+            "The settings for dbtracker and uavtracker should be disjoint sets"
+        )
+    all_settings = settings_for_uavtracker + settings_for_dbtracker
+    number_of_uavtracker_sets = len(settings_for_uavtracker)
+    number_of_dbtracker_sets = len(settings_for_dbtracker)
     dp_per_uavtracker_set = math.ceil(dp / number_of_uavtracker_sets)
-    dp_per_dbtracker_set = math.ceil(
-        generator_config["datapoints_for_dbtracker"] / number_of_dbtracker_sets
-    )
+    dp_per_dbtracker_set = generator_config["datapoints_per_dbtracker_set"]
 
     # Those are *not* raw images as we forcing them to be yolo-compatible size as they are _already_ annotated!
     # test_dir = os.path.join(ddir,config['raw_imgs_dir'],config['subsets']['test']['directory'])
@@ -378,10 +395,10 @@ def main(args):
     os.makedirs(video_dir, exist_ok=True)
     os.makedirs(preped_images_dir, exist_ok=True)
     annotations_file = an_dir + "/train_data.yml"
-    sequence_file = os.path.join(an_dir, config["seq_yml"])
+    db_train_seq_file = os.path.join(an_dir, config["seq_yml"])
     toy_label = config["common"]["LABELS"][0]
-    all_imgs = []
-    all_seq = []
+    all_imgs_for_uav = []
+    all_db_train_seq = []
 
     fourCC = cv2.VideoWriter_fourcc("X", "V", "I", "D")
     out_test = cv2.VideoWriter(
@@ -401,22 +418,26 @@ def main(args):
 
     x_init, y_init = [side // 2, side // 2]
 
-    for setting in generator_config["settings"]:
-        if setting in generator_config["settings_for_dbtracker"]:
+    for setting in all_settings:
+        if setting in settings_for_dbtracker:
             setting_for_dbtracker = True
+            train_uav = False
             dps = dp_per_dbtracker_set
-        else:
+            if setting in settings_for_dbtracker_train:
+                train_for_dbtracker = True
+            else:
+                train_for_dbtracker = False
+        elif setting in settings_for_uavtracker:
             setting_for_dbtracker = False
-
-        # number datapoints for uavtracker is more important
-        if setting in generator_config["settings_for_uavtracker"]:
-            setting_for_uavtracker = True
+            train_for_dbtracker = False
+            train_uav = True
             dps = dp_per_uavtracker_set
         else:
-            setting_for_uavtracker = False
+            print(f"Warning!!! we are not using settings {settings} for anything")
+            pass
 
         print(
-            f"Preparing data with setting {setting} with, setting_for_uavtracker={setting_for_uavtracker} and setting_for_dbtracker={setting_for_dbtracker} with {dps} datapoints"
+            f"Preparing data with setting {setting} with, train_uav={train_uav} and setting_for_dbtracker={setting_for_dbtracker} with {dps} datapoints"
         )
 
         # alfs, next_track_id = set_alfs(generator_config, setting, mr, side)
@@ -460,17 +481,17 @@ def main(args):
             fnames_gt = os.path.join(gt_dir, f"{save_name_seed}.txt")
             files_gt = open(fnames_gt, "w")
 
-            training_datapoint = it < (dp_ratio * dp_per_uavtracker_set)
+            uav_training_datapoint = it < (dp_ratio * dp_per_uavtracker_set)
 
             # if DEBUG:
             #     print(recthosealfs)
 
             # only record the sequence for training images
-            # recthosealfs.append(training_datapoint)
+            # recthosealfs.append(uav_training_datapoint)
 
             # only record sequence for those images that are used for deebbeast training
             recthosealfs.append((setting_for_dbtracker))
-            # recthosealfs.append((setting_for_dbtracker or setting_for_uavtracker))
+            # recthosealfs.append((setting_for_dbtracker or train_uav))
             # print(recthosealfs)
             record_the_seq = np.all(recthosealfs)
 
@@ -528,12 +549,16 @@ def main(args):
             files_gt.close()
 
             video_gt.write(plane_cur)
-            if record_the_seq:
-                all_seq += [seq_data]
+            # The sequence file for dbtracker is only for training
+            if record_the_seq and train_for_dbtracker:
+                all_db_train_seq += [seq_data]
 
-            if setting_for_uavtracker:
-                all_imgs += [img_data]
-                if training_datapoint:
+            # Just a reminder that our custom setup for uavtraining is a bit weird.
+            # Annotations file contains all the training and testing files
+            # But depending in which directory the file is, it will be used for testing or training
+            if train_uav:
+                all_imgs_for_uav += [img_data]
+                if uav_training_datapoint:
                     cv2.imwrite(train_dir + "/" + save_name, plane_cur)
                     out_train.write(plane_cur)
                 else:
@@ -552,13 +577,13 @@ def main(args):
                     break
 
         video_gt.release()
-        setting_for_uavtracker = False
+        train_uav = False
         one_file_gt.close()
 
     with open(annotations_file, "w") as handle:
-        yaml.dump(all_imgs, handle)
-    with open(sequence_file, "w") as handle:
-        yaml.dump(all_seq, handle)
+        yaml.dump(all_imgs_for_uav, handle)
+    with open(db_train_seq_file, "w") as handle:
+        yaml.dump(all_db_train_seq, handle)
 
     print("Done and done!")
     cv2.destroyAllWindows()
