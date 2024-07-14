@@ -10,7 +10,7 @@ with open(config_file, "r") as configfile:
     config = yaml.safe_load(configfile)
 project_directory = config["project_directory"]
 
-generator_config_file = f"../experiments/alfs_datasets.yml"
+generator_config_file = config["synth_generator"]
 with open(generator_config_file, "r") as configfile:
     generator_config = yaml.safe_load(configfile)
 

@@ -329,7 +329,8 @@ def set_name(oname, setting, it):
 
 def main(args):
 
-    generator_config_file = args.gen[0]
+    config = init_config(args)
+    generator_config_file = config["synth_generator"]
     with open(generator_config_file, "r") as configfile:
         generator_config = yaml.safe_load(configfile)
     show_img = generator_config["visual"]
@@ -339,7 +340,6 @@ def main(args):
     identical = generator_config["identical"]
 
     # read from command line
-    config = init_config(args)
     DEBUG = config["args_debug"]
     print(f"Debugging is {DEBUG}")
     ddir = config["project_directory"]
