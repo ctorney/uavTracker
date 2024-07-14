@@ -7,6 +7,7 @@ The images are already in a yolo-consistent shape (multiple of 32),
 
 import os, math, yaml, argparse
 import numpy as np
+import pandas as pd
 from skimage.color import hsv2rgb
 import cv2
 from collections import deque
@@ -15,15 +16,13 @@ import colorsys
 from utils import init_config
 
 
-"""
-We have to get RoI analytically because otherwise we cannot have overlapping even if we can resolved which recognised contour is which animals bounding box.
-There are two things to do
-TODO make it more reasonable padding for every postion of the ellipse
-TODO make it work with my expanded conciousness (shape i mean physical shape)
-"""
-
-
 def getRoI(zwk):
+    """
+    We have to get RoI analytically because otherwise we cannot have overlapping even if we can resolved which recognised contour is which animals bounding box.
+    There are two things to do
+    TODO make it more reasonable padding for every postion of the ellipse
+    TODO make it work with my expanded conciousness (shape i mean physical shape)
+    """
     sinzwk = zwk.islong * math.sin(np.pi * zwk.angle / 180)
     coszwk = zwk.islong * math.cos(np.pi * zwk.angle / 180)
     sinzwkw = zwk.iswide * math.sin(np.pi * zwk.angle / 180)
@@ -49,14 +48,11 @@ def getRoI(zwk):
     return (head, topleft, bottomright)
 
 
-"""
-Updates position of all Zwierzaks.
-We are allowing them to run on top of each other for now...
-"""
-
-
 def updateZwkPosition(zwk, zwks, side):
-
+    """
+    Updates position of all Zwierzaks.
+    We are allowing them to run on top of each other for now...
+    """
     zwk.x_prev = zwk.x_pos
     zwk.y_prev = zwk.y_pos
 
@@ -69,12 +65,11 @@ def updateZwkPosition(zwk, zwks, side):
     return zwk, is_same_panel
 
 
-"""
-This movement model need to be just the movement model so my position on the map initis etc have to be moved out of here
-"""
-
-
 class Mooveemodel:
+    """
+    This movement model need to be just the movement model so my position on the map initis etc have to be moved out of here
+    """
+
     def __init__(
         self,
         x_init,
@@ -125,13 +120,23 @@ class Mooveemodel:
     def getDirection(self):
         return np.degrees(np.arctan2(self.v[1], self.v[0]))
 
-
-"""
-Our animal can have different colour or the same
-"""
+    def prepMovement(self, nsamples=1000):
+        """
+        Generate quit e a fair bit of datapoints of the movement model
+        """
+        dd = []
+        for i in range(nsamples):
+            vv = self.updateSpeed()
+            dd.append([i, self.s, self.os[1]])
+        df = pd.DataFrame(dd, columns=["time", "speed", "angular_velocity"])
+        return df
 
 
 class Zwierzak:
+    """
+    Our animal can have different colour or the same
+    """
+
     def __init__(self, zwkid, track_id, x_init, y_init, mm, genmodel, hue=0, sat=1):
         self.mm = mm  # movememnt mode, each animus has its own now
         self.id = zwkid
@@ -212,12 +217,11 @@ class Zwierzak:
         return self.mm.pos, is_same_panel
 
 
-"""
-This class shows any natural and unnatural boundaries for the environment
-"""
-
-
 class Borders:
+    """
+    This class shows any natural and unnatural boundaries for the environment
+    """
+
     x_min = 0
     y_min = 0
     x_max = 100
