@@ -13,4 +13,5 @@ python testTrackers.py -c ../experiments/alfs.yml
 cd ../tracking
 python transforms.py -c ../experiments/alfs.yml -s
 python runTracker.py -c ../experiments/alfs.yml -s
+cd ../train
 python postTrainTest.py -c ../experiments/alfs.yml
