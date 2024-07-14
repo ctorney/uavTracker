@@ -8,11 +8,11 @@ python toy_data_generator.py -c ../experiments/alfs_terrier.yml
 python toy_data_generator.py -c ../experiments/alfs_terrier_identical.yml
 cd ../data/alfs_squirrel
 ln -s ../../weights .
-cd ../data/alfs_terrier
+cd ../alfs_terrier
 ln -s ../../weights .
-cd ../data/alfs_squirrel_identical
+cd ../alfs_squirrel_identical
 ln -s ../../weights .
-cd ../data/alfs_terrier_identical
+cd ../alfs_terrier_identical
 ln -s ../../weights .
 #squirrel
 cd ../../train
