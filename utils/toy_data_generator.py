@@ -574,13 +574,6 @@ if __name__ == "__main__":
         "--config", "-c", required=True, nargs=1, help="Your yml config file"
     )
     parser.add_argument(
-        "--gen",
-        "-g",
-        required=True,
-        nargs=1,
-        help="Additional parameters for the generator",
-    )
-    parser.add_argument(
         "--debug", "-d", default=False, action="store_true", help="Debugging"
     )
 
