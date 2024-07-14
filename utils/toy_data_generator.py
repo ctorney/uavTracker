@@ -236,7 +236,7 @@ class Borders:
         self.y_max = yma
 
 
-def set_alfs(generator_config, setting, mr, side):
+def set_alfs(generator_config, setting, mr, side, identical):
     mu_s = generator_config[setting]["mu_s"]
     sigma_speed = generator_config[setting]["sigma_speed"]
     sigma_angular_velocity = generator_config[setting]["sigma_angular_velocity"]
@@ -257,9 +257,12 @@ def set_alfs(generator_config, setting, mr, side):
             theta_speed,
             theta_angular_velocity,
         )
-        curalf = Zwierzak(
-            f"alf{a}", a, x_init, y_init, mm, genmodel, hue=mr.uniform(0, 1), sat=1
-        )
+        if identical:
+            thue = 0.4
+        else:
+            thue = mr.uniform(0, 1)
+
+        curalf = Zwierzak(f"alf{a}", a, x_init, y_init, mm, genmodel, hue=thue, sat=1)
         alfs.append(curalf)
     next_track_id = no_alfs
     return alfs, next_track_id
@@ -333,6 +336,7 @@ def main(args):
     side = (
         int(generator_config["size"]) // 32
     ) * 32  # The generator provides images with annotations so they have to be yolo-compatible size already
+    identical = generator_config["identical"]
 
     # read from command line
     config = init_config(args)
@@ -425,7 +429,9 @@ def main(args):
         for it in range(dps):
             # reset the list of alfs every 1000 frames so that long training data has different colours and slightly bit different parameters
             if it % 50 == 0:
-                alfs, next_track_id = set_alfs(generator_config, setting, mr, side)
+                alfs, next_track_id = set_alfs(
+                    generator_config, setting, mr, side, identical
+                )
             plane_cur = hdplane.copy()
             recthosealfs = (
                 []

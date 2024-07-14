@@ -1,12 +1,22 @@
 visual: False
 size: 640 #if not multiple of 32 it will be made to!
+identical: True
 
-settings: ['alpha', 'beta' , 'A', 'B', 'C', 'D', 'E']
-settings_for_uavtracker: ['alpha', 'A']
+settings: ['solitary', 'group' , 'pack', 'herd', 'A', 'B', 'C', 'D', 'E']
+settings_for_uavtracker: ['herd', 'A']
 settings_for_dbtracker: ['A', 'B' ,'C', 'D', 'E']
-datapoints_for_dbtracker: 100 #not all frames are suitable for providing the triples for the trainig
+datapoints_for_dbtracker: 5000 #not all frames are suitable for providing the triples for the trainig
 
-alpha:
+solitary:
+  mu_s: 3
+  sigma_speed: 20
+  sigma_angular_velocity: 0.2
+  theta_speed: 0.5
+  theta_angular_velocity: 0.5
+  no_alfs: 1
+  model: 'simple'
+
+group:
   mu_s: 3
   sigma_speed: 20
   sigma_angular_velocity: 0.2
@@ -15,14 +25,23 @@ alpha:
   no_alfs: 3
   model: 'simple'
 
-beta:
+pack:
   mu_s: 3
   sigma_speed: 20
   sigma_angular_velocity: 0.2
   theta_speed: 0.5
   theta_angular_velocity: 0.5
-  no_alfs: 1
-  model: 'complex_1'
+  no_alfs: 10
+  model: 'simple'
+
+herd:
+  mu_s: 3
+  sigma_speed: 20
+  sigma_angular_velocity: 0.2
+  theta_speed: 0.5
+  theta_angular_velocity: 0.5
+  no_alfs: 20
+  model: 'simple'
 
 #continuous speed straight line
 A:

@@ -2,7 +2,7 @@ set -e
 rm -rf data/final_alfsanity
 rm -f weights/alfsanity_terrier*
 cd utils
-python toy_data_generator.py -c ../experiments/alfsanity.yml -g ../experiments/alfsanity_datasets.yml
+python toy_data_generator.py -c ../experiments/alfsanity.yml -g ../experiments/alfs_identical_datasets.yml
 cd ../data/final_alfsanity
 ln -s ../../weights .
 cd ../../train
