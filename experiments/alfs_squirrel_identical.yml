@@ -5,7 +5,7 @@
 # project_name, project_directory, c_date, common:IMAGE_W (must be the same as IMAGE_H), number_of_images for train and test dataset
 project_name: 'alfs'
 project_directory: '../data/alfs_squirrel_identical' #adding a '..' because the programs are run from subdirectories. feel free to specify an absolute path if that offends you
-synth_generator: '../experiments/alfs_identical_dataset.yml'
+synth_generator: '../experiments/alfs_identical_datasets.yml'
 c_date: '2024Jul' #this is basically a part of project name if you wish.
 
 #The general project settings, will be the same if you keep the directory structure intact
