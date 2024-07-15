@@ -1,6 +1,6 @@
 set -e
 rm -rf data/alfs*
-rm -f weights/alfs_*
+#rm -f weights/alfs_*
 cd utils
 python toy_data_generator.py -c ../experiments/alfs_squirrel.yml
 python toy_data_generator.py -c ../experiments/alfs_squirrel_identical.yml
@@ -39,7 +39,20 @@ python transforms.py -c ../experiments/alfs_terrier.yml -s
 python runTracker.py -c ../experiments/alfs_terrier.yml -s
 
 
-#squirrel
+#terrier identical
+cd ../../train
+python train.py -c ../experiments/alfs_terrier_identical.yml
+cd ../train
+python postTrainTest.py -c ../experiments/alfs_terrier_identical.yml
+cd ../deepBeastLinker
+python trainTracker.py -c ../experiments/alfs_terrier_identical.yml
+python testTrackers.py -c ../experiments/alfs_terrier_identical.yml
+cd ../tracking
+python transforms.py -c ../experiments/alfs_terrier_identical.yml -s
+python runTracker.py -c ../experiments/alfs_terrier_identical.yml -s
+
+
+#squirrel identical
 cd ../../train
 python train.py -c ../experiments/alfs_squirrel_identical.yml
 cd ../train
@@ -51,14 +64,3 @@ cd ../tracking
 python transforms.py -c ../experiments/alfs_squirrel_identical.yml -s
 python runTracker.py -c ../experiments/alfs_squirrel_identical.yml -s
 
-#terrier
-cd ../../train
-python train.py -c ../experiments/alfs_terrier_identical.yml
-cd ../train
-python postTrainTest.py -c ../experiments/alfs_terrier_identical.yml
-cd ../deepBeastLinker
-python trainTracker.py -c ../experiments/alfs_terrier_identical.yml
-python testTrackers.py -c ../experiments/alfs_terrier_identical.yml
-cd ../tracking
-python transforms.py -c ../experiments/alfs_terrier_identical.yml -s
-python runTracker.py -c ../experiments/alfs_terrier_identical.yml -s
