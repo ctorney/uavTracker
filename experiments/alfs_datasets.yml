@@ -5,7 +5,7 @@ identical: False
 settings_for_uavtracker: ['herd_uavtrain', 'solitary_uavtrain']
 settings_for_dbtracker_train: ['A', 'B' ,'C', 'D', 'E'] #training on single only
 settings_for_dbtracker_test: ['solitary', 'group' , 'pack', 'herd'] #training on single only
-datapoints_per_dbtracker_set: 5000 #not all frames are suitable for providing the triples for the trainig
+datapoints_per_dbtracker_set: 1000 #not all frames are suitable for providing the triples for the trainig
 
 
 solitary:
