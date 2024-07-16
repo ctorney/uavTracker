@@ -185,7 +185,7 @@ class Zwierzak:
 
     def updateState(self):
         # for simple model we do not mess with the state
-        if self.genmodel == "simple":
+        if self.genmodel == "simple" or self.genmodel == "stochastic":
             return 0
 
         if self.state == 0:
@@ -237,14 +237,30 @@ class Borders:
 
 
 def set_alfs(generator_config, setting, mr, side, identical):
-    mu_s = generator_config[setting]["mu_s"]
-    sigma_speed = generator_config[setting]["sigma_speed"]
-    sigma_angular_velocity = generator_config[setting]["sigma_angular_velocity"]
-    theta_speed = generator_config[setting]["theta_speed"]
-    theta_angular_velocity = generator_config[setting]["theta_angular_velocity"]
-    no_alfs = generator_config[setting]["no_alfs"]
     genmodel = generator_config[setting]["model"]
-
+    if genmodel == "simple":
+        mu_s = generator_config[setting]["mu_s"]
+        sigma_speed = generator_config[setting]["sigma_speed"]
+        sigma_angular_velocity = generator_config[setting]["sigma_angular_velocity"]
+        theta_speed = generator_config[setting]["theta_speed"]
+        theta_angular_velocity = generator_config[setting]["theta_angular_velocity"]
+    elif genmodel == "stochastic":
+        mu_s = np.random.uniform(0, generator_config[setting]["mu_s"])
+        sigma_speed = np.random.uniform(0, generator_config[setting]["sigma_speed"])
+        sigma_angular_velocity = np.random.uniform(
+            0, generator_config[setting]["sigma_angular_velocity"]
+        )
+        theta_speed = np.random.uniform(0, generator_config[setting]["theta_speed"])
+        theta_angular_velocity = np.random.uniform(
+            0, generator_config[setting]["theta_angular_velocity"]
+        )
+    else:
+        raise ValueError("Unknown model")
+    # print all values
+    print(
+        f"Model: {genmodel}, mu_s: {mu_s}, sigma_speed: {sigma_speed}, sigma_angular_velocity: {sigma_angular_velocity}, theta_speed: {theta_speed}, theta_angular_velocity: {theta_angular_velocity}"
+    )
+    no_alfs = generator_config[setting]["no_alfs"]
     alfs = []
     for a in range(no_alfs):
         x_init, y_init = map(int, map(round, mr.uniform(0, side - 1, 2)))
@@ -358,6 +374,7 @@ def main(args):
     dp = dp_train + dp_test
     dp_ratio = dp_train / dp
 
+    param_seq_len = generator_config["param_seq_len"]
     settings_for_dbtracker_train = generator_config["settings_for_dbtracker_train"]
     settings_for_dbtracker_test = generator_config["settings_for_dbtracker_test"]
     if set(settings_for_dbtracker_train).intersection(set(settings_for_dbtracker_test)):
@@ -375,7 +392,8 @@ def main(args):
     number_of_uavtracker_sets = len(settings_for_uavtracker)
     number_of_dbtracker_sets = len(settings_for_dbtracker)
     dp_per_uavtracker_set = math.ceil(dp / number_of_uavtracker_sets)
-    dp_per_dbtracker_set = generator_config["datapoints_per_dbtracker_set"]
+    dp_per_dbtracker_set_train = generator_config["datapoints_per_dbtracker_set_train"]
+    dp_per_dbtracker_set_test = generator_config["datapoints_per_dbtracker_set_test"]
 
     # Those are *not* raw images as we forcing them to be yolo-compatible size as they are _already_ annotated!
     # test_dir = os.path.join(ddir,config['raw_imgs_dir'],config['subsets']['test']['directory'])
@@ -422,11 +440,12 @@ def main(args):
         if setting in settings_for_dbtracker:
             setting_for_dbtracker = True
             train_uav = False
-            dps = dp_per_dbtracker_set
             if setting in settings_for_dbtracker_train:
                 train_for_dbtracker = True
+                dps = dp_per_dbtracker_set_train
             else:
                 train_for_dbtracker = False
+                dps = dp_per_dbtracker_set_test
         elif setting in settings_for_uavtracker:
             setting_for_dbtracker = False
             train_for_dbtracker = False
@@ -449,7 +468,7 @@ def main(args):
 
         for it in range(dps):
             # reset the list of alfs every 50 frames so that long training data has different colours
-            if (train_uav or train_for_dbtracker) and (it % 50 == 0):
+            if it % param_seq_len == 0:
                 alfs, next_track_id = set_alfs(
                     generator_config, setting, mr, side, identical
                 )
