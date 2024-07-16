@@ -4,7 +4,9 @@ identical: False
 
 settings_for_uavtracker: ['herd_uavtrain', 'solitary_uavtrain']
 settings_for_dbtracker_train: ['A', 'B' ,'C', 'D', 'E'] #training on single only
-settings_for_dbtracker_test: ['solitary', 'group' , 'pack', 'herd'] #training on single only
+settings_for_dbtracker_test: ['solitary', 'group' , 'pack', 'herd',
+'A_test_solitary', 'A_test_group' , 'A_test_pack', 'A_test_herd',
+'B_test_solitary', 'B_test_group' , 'B_test_pack', 'B_test_herd'] #training on single only
 datapoints_per_dbtracker_set: 500 #not all frames are suitable for providing the triples for the trainig
 
 
@@ -41,7 +43,7 @@ herd:
   sigma_angular_velocity: 0.2
   theta_speed: 0.5
   theta_angular_velocity: 0.5
-  no_alfs: 20
+  no_alfs: 2 0
   model: 'simple'
 
 herd_uavtrain:
@@ -119,4 +121,84 @@ E:
   sigma_angular_velocity: 0.1
   theta_angular_velocity: 0.5
   no_alfs: 1
+  model: 'simple'
+
+#continuous speed straight line
+A_test_solitary:
+  mu_s: 24
+  sigma_speed: 0
+  sigma_angular_velocity: 0
+  theta_speed: 0
+  theta_angular_velocity: 0
+  no_alfs: 1
+  model: 'simple'
+
+#straight line OU speed
+B_test_solitary:
+  mu_s: 5
+  sigma_speed: 20
+  theta_speed: 0.4
+  sigma_angular_velocity: 0
+  theta_angular_velocity: 0
+  no_alfs: 1
+  model: 'simple'
+
+#continuous speed straight line
+A_test_group:
+  mu_s: 24
+  sigma_speed: 0
+  sigma_angular_velocity: 0
+  theta_speed: 0
+  theta_angular_velocity: 0
+  no_alfs: 3
+  model: 'simple'
+
+#straight line OU speed
+B_test_group:
+  mu_s: 5
+  sigma_speed: 20
+  theta_speed: 0.4
+  sigma_angular_velocity: 0
+  theta_angular_velocity: 0
+  no_alfs: 3
+  model: 'simple'
+
+#continuous speed straight line
+A_test_pack:
+  mu_s: 24
+  sigma_speed: 0
+  sigma_angular_velocity: 0
+  theta_speed: 0
+  theta_angular_velocity: 0
+  no_alfs: 10
+  model: 'simple'
+
+#straight line OU speed
+B_test_pack:
+  mu_s: 5
+  sigma_speed: 20
+  theta_speed: 0.4
+  sigma_angular_velocity: 0
+  theta_angular_velocity: 0
+  no_alfs: 10
+  model: 'simple'
+
+#continuous speed straight line
+A_test_herd:
+  mu_s: 24
+  sigma_speed: 0
+  sigma_angular_velocity: 0
+  theta_speed: 0
+  theta_angular_velocity: 0
+  no_alfs: 20
+  model: 'simple'
+
+#straight line OU speed
+B_test_herd:
+  mu_s: 5
+  sigma_speed: 20
+  theta_speed: 0.4
+  sigma_angular_velocity: 0
+  theta_angular_velocity: 0
+  no_alfs: 20
   model: 'simple'

@@ -448,8 +448,8 @@ def main(args):
         one_file_gt = open(one_fname_gt, "a")
 
         for it in range(dps):
-            # reset the list of alfs every 1000 frames so that long training data has different colours and slightly bit different parameters
-            if it % 50 == 0:
+            # reset the list of alfs every 50 frames so that long training data has different colours
+            if (train_uav or train_for_dbtracker) and (it % 50 == 0):
                 alfs, next_track_id = set_alfs(
                     generator_config, setting, mr, side, identical
                 )

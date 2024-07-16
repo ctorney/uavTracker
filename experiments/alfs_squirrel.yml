@@ -125,11 +125,11 @@ deepBeastLinking:
 
   #checked annotations are used for training:
   checked_annotations_fname: 'seq_data.yml'
-  test_seqs: ['A.txt', 'B.txt', 'C.txt', 'D.txt', 'E.txt', 'solitary.txt', 'group.txt' , 'pack.txt', 'herd.txt']
+  test_seqs: ['A.txt', 'B.txt', 'C.txt', 'D.txt', 'E.txt', 'solitary.txt', 'group.txt', 'pack.txt', 'herd.txt', 'A_test_solitary.txt', 'A_test_group.txt' , 'A_test_pack.txt', 'A_test_herd.txt', 'B_test_solitary.txt', 'B_test_group.txt' , 'B_test_pack.txt', 'B_test_herd.txt']
   nframes_seq: 0 #set to 0 if you want the wole sequence, otherwise provide number of frames
   detection_net_weights: 'alfs_squirrel_phase_two_2024Jul.h5'
   detection_net_weights_md5: ''
-  linking_net_weights: 'alfs2024jul_squirrel.h5'
+  linking_net_weights: 'alfs_link_2024jul_squirrel.h5'
   linking_net_weights_md5: ''
 
   #training parameters
