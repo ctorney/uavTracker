@@ -256,10 +256,7 @@ def set_alfs(generator_config, setting, mr, side, identical):
         )
     else:
         raise ValueError("Unknown model")
-    # print all values
-    print(
-        f"Model: {genmodel}, mu_s: {mu_s}, sigma_speed: {sigma_speed}, sigma_angular_velocity: {sigma_angular_velocity}, theta_speed: {theta_speed}, theta_angular_velocity: {theta_angular_velocity}"
-    )
+
     no_alfs = generator_config[setting]["no_alfs"]
     alfs = []
     for a in range(no_alfs):
