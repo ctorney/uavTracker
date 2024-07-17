@@ -48,3 +48,31 @@ plot_df(
 plt.xticks(rotation=45)
 plt.tight_layout()
 plt.show()
+
+resfile = "../data/alfs_terrier/results/results_file.yml"
+with open(resfile, "r") as f:
+    res = yaml.safe_load(f)
+
+res_squirrel_train = pd.Series(res["AP"]["all_sets"]["terrier"]["phase_two"]).apply(
+    lambda x: round(100 * x, 2)
+)
+res_squirrel_test = pd.Series(res["AP"]["test"]["terrier"]["phase_two"]).apply(
+    lambda x: round(100 * x, 2)
+)
+res_terrier_train = pd.Series(res["AP"]["all_sets"]["terrier"]["phase_one"]).apply(
+    lambda x: round(100 * x, 2)
+)
+res_terrier_test = pd.Series(res["AP"]["test"]["terrier"]["phase_one"]).apply(
+    lambda x: round(100 * x, 2)
+)
+
+det_results = pd.DataFrame(
+    {
+        "Dataset": ["Squirrel", "Terrier"],
+        "Train": [res_squirrel_train, res_terrier_train],
+        "Test": [res_squirrel_test, res_terrier_test],
+    }
+)
+
+# print det_results to latex
+print(det_results.to_latex(index=False))
