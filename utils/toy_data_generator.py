@@ -147,7 +147,7 @@ class Zwierzak:
         self.y_pos = y_init
         self.x_prev = x_init
         self.y_prev = y_init
-        self.hsv = (hue, sat, 0)  # initialise as a dim value
+        self.hsv = (hue, sat, 200)  # initialise as not too-light value
         self.angle = mm.angle
         self.islong = (
             30  # half of width and height as opencv ellipses measurements defined
@@ -236,7 +236,7 @@ class Borders:
         self.y_max = yma
 
 
-def set_alfs(generator_config, setting, mr, side, identical):
+def set_alfs(generator_config, setting, mr, side):
     genmodel = generator_config[setting]["model"]
     if genmodel == "simple":
         mu_s = generator_config[setting]["mu_s"]
@@ -256,6 +256,11 @@ def set_alfs(generator_config, setting, mr, side, identical):
         )
     else:
         raise ValueError("Unknown model")
+
+    if "identical" in generator_config[setting]:
+        identical = generator_config[setting]["identical"]
+    else:
+        identical = False
 
     no_alfs = generator_config[setting]["no_alfs"]
     alfs = []
@@ -295,12 +300,14 @@ def updateAndDrawAlfs(
         alf.angle,
         0,
         360,
-        colorsys.hsv_to_rgb(alf.hsv[0], alf.hsv[1], 255),
+        colorsys.hsv_to_rgb(alf.hsv[0], alf.hsv[1], alf.hsv[2]),
         -1,
     )
     (head, r1, r2) = getRoI(alf)
 
-    cv2.circle(plane_cur, head, 3, (0, 255, 255))
+    cv2.circle(
+        plane_cur, head, 3, (40, 0, 0)
+    )  # make alfs head dark as the plane is now light
 
     roiNotOnBorder = True  # or beyond....
     if (
@@ -350,10 +357,6 @@ def main(args):
     side = (
         int(generator_config["size"]) // 32
     ) * 32  # The generator provides images with annotations so they have to be yolo-compatible size already
-    if "synth_identical" in config.keys():
-        identical = config["synth_identical"]
-    else:
-        identical = False
 
     # read from command line
     DEBUG = config["args_debug"]
@@ -466,9 +469,7 @@ def main(args):
         for it in range(dps):
             # reset the list of alfs every 50 frames so that long training data has different colours
             if it % param_seq_len == 0:
-                alfs, next_track_id = set_alfs(
-                    generator_config, setting, mr, side, identical
-                )
+                alfs, next_track_id = set_alfs(generator_config, setting, mr, side)
             plane_cur = hdplane.copy()
             recthosealfs = (
                 []

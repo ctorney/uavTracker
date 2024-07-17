@@ -1,10 +1,10 @@
 visual: False
 size: 640 #if not multiple of 32 it will be made to!
-identical: False
 
 settings_for_uavtracker: ['herd_uavtrain', 'solitary_uavtrain']
 settings_for_dbtracker_train: ['A', 'B' ,'C', 'D', 'E'] #training on single only
 settings_for_dbtracker_test: ['solitary', 'group' , 'pack', 'herd',
+'group_identical' , 'pack_identical', 'herd_identical',
 'A_test_solitary', 'A_test_group' , 'A_test_pack', 'A_test_herd',
 'B_test_solitary', 'B_test_group' , 'B_test_pack', 'B_test_herd'] #training on single only
 datapoints_per_dbtracker_set_train: 500 #not all frames are suitable for providing the triples for the trainig
@@ -48,6 +48,39 @@ herd:
   theta_angular_velocity: 0.5
   no_alfs: 20
   model: 'stochastic'
+
+
+group_identical:
+  identical: True
+  mu_s: 20
+  sigma_speed: 20
+  sigma_angular_velocity: 0.5
+  theta_speed: 1
+  theta_angular_velocity: 0.5
+  no_alfs: 3
+  model: 'stochastic'
+
+
+pack_identical:
+  identical: True
+  mu_s: 20
+  sigma_speed: 20
+  sigma_angular_velocity: 0.5
+  theta_speed: 1
+  theta_angular_velocity: 0.5
+  no_alfs: 10
+  model: 'stochastic'
+
+herd_identical:
+  identical: True
+  mu_s: 20
+  sigma_speed: 20
+  sigma_angular_velocity: 0.5
+  theta_speed: 1
+  theta_angular_velocity: 0.5
+  no_alfs: 20
+  model: 'stochastic'
+
 
 herd_uavtrain:
   mu_s: 3
