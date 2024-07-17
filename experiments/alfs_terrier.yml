@@ -43,7 +43,7 @@ models:
     pretrained_weights: 'yolo-v3-coco.h5'
     pretrained_weights_md5: "26cf8e8b5ba9d9d4a3778f9747e3407a" #leave empty if you are retraining
     training_sets: ['train']
-    phases: 2
+    phases: 1
     num_class: 1
     obj_thresh: 0.9
     nms_thresh: 0.1
@@ -127,7 +127,7 @@ deepBeastLinking:
   test_seqs: ['A.txt', 'B.txt', 'C.txt', 'D.txt', 'E.txt', 'solitary.txt', 'group.txt', 'pack.txt', 'herd.txt', 'A_test_solitary.txt', 'A_test_group.txt' , 'A_test_pack.txt', 'A_test_herd.txt', 'B_test_solitary.txt', 'B_test_group.txt' , 'B_test_pack.txt', 'B_test_herd.txt']
   nframes_seq: 0 #set to 0 if you want the wole sequence, otherwise provide number of frames
   param_seq_len: 50 #must match the one used in generator
-  detection_net_weights: 'alfs_terrier_phase_two_2024Jul.h5'
+  detection_net_weights: 'alfs_terrier_phase_one_2024Jul.h5'
   detection_net_weights_md5: ''
   linking_net_weights: 'alfs_link_2024jul_terrier.h5'
   linking_net_weights_md5: ''
