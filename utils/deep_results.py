@@ -66,13 +66,17 @@ res_terrier_test = pd.Series(res["AP"]["test"]["terrier"]["phase_one"]).apply(
     lambda x: round(100 * x, 2)
 )
 
+# Create a table of results for squirrel and terrier with subheading train/test with each row being a value with index the same as the series
 det_results = pd.DataFrame(
     {
-        "Dataset": ["Squirrel", "Terrier"],
-        "Train": [res_squirrel_train, res_terrier_train],
-        "Test": [res_squirrel_test, res_terrier_test],
+        "Squirrel-train": res_squirrel_train,
+        "Squirrel-test": res_squirrel_test,
+        "Terrier-train": res_terrier_train,
+        "Terrier-test": res_terrier_test,
     }
 )
+# change name of the index column to mAP threshold
+det_results.index.name = "mAP threshold"
 
-# print det_results to latex
-print(det_results.to_latex(index=False))
+# print det_results to latex, one decimal point
+print(det_results.to_latex(index=True, float_format="%.1f"))
