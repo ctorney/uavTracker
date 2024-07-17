@@ -236,7 +236,7 @@ class Borders:
         self.y_max = yma
 
 
-def set_alfs(generator_config, setting, mr, side):
+def set_alfs(generator_config, setting, mr, side, next_track_id=0):
     genmodel = generator_config[setting]["model"]
     if genmodel == "simple":
         mu_s = generator_config[setting]["mu_s"]
@@ -264,7 +264,8 @@ def set_alfs(generator_config, setting, mr, side):
 
     no_alfs = generator_config[setting]["no_alfs"]
     alfs = []
-    for a in range(no_alfs):
+    next_after_track_id = no_alfs + next_track_id
+    for a in range(next_track_id, next_after_track_id):
         x_init, y_init = map(int, map(round, mr.uniform(0, side - 1, 2)))
         mm = Mooveemodel(
             x_init,
@@ -282,7 +283,7 @@ def set_alfs(generator_config, setting, mr, side):
 
         curalf = Zwierzak(f"alf{a}", a, x_init, y_init, mm, genmodel, hue=thue, sat=1)
         alfs.append(curalf)
-    next_track_id = no_alfs
+    next_track_id = next_after_track_id
     return alfs, next_track_id
 
 
@@ -427,6 +428,7 @@ def main(args):
     )
 
     borders = Borders(1, 1, side - 1, side - 1)
+    next_track_id = 0
 
     hdplane = np.zeros((side, side, 3), np.uint8)
     hdplane[:, :, 2] = 255
@@ -467,9 +469,11 @@ def main(args):
         one_file_gt = open(one_fname_gt, "a")
 
         for it in range(dps):
-            # reset the list of alfs every 50 frames so that long training data has different colours
+            # reset the list of alfs every XXX frames so that long training data has different colours
             if it % param_seq_len == 0:
-                alfs, next_track_id = set_alfs(generator_config, setting, mr, side)
+                alfs, next_track_id = set_alfs(
+                    generator_config, setting, mr, side, next_track_id
+                )
             plane_cur = hdplane.copy()
             recthosealfs = (
                 []
