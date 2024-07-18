@@ -3,9 +3,9 @@ import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
 
-terrier = pd.read_csv("../data/alfs_terrier/results/real_tracker_comparison.csv")
+terrier = pd.read_csv("../data/alfs_terrier/results/tracker_results_samples.csv")
 terrier["detector"] = "poor"
-squirrel = pd.read_csv("../data/alfs_squirrel/results/real_tracker_comparison.csv")
+squirrel = pd.read_csv("../data/alfs_terrier/results/tracker_results_samples.csv")
 terrier["detector"] = "good"
 
 linkresults = pd.concat([terrier, squirrel])
@@ -31,8 +31,75 @@ linkresults["n_objects"] = linkresults["sequence"].map(lambda x: sequence_lookup
 linkresults["variant"] = linkresults["sequence"].map(lambda x: sequence_lookup[x][1])
 linkresults["scenario"] = linkresults["sequence"].map(lambda x: sequence_lookup[x][2])
 
-# Plotting with seaborn
-sns.set_theme(style="whitegrid")
-g = sns.FacetGrid(
-    linkresults, col="scenario", row="variant", hue="detector", height=4, aspect=1.5
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Load your DataFrame
+# linkresults = pd.read_csv('your_data.csv')  # Assuming data is in CSV for example
+
+# Filter data
+# filtered_data = linkresults[(linkresults["scenario"] == "Z")]
+filtered_data = linkresults[
+    (linkresults["scenario"] == "Z") & (linkresults["detector"] == "good")
+]
+
+# Melt the DataFrame to get 'torney', 'sort', 'beast' into a single column
+melted_data = filtered_data.melt(
+    id_vars=["detector", "n_objects", "variant", "scenario"],
+    value_vars=["torney", "sort", "beast"],
+    var_name="method",
+    value_name="performance",
 )
+melted_data["detector_variant"] = melted_data[["detector", "variant"]].apply(
+    lambda x: f"{x[0]}_{x[1]}", axis=1
+)
+# Plot using seaborn's catplot
+g = sns.catplot(
+    data=melted_data,
+    x="method",
+    y="performance",
+    hue="variant",
+    col="n_objects",
+    kind="box",
+    ci="sd",  # standard deviation for the error bars
+    aspect=0.6,
+)
+
+# Adjust the axis labels and plot title
+g.set_axis_labels("Variant", "Performance")
+g.set_titles("Objects: {col_name}")
+# save
+plt.savefig(f"plots/results_variant.png")
+
+
+filtered_data = linkresults[
+    (linkresults["detector"] == "good") & (linkresults["variant"] == "diff")
+]
+# Melt the DataFrame to get 'torney', 'sort', 'beast' into a single column
+melted_data = filtered_data.melt(
+    id_vars=["detector", "n_objects", "variant", "scenario"],
+    value_vars=["torney", "sort", "beast"],
+    var_name="method",
+    value_name="performance",
+)
+melted_data["n_objects"] = melted_data["n_objects"].astype(str)
+#
+g = sns.catplot(
+    data=melted_data,
+    x="method",
+    y="performance",
+    hue="n_objects",
+    col="scenario",
+    kind="box",
+    ci="sd",  # Standard deviation for the error bars
+    aspect=0.6,
+)
+
+# Adjust the axis labels and plot title
+g.set_axis_labels("Variant", "Performance")
+g.set_titles("Objects: {col_name}")
+plt.savefig(f"plots/results_main.png")
+plt.show()
+
+#
