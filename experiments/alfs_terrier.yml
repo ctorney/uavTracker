@@ -49,7 +49,7 @@ models:
     nms_thresh: 0.1
     phase_one:
       BATCH_SIZE: 16
-      EPOCHS: 50
+      EPOCHS: 10
       LR: 0.5e-3
       B1: 0.9
       B2: 0.999
