@@ -110,11 +110,29 @@ melted_data = filtered_data.melt(
     var_name="method",
     value_name="performance",
 )
-melted_data = melted_data[(melted_data["method"] == "beast")]
+
+
+g = sns.catplot(
+    data=melted_data,
+    x="method",
+    y="performance",
+    hue="detector",
+    kind="box",
+    col="n_objects",
+    ci="sd",  # standard deviation for the error bars
+    aspect=0.6,
+)
+g.set_axis_labels("Number of Objects", "Average IoU")
+# g.add_legend(title="Detector quality on scenario Z")
+plt.savefig("plots/results_dets_all.png")
+plt.show()
+
+
+melted_data_beast = melted_data[(melted_data["method"] == "beast")]
 
 # Plot using seaborn's catplot
 g = sns.catplot(
-    data=melted_data,
+    data=melted_data_beast,
     x="n_objects",
     y="performance",
     hue="detector",
@@ -122,15 +140,9 @@ g = sns.catplot(
     ci="sd",  # standard deviation for the error bars
     aspect=0.6,
 )
-
-
-# Adjust legend and axis labels
 g.set_axis_labels("Number of Objects", "Average IoU")
 g.add_legend(title="Detector quality on scenario Z")
-
-# Save the figure
-plt.savefig("plots/results_dets.png")
-
+plt.savefig("plots/results_dets_beast.png")
 plt.show()
 ##############
 ############
