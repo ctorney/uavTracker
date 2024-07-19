@@ -66,11 +66,33 @@ g = sns.catplot(
     aspect=0.6,
 )
 
-# Adjust the axis labels and plot title
-g.set_axis_labels("Variant", "Performance")
+
+# Adjust legend and axis labels
+g.set_axis_labels("Method", "Performance")
 g.set_titles("Objects: {col_name}")
-# save
-plt.savefig(f"plots/results_variant.png")
+g.add_legend(title="Variant")
+
+# Save the figure
+plt.savefig("plots/results_variant.png")
+
+plt.show()
+
+# Compute mean performance grouped by 'method', 'variant', and 'n_objects'
+mean_results = (
+    melted_data.groupby(["method", "variant", "n_objects"])["performance"]
+    .agg(["mean", "std"])
+    .reset_index()
+)
+
+# Rename the columns for clarity
+mean_results.rename(
+    columns={"mean": "Mean Performance", "std": "Standard Deviation"}, inplace=True
+)
+
+# Display or save the DataFrame
+print(mean_results)
+# Optionally save to CSV
+mean_results.to_csv("mean_performance_results.csv", index=False)
 
 
 filtered_data = linkresults[

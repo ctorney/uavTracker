@@ -41,7 +41,7 @@ def print_tex_table(ldf, methods):
     return centered_latex_table
 
 
-terrier = pd.read_csv("../data/alfs_terrier/results/tracker_comparison.csv")
+terrier = pd.read_csv("../data/alfs_terrier/results/real_tracker_comparison.csv")
 squirrel = pd.read_csv("../data/alfs_squirrel/results/tracker_comparison.csv")
 
 n_objects = [1, 3, 10, 20, 3, 10, 20, 1, 3, 10, 20, 1, 3, 10, 20]

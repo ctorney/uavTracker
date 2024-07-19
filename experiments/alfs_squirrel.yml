@@ -136,3 +136,7 @@ deepBeastLinking:
   LR: 0.5e-4
   MIN_DELTA: 0.001
   PATIENCE: 5
+
+  #saving stuff?
+  all_samples_csv: True
+  output_imgs: 100 #-1 to show all, otherwise number

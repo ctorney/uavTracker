@@ -124,7 +124,7 @@ deepBeastLinking:
 
   #checked annotations are used for training:
   checked_annotations_fname: 'seq_data.yml'
-  nframes_seq: 0 #set to 0 if you want the wole sequence, otherwise provide number of frames
+  nframes_seq: 70 #set to 0 if you want the wole sequence, otherwise provide number of frames
   detection_net_weights: 'alfs_terrier_phase_one_2024Jul.h5'
   detection_net_weights_md5: ''
   linking_net_weights: 'alfs_link_2024jul_terrier.h5'
@@ -136,3 +136,7 @@ deepBeastLinking:
   LR: 0.5e-4
   MIN_DELTA: 0.001
   PATIENCE: 5
+
+  #saving stuff?
+  all_samples_csv: True
+  output_imgs: 100 #-1 to show all, otherwise number
