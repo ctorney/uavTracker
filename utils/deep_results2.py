@@ -5,8 +5,8 @@ import matplotlib.pyplot as plt
 
 terrier = pd.read_csv("../data/alfs_terrier/results/tracker_results_samples.csv")
 terrier["detector"] = "poor"
-squirrel = pd.read_csv("../data/alfs_terrier/results/tracker_results_samples.csv")
-terrier["detector"] = "good"
+squirrel = pd.read_csv("../data/alfs_squirrel/results/tracker_results_samples.csv")
+squirrel["detector"] = "good"
 
 linkresults = pd.concat([terrier, squirrel])
 
@@ -31,10 +31,19 @@ linkresults["n_objects"] = linkresults["sequence"].map(lambda x: sequence_lookup
 linkresults["variant"] = linkresults["sequence"].map(lambda x: sequence_lookup[x][1])
 linkresults["scenario"] = linkresults["sequence"].map(lambda x: sequence_lookup[x][2])
 
-import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
-
+##############
+############
+#############
+#########
+######
+################
+####
+####################
+######### compare diff and same on 'good'
+##################
+#################
+########
+#####
 # Load your DataFrame
 # linkresults = pd.read_csv('your_data.csv')  # Assuming data is in CSV for example
 
@@ -77,6 +86,67 @@ plt.savefig("plots/results_variant.png")
 
 plt.show()
 
+##############
+############
+#############
+#########
+######
+################
+####
+####################
+######### compare good and bad!
+##################
+#################
+########
+#####
+filtered_data = linkresults[
+    (linkresults["scenario"] == "Z") & (linkresults["variant"] == "diff")
+]
+
+# Melt the DataFrame to get 'torney', 'sort', 'beast' into a single column
+melted_data = filtered_data.melt(
+    id_vars=["detector", "n_objects", "variant", "scenario"],
+    value_vars=["torney", "sort", "beast"],
+    var_name="method",
+    value_name="performance",
+)
+melted_data = melted_data[(melted_data["method"] == "beast")]
+
+# Plot using seaborn's catplot
+g = sns.catplot(
+    data=melted_data,
+    x="n_objects",
+    y="performance",
+    hue="detector",
+    kind="box",
+    ci="sd",  # standard deviation for the error bars
+    aspect=0.6,
+)
+
+
+# Adjust legend and axis labels
+g.set_axis_labels("Number of Objects", "Average IoU")
+g.add_legend(title="Detector quality on scenario Z")
+
+# Save the figure
+plt.savefig("plots/results_dets.png")
+
+plt.show()
+##############
+############
+#############
+#########
+######
+################
+####
+####################
+#########
+##################
+#################
+########
+#####
+
+
 # Compute mean performance grouped by 'method', 'variant', and 'n_objects'
 mean_results = (
     melted_data.groupby(["method", "variant", "n_objects"])["performance"]
@@ -92,8 +162,23 @@ mean_results.rename(
 # Display or save the DataFrame
 print(mean_results)
 # Optionally save to CSV
-mean_results.to_csv("mean_performance_results.csv", index=False)
+# mean_results.to_csv("plots/mean_performance_results.csv", index=False)
+# print tex
+print(mean_results.to_latex(index=False))
 
+##############
+############
+#############
+#########
+######
+################
+####
+####################
+#########
+##################
+#################
+########
+#####
 
 filtered_data = linkresults[
     (linkresults["detector"] == "good") & (linkresults["variant"] == "diff")
@@ -113,6 +198,7 @@ g = sns.catplot(
     y="performance",
     hue="n_objects",
     col="scenario",
+    col_order=["A", "B", "Z"],  # Specify the order of the columns
     kind="box",
     ci="sd",  # Standard deviation for the error bars
     aspect=0.6,
@@ -125,3 +211,16 @@ plt.savefig(f"plots/results_main.png")
 plt.show()
 
 #
+##############
+############
+#############
+#########
+######
+################
+####
+####################
+#########
+##################
+#################
+########
+#####
