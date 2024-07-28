@@ -306,20 +306,23 @@ plot_df(
 ########################
 
 
-resfile = "../data/alfs_terrier/results/results_file.yml"
-with open(resfile, "r") as f:
-    res = yaml.safe_load(f)
+resfile_ter = "../data/alfs_terrier/results/results_file.yml"
+resfile_sqr = "../data/alfs_squirrel/results/results_file.yml"
+with open(resfile_ter, "r") as f:
+    res_ter = yaml.safe_load(f)
+with open(resfile_sqr, "r") as f:
+    res_sqr = yaml.safe_load(f)
 
-res_squirrel_train = pd.Series(res["AP"]["all_sets"]["terrier"]["phase_two"]).apply(
+res_squirrel_train = pd.Series(res_sqr["AP"]["all_sets"]["squirrel"]["phase_two"]).apply(
     lambda x: round(100 * x, 2)
 )
-res_squirrel_test = pd.Series(res["AP"]["test"]["terrier"]["phase_two"]).apply(
+res_squirrel_test = pd.Series(res_sqr["AP"]["test"]["squirrel"]["phase_two"]).apply(
     lambda x: round(100 * x, 2)
 )
-res_terrier_train = pd.Series(res["AP"]["all_sets"]["terrier"]["phase_one"]).apply(
+res_terrier_train = pd.Series(res_ter["AP"]["all_sets"]["terrier"]["phase_one"]).apply(
     lambda x: round(100 * x, 2)
 )
-res_terrier_test = pd.Series(res["AP"]["test"]["terrier"]["phase_one"]).apply(
+res_terrier_test = pd.Series(res_ter["AP"]["test"]["terrier"]["phase_one"]).apply(
     lambda x: round(100 * x, 2)
 )
 
