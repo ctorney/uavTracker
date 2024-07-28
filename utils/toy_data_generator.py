@@ -376,6 +376,7 @@ def main(args):
     dp_ratio = dp_train / dp
 
     param_seq_len = generator_config["param_seq_len"]
+    stoch_multip = generator_config["datapoints_muliploer_for_stochastic"]
     settings_for_dbtracker_train = generator_config["settings_for_dbtracker_train"]
     settings_for_dbtracker_test = generator_config["settings_for_dbtracker_test"]
     if set(settings_for_dbtracker_train).intersection(set(settings_for_dbtracker_test)):
@@ -447,7 +448,11 @@ def main(args):
                 dps = dp_per_dbtracker_set_train
             else:
                 train_for_dbtracker = False
-                dps = dp_per_dbtracker_set_test
+                if generator_config[setting]["model"] == "stochastic":
+                    dps = dp_per_dbtracker_set_test * stoch_multip
+                else:
+                    dps = dp_per_dbtracker_set_test
+
         elif setting in settings_for_uavtracker:
             setting_for_dbtracker = False
             train_for_dbtracker = False

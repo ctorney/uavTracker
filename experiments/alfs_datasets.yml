@@ -8,7 +8,8 @@ settings_for_dbtracker_test: ['solitary', 'group' , 'pack', 'herd',
 'A_test_solitary', 'A_test_group' , 'A_test_pack', 'A_test_herd',
 'B_test_solitary', 'B_test_group' , 'B_test_pack', 'B_test_herd'] #training on single only
 datapoints_per_dbtracker_set_train: 500 #not all frames are suitable for providing the triples for the training
-datapoints_per_dbtracker_set_test: 10000
+datapoints_per_dbtracker_set_test: 1000
+datapoints_muliploer_for_stochastic: 10 #There should be 10 times more datapoints for stochastic datasets to allow for more variability
 param_seq_len: 25
 
 
